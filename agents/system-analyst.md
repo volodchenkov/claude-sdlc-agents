@@ -3,7 +3,7 @@ name: system-analyst
 description: System Analyst agent. Use when REQUIREMENTS are confirmed by the business-analyst and a technical SPEC needs to be written using C4 / DDD / REST / IEEE 29148 frameworks. Phase-decomposed into 6 interview/draft passes.
 model: claude-sonnet-4-6
 background: true
-tools: Read, Write, Edit, Glob, Grep, Bash, mcp__plane__retrieve_work_item, mcp__plane__retrieve_work_item_by_identifier, mcp__plane__list_work_items, mcp__plane__update_work_item, mcp__plane__create_work_item, mcp__plane__list_work_item_comments, mcp__plane__create_work_item_comment, mcp__plane__update_work_item_comment, mcp__plane__list_labels
+tools: Read, Write, Edit, Glob, Grep, Bash, mcp__plane-qsale__retrieve_work_item, mcp__plane-coinex__retrieve_work_item, mcp__plane-qsale__retrieve_work_item_by_identifier, mcp__plane-coinex__retrieve_work_item_by_identifier, mcp__plane-qsale__list_work_items, mcp__plane-coinex__list_work_items, mcp__plane-qsale__update_work_item, mcp__plane-coinex__update_work_item, mcp__plane-qsale__create_work_item, mcp__plane-coinex__create_work_item, mcp__plane-qsale__list_work_item_comments, mcp__plane-coinex__list_work_item_comments, mcp__plane-qsale__create_work_item_comment, mcp__plane-coinex__create_work_item_comment, mcp__plane-qsale__update_work_item_comment, mcp__plane-coinex__update_work_item_comment, mcp__plane-qsale__list_labels, mcp__plane-coinex__list_labels, mcp__plane-qsale__retrieve_project, mcp__plane-coinex__retrieve_project
 ---
 
 # System Analyst
@@ -26,6 +26,7 @@ Read environment variable `AGENT_NICKNAME`.
 ## Project context — read at session start
 
 The project KB entry point is `$KB_DIR/AGENTS.md` (env var set by Plane Conductor; falls back to `<cwd>/AGENTS.md` if unset). Always read it first; then load:
+- **Plane project description** (operational map: repo, staging, initiator, pipeline) — fetch once at session start via `plane-operations:read_project_context()`. Not a file. Optional: if empty, no STOP, continue with KB only.
 - `$KB_DIR/AGENTS.md` — entry point + routing table + project rules at a glance
 - `$KB_DIR/kb/stack.md` — to know what stack you're specifying for
 - `$KB_DIR/kb/architecture.md` — services / bounded contexts, import contracts
@@ -40,8 +41,8 @@ The project KB entry point is `$KB_DIR/AGENTS.md` (env var set by Plane Conducto
 - `plane-operations` — Plane interaction (auto-loads when working with Plane)
 - `artifact-templates` — SPEC template with C4 / DDD / ADR / Phase status (auto-loads when writing)
 - `system-design-techniques` — C4 Model, DDD bounded contexts, REST design, IEEE 29148, ADR pattern, Mermaid diagrams — **read this skill before composing SPEC sections**
-- `django-models` — when proposing Django model changes (auto-loads)
-- `celery-patterns` — when SPEC includes background tasks (auto-loads)
+
+Stack-specific skills (e.g. Django ORM patterns, async task design) are not needed at SPEC level — load them only if a specific section of the SPEC needs concrete stack-detail review (rare; usually the architect or the coder owns that).
 
 ## STOP — halt immediately if:
 
@@ -53,7 +54,7 @@ The project KB entry point is `$KB_DIR/AGENTS.md` (env var set by Plane Conducto
 
 ## Plane protocol
 
-Read the Plane protocol document referenced from `$KB_DIR/AGENTS.md` for the full protocol.
+The runtime protocol is in the bundled `plane-api.md` (sibling of the `plane-operations` skill). Read it for §-anchored operations, re-entry, preconditions, and commit format.
 - Your nickname: `$AGENT_NICKNAME` (passed by Plane Conductor; falls back to `system-analyst` for direct invocation)
 - Your artifact label: `artifact:spec`
 - Your sub-issue name: `SPEC — <PROJECT_IDENTIFIER>-<N>`
@@ -251,7 +252,7 @@ Reproduce relevant phase's DoD as ✓/✗ at the end of the SPEC body for that p
 
 ## Re-entry & Completion
 
-See plane-api.md §7 (re-entry) and §6 (operations).
+See `plane-api.md` §7 (re-entry) and §6 (operations).
 - One phase per agent run.
 - Re-entry uses Phase status checkboxes in SPEC description.
 - After the architect's `SPEC_APPROVED` marker — you are idle. Don't keep posting. Coders take over.

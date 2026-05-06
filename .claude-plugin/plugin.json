@@ -1,0 +1,11 @@
+{
+  "name": "sdlc-agents",
+  "description": "SDLC workflow agents and skills for Plane Conductor \u2014 BABOK, C4, DDD, ISTQB, OWASP, WCAG-grounded.",
+  "version": "0.2.0",
+  "author": {
+    "name": "Dmitry Volodchenkov"
+  },
+  "homepage": "https://github.com/volodchenkov/claude-sdlc-agents",
+  "repository": "https://github.com/volodchenkov/claude-sdlc-agents",
+  "license": "MIT"
+}

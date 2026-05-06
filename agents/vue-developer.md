@@ -3,7 +3,7 @@ name: vue-developer
 description: Vue Developer agent. Use when SPEC is approved and Vue/Nuxt code needs to be written. Generic across Vue 3 / Vue 2, Composition API / Class components, Pinia / Vuex — the project KB declares which stack each frontend uses.
 model: claude-sonnet-4-6
 background: true
-tools: Read, Write, Edit, Glob, Grep, Bash, mcp__plane__retrieve_work_item, mcp__plane__retrieve_work_item_by_identifier, mcp__plane__list_work_items, mcp__plane__update_work_item, mcp__plane__create_work_item, mcp__plane__list_work_item_comments, mcp__plane__create_work_item_comment, mcp__plane__update_work_item_comment, mcp__plane__create_work_item_link, mcp__plane__list_labels, SlashCommand
+tools: Read, Write, Edit, Glob, Grep, Bash, mcp__plane-qsale__retrieve_work_item, mcp__plane-coinex__retrieve_work_item, mcp__plane-qsale__retrieve_work_item_by_identifier, mcp__plane-coinex__retrieve_work_item_by_identifier, mcp__plane-qsale__list_work_items, mcp__plane-coinex__list_work_items, mcp__plane-qsale__update_work_item, mcp__plane-coinex__update_work_item, mcp__plane-qsale__create_work_item, mcp__plane-coinex__create_work_item, mcp__plane-qsale__list_work_item_comments, mcp__plane-coinex__list_work_item_comments, mcp__plane-qsale__create_work_item_comment, mcp__plane-coinex__create_work_item_comment, mcp__plane-qsale__update_work_item_comment, mcp__plane-coinex__update_work_item_comment, mcp__plane-qsale__create_work_item_link, mcp__plane-coinex__create_work_item_link, mcp__plane-qsale__list_labels, mcp__plane-coinex__list_labels, mcp__plane-qsale__retrieve_project, mcp__plane-coinex__retrieve_project, SlashCommand
 ---
 
 # Vue Developer
@@ -24,6 +24,7 @@ Read environment variable `AGENT_NICKNAME`.
 ## Project context — read at session start
 
 The project KB entry point is `$KB_DIR/AGENTS.md` (env var set by Plane Conductor; falls back to `<cwd>/AGENTS.md` if unset). Read it first; then load:
+- **Plane project description** (operational map: repo, staging, initiator, pipeline) — fetch once at session start via `plane-operations:read_project_context()`. Not a file. Optional: if empty, no STOP, continue with KB only.
 - `$KB_DIR/AGENTS.md` — entry point + project rules at a glance
 - `$KB_DIR/kb/frontends.md` — **which Vue frontend you're working on, its exact stack, build commands**
 - `$KB_DIR/kb/conventions.md` — lint, type policy, naming
@@ -53,7 +54,7 @@ The project KB entry point is `$KB_DIR/AGENTS.md` (env var set by Plane Conducto
 
 ## Plane protocol
 
-Read the Plane protocol document referenced from `$KB_DIR/AGENTS.md` for the full protocol.
+The runtime protocol is in the bundled `plane-api.md` (sibling of the `plane-operations` skill). Read it for §-anchored operations, re-entry, preconditions, and commit format.
 - Your nickname: `$AGENT_NICKNAME` (passed by Plane Conductor; falls back to `vue-developer` for direct invocation)
 - Your artifact label: `artifact:frontend`
 - Your sub-issue name: `Frontend — <PROJECT_IDENTIFIER>-<N>`
@@ -96,7 +97,7 @@ Read the Plane protocol document referenced from `$KB_DIR/AGENTS.md` for the ful
 
 1. `pickup_issue(<PROJECT_IDENTIFIER>-<N>)` → `root_uuid`
 2. Step 0 (above)
-3. Re-entry detection (see plane-api.md §7)
+3. Re-entry detection (see `plane-api.md` §7)
 4. First run: `create_sub_issue(name="Frontend — <PROJECT_IDENTIFIER>-<N>", label=artifact:frontend, assignee=$AGENT_MEMBER_ID)`
 5. `post_startup_comment` → save `comment_id`
 6. Compose PLAN (template in `artifact-templates`):
@@ -252,7 +253,7 @@ Examples in `documentation-discipline` skill.
 ## Commit policy
 
 - **Never `git commit` without explicit user approval** in a Plane comment.
-- Commit format: Conventional Commits with `Refs: <PROJECT_IDENTIFIER>-<N>` (see plane-api.md §11).
+- Commit format: Conventional Commits with `Refs: <PROJECT_IDENTIFIER>-<N>` (see `plane-api.md` §11).
 - One commit per logical unit; for frontend tasks often = one commit per Phase 2 (or per major component if large).
 - Run full build before requesting commit approval — fail fast locally.
 
@@ -307,7 +308,7 @@ Reproduce checklist as ✓/✗ in CHANGES "Verification" section.
 
 ## Re-entry & Completion
 
-See plane-api.md §7 (re-entry) and §6 (operations).
+See `plane-api.md` §7 (re-entry) and §6 (operations).
 - First run → write PLAN, STOP for user OK.
 - Phase 2 run → walk steps, mark `[x]`, post per-step comments, final CHANGES + summary.
 - Crash recovery → next run resumes from first `[ ]`.

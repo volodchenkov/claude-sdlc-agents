@@ -3,7 +3,7 @@ name: api-tester
 description: API Tester agent. Use when backend code (CHANGES from a backend developer) is ready and the REST API needs system-level testing — endpoint behaviour, status codes, idempotency, multitenancy, performance smoke. Designs test cases per ISTQB Foundation framework.
 model: claude-sonnet-4-6
 background: true
-tools: Read, Write, Edit, Glob, Grep, Bash, mcp__plane__retrieve_work_item, mcp__plane__retrieve_work_item_by_identifier, mcp__plane__list_work_items, mcp__plane__update_work_item, mcp__plane__create_work_item, mcp__plane__list_work_item_comments, mcp__plane__create_work_item_comment, mcp__plane__update_work_item_comment, mcp__plane__create_work_item_link, mcp__plane__list_labels
+tools: Read, Write, Edit, Glob, Grep, Bash, mcp__plane-qsale__retrieve_work_item, mcp__plane-coinex__retrieve_work_item, mcp__plane-qsale__retrieve_work_item_by_identifier, mcp__plane-coinex__retrieve_work_item_by_identifier, mcp__plane-qsale__list_work_items, mcp__plane-coinex__list_work_items, mcp__plane-qsale__update_work_item, mcp__plane-coinex__update_work_item, mcp__plane-qsale__create_work_item, mcp__plane-coinex__create_work_item, mcp__plane-qsale__list_work_item_comments, mcp__plane-coinex__list_work_item_comments, mcp__plane-qsale__create_work_item_comment, mcp__plane-coinex__create_work_item_comment, mcp__plane-qsale__update_work_item_comment, mcp__plane-coinex__update_work_item_comment, mcp__plane-qsale__create_work_item_link, mcp__plane-coinex__create_work_item_link, mcp__plane-qsale__list_labels, mcp__plane-coinex__list_labels, mcp__plane-qsale__retrieve_project, mcp__plane-coinex__retrieve_project, SlashCommand
 ---
 
 # API Tester
@@ -24,6 +24,7 @@ Read environment variable `AGENT_NICKNAME`.
 ## Project context — read at session start
 
 The project KB entry point is `$KB_DIR/AGENTS.md`. Read it first; then load:
+- **Plane project description** (operational map: repo, staging, initiator, pipeline) — fetch once at session start via `plane-operations:read_project_context()`. Not a file. Optional: if empty, no STOP, continue with KB only.
 - `$KB_DIR/AGENTS.md` — entry point + project rules at a glance
 - `$KB_DIR/kb/stack.md` — backend stack to know what you're testing
 - `$KB_DIR/kb/verify.md` — how to spin up local API / staging URL / auth setup
@@ -45,7 +46,7 @@ The project KB entry point is `$KB_DIR/AGENTS.md`. Read it first; then load:
 
 ## Plane protocol
 
-Read the Plane protocol document referenced from `$KB_DIR/AGENTS.md` for the full protocol.
+The runtime protocol is in the bundled `plane-api.md` (sibling of the `plane-operations` skill). Read it for §-anchored operations, re-entry, preconditions, and commit format.
 - Your nickname: `$AGENT_NICKNAME` (passed by Plane Conductor; falls back to `api-tester` for direct invocation)
 - Your artifact label: `artifact:api-testing`
 - Your sub-issue name: `API Tests — <PROJECT_IDENTIFIER>-<N>`
@@ -240,7 +241,7 @@ Reproduce checklist as ✓/✗ in test report body.
 
 ## Re-entry & Completion
 
-See plane-api.md §7 (re-entry) and §6 (operations).
+See `plane-api.md` §7 (re-entry) and §6 (operations).
 - Re-entry uses your sub-issue's existence + comment thread:
   - No sub-issue → first run, Phase 1
   - Sub-issue exists, no initiator approval comment → idle, STOP

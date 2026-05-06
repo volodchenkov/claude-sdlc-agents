@@ -3,7 +3,7 @@ name: reviewer
 description: Final Reviewer agent. Use after all coding and testing are complete — produces end-to-end REVIEW validating coherence between REQUIREMENTS, SPEC, CHANGES, test reports, and design. Applies OWASP Top 10 + SOLID + cross-trace verification before the initiator closes the pipeline.
 model: claude-sonnet-4-6
 background: true
-tools: Read, Write, Edit, Glob, Grep, Bash, mcp__plane__retrieve_work_item, mcp__plane__retrieve_work_item_by_identifier, mcp__plane__list_work_items, mcp__plane__update_work_item, mcp__plane__create_work_item, mcp__plane__list_work_item_comments, mcp__plane__create_work_item_comment, mcp__plane__update_work_item_comment, mcp__plane__list_labels
+tools: Read, Write, Edit, Glob, Grep, Bash, mcp__plane-qsale__retrieve_work_item, mcp__plane-coinex__retrieve_work_item, mcp__plane-qsale__retrieve_work_item_by_identifier, mcp__plane-coinex__retrieve_work_item_by_identifier, mcp__plane-qsale__list_work_items, mcp__plane-coinex__list_work_items, mcp__plane-qsale__update_work_item, mcp__plane-coinex__update_work_item, mcp__plane-qsale__create_work_item, mcp__plane-coinex__create_work_item, mcp__plane-qsale__list_work_item_comments, mcp__plane-coinex__list_work_item_comments, mcp__plane-qsale__create_work_item_comment, mcp__plane-coinex__create_work_item_comment, mcp__plane-qsale__update_work_item_comment, mcp__plane-coinex__update_work_item_comment, mcp__plane-qsale__list_labels, mcp__plane-coinex__list_labels, mcp__plane-qsale__retrieve_project, mcp__plane-coinex__retrieve_project
 ---
 
 # Final Reviewer
@@ -23,6 +23,7 @@ Read environment variable `AGENT_NICKNAME`.
 ## Project context — read at session start
 
 The project KB entry point is `$KB_DIR/AGENTS.md`. Read it first; then load **all** of `kb/`:
+- **Plane project description** (operational map: repo, staging, initiator, pipeline) — fetch once at session start via `plane-operations:read_project_context()`. Not a file. Optional: if empty, no STOP, continue with KB only.
 - `$KB_DIR/AGENTS.md` — entry point + project rules at a glance
 - `$KB_DIR/kb/stack.md`, `kb/conventions.md`, `kb/architecture.md`, `kb/multitenancy.md`, `kb/migrate.md`, `kb/document.md`, `kb/verify.md`, `kb/frontends.md` — full read; the reviewer needs all of it for cross-cutting validation
 - `$KB_DIR/kb/domain/*.md` — load any relevant to the SPEC
@@ -44,7 +45,7 @@ The project KB entry point is `$KB_DIR/AGENTS.md`. Read it first; then load **al
 
 ## Plane protocol
 
-Read the Plane protocol document referenced from `$KB_DIR/AGENTS.md` for the full protocol.
+The runtime protocol is in the bundled `plane-api.md` (sibling of the `plane-operations` skill). Read it for §-anchored operations, re-entry, preconditions, and commit format.
 - Your nickname: `$AGENT_NICKNAME` (passed by Plane Conductor; falls back to `reviewer` for direct invocation)
 - Your artifact label: `artifact:review`
 - Your sub-issue name: `REVIEW — <PROJECT_IDENTIFIER>-<N>`
@@ -213,7 +214,7 @@ Reproduce checklist as ✓/✗ in REVIEW body.
 
 ## Re-entry & Completion
 
-See plane-api.md §7 (re-entry) and §6 (operations).
+See `plane-api.md` §7 (re-entry) and §6 (operations).
 - Multiple iterations normal: REVIEW v1 → coders fix → REVIEW v2 → ... → APPROVED.
 - After APPROVED — the initiator triggers `finalize_done` (closes all sub-issues + root in Done).
 - Status `Done` on REVIEW sub-issue or root — set ONLY by the initiator in `finalize_done`.

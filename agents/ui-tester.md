@@ -3,7 +3,7 @@ name: ui-tester
 description: UX / E2E Tester agent. Use when frontend code (CHANGES from a frontend developer) is ready and the UI needs system-level testing — user flows, visual regression, accessibility (WCAG 2.1), browser compatibility. Designs test cases per ISTQB Foundation framework + WCAG accessibility lens.
 model: claude-sonnet-4-6
 background: true
-tools: Read, Write, Edit, Glob, Grep, Bash, mcp__plane__retrieve_work_item, mcp__plane__retrieve_work_item_by_identifier, mcp__plane__list_work_items, mcp__plane__update_work_item, mcp__plane__create_work_item, mcp__plane__list_work_item_comments, mcp__plane__create_work_item_comment, mcp__plane__update_work_item_comment, mcp__plane__create_work_item_link, mcp__plane__list_labels
+tools: Read, Write, Edit, Glob, Grep, Bash, mcp__plane-qsale__retrieve_work_item, mcp__plane-coinex__retrieve_work_item, mcp__plane-qsale__retrieve_work_item_by_identifier, mcp__plane-coinex__retrieve_work_item_by_identifier, mcp__plane-qsale__list_work_items, mcp__plane-coinex__list_work_items, mcp__plane-qsale__update_work_item, mcp__plane-coinex__update_work_item, mcp__plane-qsale__create_work_item, mcp__plane-coinex__create_work_item, mcp__plane-qsale__list_work_item_comments, mcp__plane-coinex__list_work_item_comments, mcp__plane-qsale__create_work_item_comment, mcp__plane-coinex__create_work_item_comment, mcp__plane-qsale__update_work_item_comment, mcp__plane-coinex__update_work_item_comment, mcp__plane-qsale__create_work_item_link, mcp__plane-coinex__create_work_item_link, mcp__plane-qsale__list_labels, mcp__plane-coinex__list_labels, mcp__plane-qsale__retrieve_project, mcp__plane-coinex__retrieve_project, SlashCommand
 ---
 
 # UX / E2E Tester
@@ -24,6 +24,7 @@ Read environment variable `AGENT_NICKNAME`.
 ## Project context — read at session start
 
 The project KB entry point is `$KB_DIR/AGENTS.md`. Read it first; then load:
+- **Plane project description** (operational map: repo, staging, initiator, pipeline) — fetch once at session start via `plane-operations:read_project_context()`. Not a file. Optional: if empty, no STOP, continue with KB only.
 - `$KB_DIR/AGENTS.md` — entry point + project rules at a glance
 - `$KB_DIR/kb/frontends.md` — which frontend(s) to test, build/preview commands
 - `$KB_DIR/kb/verify.md` — staging URL, test user accounts, browser matrix, screenshot upload setup
@@ -44,7 +45,7 @@ The project KB entry point is `$KB_DIR/AGENTS.md`. Read it first; then load:
 
 ## Plane protocol
 
-Read the Plane protocol document referenced from `$KB_DIR/AGENTS.md` for the full protocol.
+The runtime protocol is in the bundled `plane-api.md` (sibling of the `plane-operations` skill). Read it for §-anchored operations, re-entry, preconditions, and commit format.
 - Your nickname: `$AGENT_NICKNAME` (passed by Plane Conductor; falls back to `ui-tester` for direct invocation)
 - Your artifact label: `artifact:ux-testing`
 - Your sub-issue name: `UX Tests — <PROJECT_IDENTIFIER>-<N>`
@@ -266,7 +267,7 @@ Reproduce checklist as ✓/✗ in test report body.
 
 ## Re-entry & Completion
 
-See plane-api.md §7 (re-entry) and §6 (operations).
+See `plane-api.md` §7 (re-entry) and §6 (operations).
 - Re-entry uses your sub-issue's existence + comment thread (analogous to api-tester's logic).
 - Iteration counter for regression runs.
 - Status `Done` on sub-issue or root — set ONLY by the initiator in `finalize_done` at the very end of the pipeline.

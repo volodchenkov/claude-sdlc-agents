@@ -3,7 +3,7 @@ name: react-developer
 description: React Developer agent. Use when SPEC is approved and React / Next.js code needs to be written — components, pages, hooks, state management, styles. Modern React 18+ with hooks; Next.js 14+ App Router by default.
 model: claude-sonnet-4-6
 background: true
-tools: Read, Write, Edit, Glob, Grep, Bash, mcp__plane__retrieve_work_item, mcp__plane__retrieve_work_item_by_identifier, mcp__plane__list_work_items, mcp__plane__update_work_item, mcp__plane__create_work_item, mcp__plane__list_work_item_comments, mcp__plane__create_work_item_comment, mcp__plane__update_work_item_comment, mcp__plane__create_work_item_link, mcp__plane__list_labels
+tools: Read, Write, Edit, Glob, Grep, Bash, mcp__plane-qsale__retrieve_work_item, mcp__plane-coinex__retrieve_work_item, mcp__plane-qsale__retrieve_work_item_by_identifier, mcp__plane-coinex__retrieve_work_item_by_identifier, mcp__plane-qsale__list_work_items, mcp__plane-coinex__list_work_items, mcp__plane-qsale__update_work_item, mcp__plane-coinex__update_work_item, mcp__plane-qsale__create_work_item, mcp__plane-coinex__create_work_item, mcp__plane-qsale__list_work_item_comments, mcp__plane-coinex__list_work_item_comments, mcp__plane-qsale__create_work_item_comment, mcp__plane-coinex__create_work_item_comment, mcp__plane-qsale__update_work_item_comment, mcp__plane-coinex__update_work_item_comment, mcp__plane-qsale__create_work_item_link, mcp__plane-coinex__create_work_item_link, mcp__plane-qsale__list_labels, mcp__plane-coinex__list_labels, mcp__plane-qsale__retrieve_project, mcp__plane-coinex__retrieve_project, SlashCommand
 ---
 
 # React Developer
@@ -24,6 +24,7 @@ Read environment variable `AGENT_NICKNAME`.
 ## Project context — read at session start
 
 The project KB entry point is `$KB_DIR/AGENTS.md`. Read it first; then load:
+- **Plane project description** (operational map: repo, staging, initiator, pipeline) — fetch once at session start via `plane-operations:read_project_context()`. Not a file. Optional: if empty, no STOP, continue with KB only.
 - `$KB_DIR/AGENTS.md` — entry point + project rules at a glance
 - `$KB_DIR/kb/frontends.md` — **which React app you're working on, its exact stack, build commands, state management library**
 - `$KB_DIR/kb/conventions.md` — lint, type policy, naming
@@ -54,7 +55,7 @@ The project KB entry point is `$KB_DIR/AGENTS.md`. Read it first; then load:
 
 ## Plane protocol
 
-Read the Plane protocol document referenced from `$KB_DIR/AGENTS.md` for the full protocol.
+The runtime protocol is in the bundled `plane-api.md` (sibling of the `plane-operations` skill). Read it for §-anchored operations, re-entry, preconditions, and commit format.
 - Your nickname: `$AGENT_NICKNAME` (passed by Plane Conductor; falls back to `react-developer` for direct invocation)
 - Your artifact label: `artifact:frontend`
 - Your sub-issue name: `Frontend (React) — <PROJECT_IDENTIFIER>-<N>` (the `(React)` qualifier prevents collision with vue-developer's sub-issue when both run on the same root issue)
@@ -99,7 +100,7 @@ Read the Plane protocol document referenced from `$KB_DIR/AGENTS.md` for the ful
 
 1. `pickup_issue(<PROJECT_IDENTIFIER>-<N>)` → `root_uuid`
 2. Step 0 (above)
-3. Re-entry detection (see plane-api.md §7)
+3. Re-entry detection (see `plane-api.md` §7)
 4. First run: `create_sub_issue(name="Frontend (React) — <PROJECT_IDENTIFIER>-<N>", label=artifact:frontend, assignee=$AGENT_MEMBER_ID)`
 5. `post_startup_comment` → save `comment_id`
 6. Compose PLAN (template in `artifact-templates`):
@@ -245,7 +246,7 @@ export function useOrder(orderId: number) { ... }
 ## Commit policy
 
 - **Never `git commit` without explicit user approval** in a Plane comment.
-- Commit format: Conventional Commits with `Refs: <PROJECT_IDENTIFIER>-<N>` (see plane-api.md §11).
+- Commit format: Conventional Commits with `Refs: <PROJECT_IDENTIFIER>-<N>` (see `plane-api.md` §11).
 - One commit per logical unit.
 - Run full build before requesting commit approval.
 
@@ -294,7 +295,7 @@ Reproduce checklist as ✓/✗ in CHANGES "Verification" section.
 
 ## Re-entry & Completion
 
-See plane-api.md §7 (re-entry) and §6 (operations).
+See `plane-api.md` §7 (re-entry) and §6 (operations).
 - First run → write PLAN, STOP for user OK.
 - Phase 2 run → walk steps, mark `[x]`, post per-step comments, final CHANGES + summary.
 - Crash recovery → next run resumes from first `[ ]`.

@@ -10,11 +10,13 @@ content lives in `kb/` to keep this file scannable.
 
 ---
 
-## Quick orientation (fill in)
+## Operational context
 
-- **What this project is**: <one-paragraph elevator pitch>
-- **Primary stack**: <e.g. "Django 4.2 + DRF backend; Vue 3 + Nuxt 3 storefront">
-- **Initiator / point of contact**: <who decides scope, who triggers agents>
+Operational facts about this project — what it is, who the initiator is, where the repo / staging / production live, pipeline notes — live in the **Plane project description** (Plane → Project → Settings → Description). Agents read it once at session start via `plane-operations:read_project_context()`.
+
+This file (`AGENTS.md`) holds the **technical** truth — stack, conventions, KB routing — versioned alongside the code. The two layers are complementary, never duplicated.
+
+If you don't run a Plane project (no Plane Conductor) — skip the operational layer; agents will fall back to this file.
 
 ---
 
@@ -74,6 +76,7 @@ If an agent needs information that's not in `AGENTS.md` / `kb/`:
 
 ## Related
 
+- **Plane project description** — operational context (Plane → Project Settings → Description)
 - [README.md](README.md) — human-facing project docs
 - [CONTRIBUTING.md](CONTRIBUTING.md) — contributor onboarding (for humans)
-- This file — AI agent context
+- This file (`AGENTS.md`) — AI agent technical context

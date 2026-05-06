@@ -5,7 +5,7 @@ description: Use this skill whenever an agent interacts with Plane (https://plan
 
 # Plane Operations — Pipeline Protocol
 
-This skill provides the **operational vocabulary** every agent uses to interact with Plane in the Plane Conductor pipeline. It is the runtime companion to your project's `plane-api.md` protocol document (location referenced from `$KB_DIR/AGENTS.md`).
+This skill provides the **operational vocabulary** every agent uses to interact with Plane in the Plane Conductor pipeline. The full protocol — operations with parameter shapes, re-entry algorithm, preconditions per role, commit format — is in the bundled [`plane-api.md`](plane-api.md) (sibling file in this skill). Agents reference it by §-anchor.
 
 **When you load this skill:** use the operation names below (e.g. `pickup_issue`, `create_sub_issue`) instead of inlining MCP tool calls. The MCP details are abstracted; you focus on intent.
 
@@ -15,6 +15,7 @@ This skill provides the **operational vocabulary** every agent uses to interact 
 
 | Operation | When to use |
 |---|---|
+| **read_project_context** | At session start — fetches the Plane project's `description` field for operational orientation (repo URL, staging, initiator, pipeline notes). Optional: returns `None` if empty. Wraps `mcp__plane-<workspace_slug>__retrieve_project(PROJECT_ID)`. |
 | **pickup_issue** | At the start of every run. Resolves `<PROJECT_IDENTIFIER>-<N>` to a UUID. |
 | **find_artifact_by_label** | To locate an upstream artifact (SPEC, Backend CHANGES, etc.) among root sub-issues. |
 | **read_artifact** | To read full content of an artifact = description + comments of its sub-issue. |
@@ -27,7 +28,28 @@ This skill provides the **operational vocabulary** every agent uses to interact 
 | **attach_screenshot** | UX Tester only — upload PNG to object storage, link via `create_work_item_link`. |
 | **redirect_task** | When triggered for a task outside your role — comment with mention to the initiator. |
 
-Full operation specs with parameter schemas and examples are in your project's `plane-api.md` (referenced from `$KB_DIR/AGENTS.md`).
+Full operation specs with parameter schemas and examples are in the bundled [`plane-api.md`](plane-api.md) §6.
+
+---
+
+## MCP tool naming — workspace-prefixed
+
+The Plane MCP server is registered **per workspace** in your Claude Code config. Tool names take the form `mcp__plane-<workspace_slug>__<operation>` — e.g. `mcp__plane-acme__retrieve_work_item`. Throughout this skill, examples may show the bare `mcp__plane__*` form for brevity; substitute your workspace slug in real calls. Each agent's `tools:` allowlist enumerates the exact prefixed names for the workspaces it can serve.
+
+---
+
+## Project context vs. KB — two layers
+
+Two parallel sources of orientation, with non-overlapping scope:
+
+| Source | Where it lives | What it owns |
+|---|---|---|
+| **Plane project description** | Plane → Project → Settings → Description | Operational truth: repo URL, staging URL, production URL, initiator handle, pipeline trigger notes, project-level overrides. Mutates with hosting / team changes, not with code. |
+| **`$KB_DIR/AGENTS.md` + `kb/*.md`** | In the project repo, versioned with code | Technical truth: stack, conventions, multitenancy rules, migration discipline, KB routing per role. Mutates with the codebase. |
+
+`read_project_context()` fetches the first; the agent's role prompt directs reads of the second. They are not redundant — if a fact would belong in either, it goes to the layer that owns it. `AGENTS.md` links to the Plane project description for operational facts; it does not duplicate them.
+
+If `read_project_context()` returns `None` (empty description) — no STOP. Continue with `$KB_DIR/AGENTS.md` only.
 
 ---
 
@@ -106,14 +128,15 @@ Label UUIDs are stored in `plane-config.local.md` after setup. Reference them as
 ## Standard workflow (every agent, every run)
 
 ```
+0. read_project_context() → operational map (optional; None if empty, no STOP)
 1. pickup_issue(<PROJECT_IDENTIFIER>-<N>) → root_uuid
 2. find_artifact_by_label(<label_for_my_role>, parent=root_uuid) → my_sub
 3. Branch on result:
    - my_sub is None → first run → continue at step 4
-   - my_sub exists → re-entry → see plane-api.md §7
+   - my_sub exists → re-entry → see "Re-entry algorithm" below
 4. find_artifact_by_label(<labels_for_my_dependencies>) → upstream artifacts
 5. read_artifact(<each upstream>) → context
-6. Check preconditions (see plane-api.md §8). If unmet → ask_blocking_question, STOP.
+6. Check preconditions per role prompt. If unmet → ask_blocking_question, STOP.
 7. create_sub_issue(name=<role title — PROJECT-N>, label=<my role label>) → my_sub
 8. post_startup_comment(my_sub) → save comment_id
 9. Do the role work (varies per agent — see role prompt)
@@ -122,7 +145,7 @@ Label UUIDs are stored in `plane-config.local.md` after setup. Reference them as
 11. update_startup_to_summary(comment_id, "<role> done. Summary. <mention initiator>")
 ```
 
-For re-entry (continuation/rework), skip steps 7-8 and operate on the existing `my_sub`. Full algorithm in plane-api.md §7.
+For re-entry (continuation/rework), skip steps 7-8 and operate on the existing `my_sub`. Full algorithm in [`plane-api.md`](plane-api.md) §7.
 
 ---
 
@@ -155,8 +178,8 @@ Plane Conductor only triggers from initiator's mentions. If you `@mention` the n
 
 ## When in doubt — read
 
-- Your project's `plane-api.md` — full protocol with §-anchors. Path is referenced from `$KB_DIR/AGENTS.md`.
-- This skill's parent file is the operational vocabulary; the protocol document is the authoritative spec.
+- The bundled [`plane-api.md`](plane-api.md) — full protocol with §-anchors. Sibling file in this skill; ships with the pack.
+- This SKILL.md gives the operational vocabulary; `plane-api.md` is the authoritative spec.
 
 ---
 

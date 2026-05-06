@@ -18,7 +18,7 @@ directory in this repo.
 
 ## What's inside
 
-### `prompts/` — 10 generic agent definitions
+### `agents/` — 10 generic agent definitions
 
 | File (also the `name:` for `claude --agent <name>`) | Role | Methodology |
 |---|---|---|
@@ -59,7 +59,8 @@ code. The pack ships an empty template:
 
 ```
 template/
-├── AGENTS.md            # entry point: index, routing table, project rules at a glance
+├── AGENTS.md                  # entry point: index, routing table, project rules at a glance
+├── PROJECT_DESCRIPTION.md     # draft of the Plane project description (operational layer)
 └── kb/
     ├── stack.md         # languages, frameworks, libs, versions
     ├── conventions.md   # lint, types, naming, TDD policy
@@ -117,41 +118,62 @@ it, falling back to the role name.
 
 ## Install
 
-### 1. Get the agent files into Claude Code
+### 1. Install the plugin
 
-User-level (available to every Claude Code session):
-
-```bash
-git clone https://github.com/volodchenkov/claude-sdlc-agents.git ~/Projects/claude-sdlc-agents
-ln -s ~/Projects/claude-sdlc-agents/prompts ~/.claude/agents
-ln -s ~/Projects/claude-sdlc-agents/skills  ~/.claude/skills
-```
-
-Project-level only:
+The pack ships as a Claude Code plugin via marketplace.
 
 ```bash
-cd /your/project
-cp -r ~/Projects/claude-sdlc-agents/prompts .claude/agents
-cp -r ~/Projects/claude-sdlc-agents/skills  .claude/skills
+claude plugin marketplace add volodchenkov/claude-sdlc-agents
+claude plugin install sdlc-agents@sdlc-agents-marketplace
 ```
+
+This makes 10 agents (`claude --agent business-analyst`,
+`system-analyst`, …) and 9 skills available globally.
+
+For local-development install pointing at a checkout:
+
+```bash
+claude plugin marketplace add /path/to/claude-sdlc-agents
+claude plugin install sdlc-agents@sdlc-agents-marketplace
+```
+
+The same commands are available as slash-commands inside an
+interactive Claude Code session (`/plugin marketplace add …`,
+`/plugin install …`).
 
 ### 2. Drop the KB template into your project
 
 ```bash
-cp -r ~/Projects/claude-sdlc-agents/template/AGENTS.md  /your/project/
-cp -r ~/Projects/claude-sdlc-agents/template/kb         /your/project/
+cp ~/Projects/claude-sdlc-agents/template/AGENTS.md  /your/project/
+cp -r ~/Projects/claude-sdlc-agents/template/kb      /your/project/
 ```
 
 Fill in `/your/project/AGENTS.md` and `/your/project/kb/*.md` (every
 file has a `# Fill in:` block describing what to write).
 
-### 3. Wire up Plane Conductor
+### 2b. Set up the Plane project description (optional but recommended)
 
-In your Plane Conductor `.env`:
+Agents read a short *operational* one-pager from your Plane project's
+**Settings → Description** at session start (repo URL, staging,
+initiator, pipeline notes). It is **complementary** to `AGENTS.md`
+(technical truth, in repo) — never duplicated.
+
+Use the version-controlled draft as a starting point, then paste the
+body into Plane:
 
 ```bash
-PROMPTS_DIR=/your/project/.claude/agents     # or ~/.claude/agents if user-level
-KB_DIR=/your/project                          # AGENTS.md + kb/ live here
+cat ~/Projects/claude-sdlc-agents/template/PROJECT_DESCRIPTION.md
+```
+
+If the description is empty, agents skip this layer with no STOP.
+
+### 3. Wire up Plane Conductor
+
+In your Plane Conductor workspace YAML (`conductor.d/<slug>.yaml`):
+
+```yaml
+prompts_dir: ~/.claude/plugins/.../sdlc-agents/agents   # or your project's .claude/agents
+kb_dir:      /your/project                              # AGENTS.md + kb/ live here
 ```
 
 In `conductor.yaml` reference the prompt-role names from `prompts/`:
@@ -194,25 +216,36 @@ agents:
 
 ## Status
 
-`v0.1` — freshly extracted from a private codebase, working in
-production for one team. Prompts will evolve as patterns settle. Not
-yet versioned for the public; pin a commit if you depend on a specific
-shape.
+`v0.2` — packaged as a Claude Code plugin (`marketplace.json` /
+`plugin.json`), 10 agents + 9 skills, KB template + Plane project
+description template. Working in production for one team. Prompts will
+evolve as patterns settle.
 
 PRs welcome — especially if you adapt the pack to a different
 methodology (DSDM, SAFe, FDD, …) or different stack.
 
 ---
 
-## Inspiration / acknowledgements
+## Optional companion skills
 
-The Django-specific skills (`django-models`, `celery-patterns`,
-`pytest-django-patterns`, `systematic-debugging`) are commonly bundled
-separately — if you use Django, look at
-[kjnez/claude-code-django](https://github.com/kjnez/claude-code-django)
-(MIT) for a richer set. The `agents.md` convention is from
-[agents.md](https://agents.md/) — one entry-point file at the repo
-root, kb/ for details.
+This pack stays stack-agnostic on purpose. For Django projects, the
+`django-developer` agent references four extra skills that are NOT
+shipped here — they're authored separately and remain optional:
+
+- `django-models` — fat-model / thin-view patterns, QuerySet composition
+- `celery-patterns` — task design, retries, idempotency
+- `pytest-django-patterns` — fixtures, factories, pytest-django
+- `systematic-debugging` — 4-phase root-cause methodology
+
+Recommended source: [kjnez/claude-code-django](https://github.com/kjnez/claude-code-django) (MIT).
+
+The `django-developer` agent works without them — it falls back to
+first principles + your `$KB_DIR/kb/` rules. With them installed, it
+loads them automatically when designing models, writing Celery tasks,
+writing pytest, or debugging.
+
+The `agents.md` convention is from [agents.md](https://agents.md/) —
+one entry-point file at the repo root, `kb/` for details.
 
 ---
 
