@@ -1,0 +1,122 @@
+# CodeRabbit configuration for claude-sdlc-agents.
+# Reference: https://docs.coderabbit.ai/getting-started/configure-coderabbit
+#
+# This pack is markdown-only (agent prompts, skills, KB templates).
+# CodeRabbit's value here: catch broken cross-references, drifting §-anchors
+# between agents/*.md and skills/plane-operations/plane-api.md, stale
+# install-instructions, frontmatter typos. We don't need code-review
+# heuristics — there's no code.
+
+language: en-US
+early_access: false
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  high_level_summary_placeholder: "@coderabbitai summary"
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  changed_files_summary: true
+
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - main
+
+  # Nothing to filter out — every file in the pack is human-authored content.
+  path_filters: []
+
+  path_instructions:
+    - path: "agents/*.md"
+      instructions: |
+        Each agent prompt has a strict structure: YAML frontmatter (name,
+        description, model, tools, optional background) → Identity →
+        Greeting → Project context → Skills → STOP conditions → Plane
+        protocol → Input/Output → Step 0 → Process → Stack/Rules → DoD →
+        Never do → Re-entry & Completion. Flag missing or reordered
+        sections.
+
+        Frontmatter rules:
+        - `tools:` is comma-separated; every entry that starts with
+          `mcp__plane-` follows the form `mcp__plane-<workspace>__<op>`.
+          When new MCP operations are added, both `qsale` and `coinex`
+          variants are listed (workspace-prefixed, dual entries).
+        - `name:` matches the file basename (without `.md`).
+        - `model:` is `claude-sonnet-4-6` unless explicitly upgraded.
+
+        Cross-references to `plane-api.md` use `§N` (e.g. `§7`, `§6.5`).
+        Verify the §-anchor exists in `skills/plane-operations/plane-api.md`.
+        References to `$KB_DIR/kb/<file>.md` must point at files actually
+        present under `template/kb/`.
+
+        Skills referenced inline by name (`plane-operations`,
+        `artifact-templates`, etc.) must exist as `skills/<name>/SKILL.md`,
+        OR be marked as "optional companion skills (not shipped with this
+        pack)" — currently only `django-models`, `celery-patterns`,
+        `pytest-django-patterns`, `systematic-debugging`.
+
+    - path: "skills/plane-operations/SKILL.md"
+      instructions: |
+        Every operation listed in the Quick reference table must have a
+        corresponding §6.N entry in the bundled `plane-api.md`. The
+        Standard workflow numbering must agree with §6 ordering of
+        operations.
+
+    - path: "skills/plane-operations/plane-api.md"
+      instructions: |
+        Section numbering (§1..§12) is referenced by §-anchor from agent
+        prompts. Renumbering, splitting, or removing a section is a
+        breaking change for the whole pack — flag explicitly and ask the
+        author to grep `agents/` for orphaned references in the same PR.
+
+        MCP tool names use the `mcp__plane-<workspace>__<op>` form. The
+        bare `mcp__plane__*` form is legacy and should not appear.
+
+    - path: "skills/*/SKILL.md"
+      instructions: |
+        Every SKILL.md must have YAML frontmatter with `name:` and
+        `description:` at minimum. The `description:` is what triggers
+        auto-loading — be precise about when the skill applies.
+
+    - path: "template/AGENTS.md"
+      instructions: |
+        AGENTS.md is the technical layer. It must NOT duplicate the
+        operational layer (Plane project description). If an edit
+        re-introduces "What this project is" / "Initiator" / "Repo URL"
+        in AGENTS.md, flag it — those belong in
+        `template/PROJECT_DESCRIPTION.md` (Plane project Settings).
+
+    - path: "template/kb/*.md"
+      instructions: |
+        These are templates filled in per project. Keep instructions
+        concrete: each file has a `# Fill in:` block describing what to
+        write. Don't insert project-specific facts here (those go in the
+        consumer's repo, not in the pack template).
+
+    - path: "README.md"
+      instructions: |
+        Install instructions must use `claude plugin marketplace add ...`
+        and `claude plugin install ...@<marketplace>` form. The
+        marketplace name is `sdlc-agents-marketplace` (per
+        `.claude-plugin/marketplace.json`). The plugin name is
+        `sdlc-agents` (per `.claude-plugin/plugin.json`). Don't drift
+        these.
+
+    - path: ".claude-plugin/plugin.json"
+      instructions: |
+        On any agents/skills change, the `version` field must bump by
+        SemVer rules (patch for bug fixes, minor for new agents/skills/
+        operations, major for breaking protocol changes — e.g. §-anchor
+        renumbering in plane-api.md, label rename, frontmatter contract
+        change).
+
+    - path: ".claude-plugin/marketplace.json"
+      instructions: |
+        The `version` here must agree with `plugin.json`. CI / a future
+        `claude plugin tag` step relies on both being in sync.
+
+chat:
+  auto_reply: true
