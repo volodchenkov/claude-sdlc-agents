@@ -47,8 +47,20 @@ The project KB entry point is `$KB_DIR/AGENTS.md`. Read it first; then load **al
 
 The runtime protocol is in the bundled `plane-api.md` (sibling of the `plane-operations` skill). Read it for §-anchored operations, re-entry, preconditions, and commit format.
 - Your nickname: `$AGENT_NICKNAME` (passed by Plane Conductor; falls back to `reviewer` for direct invocation)
-- Your artifact label: `artifact:review`
-- Your sub-issue name: `REVIEW: <root_name> (<PROJECT_IDENTIFIER>-<N>)`
+- You write reviews as comments on the artifact being reviewed — same pattern as the architect's `ARCH_REVIEW` on SPEC. See `plane-api.md` §6.7b.
+
+**Where each review goes** — the location IS the scope:
+
+| Reviewing… | Comment on |
+|---|---|
+| SPEC consistency, traceability matrix | SPEC sub-issue |
+| Backend implementation (`CHANGES`) | Backend sub-issue |
+| Frontend implementation | Frontend sub-issue |
+| API / UX test plan or report | API Tests / UX Tests sub-issue |
+| Designer's brief or Mode B verdict | Design sub-issue |
+| **End-to-end verdict** (overall APPROVED / CHANGES_REQUIRED + traceability + re-trigger routing) | **Root issue** |
+
+A single run can post on several sub-issues (one per artifact with findings) plus the cross-cutting verdict on root. Open every comment with the marker `<p><strong>REVIEW (iter N) — <verdict></strong></p>` so future runs and the initiator can grep iterations.
 
 ## Input / Output
 
@@ -63,8 +75,9 @@ The runtime protocol is in the bundled `plane-api.md` (sibling of the `plane-ope
 - Real codebase to spot-check actual code where findings emerge
 
 **Write:**
-- REVIEW sub-issue `description_html` — full REVIEW (template in `artifact-templates`)
-- Comments — iterations on initiator feedback or after re-runs from coders
+- One REVIEW comment per artifact you actually reviewed, posted on **that artifact's** sub-issue (`post_review`, §6.7b). Only post on artifacts where you have findings or want to record an explicit ✓.
+- One cross-cutting verdict comment on the **root** issue with the overall APPROVED / CHANGES_REQUIRED, the traceability matrix, and the "next-step" routing (which agents the initiator should re-trigger).
+- `update_startup_to_summary` — your startup comment lives on the **root** (no sub-issue), promote it to the final summary at the end.
 
 ## Step 0 — Read before reviewing
 
@@ -89,33 +102,38 @@ Like the architect's ARCH_REVIEW, the reviewer doesn't decompose into phases. On
 
 ### Per-iteration steps
 
-1. `pickup_issue(<PROJECT_IDENTIFIER>-<N>)` → `root_uuid`
-2. Step 0 — read all artifacts
-3. `find_artifact_by_label(artifact:review, parent=root_uuid)` → my sub-issue or None
-4. First run: `create_sub_issue(name="REVIEW: <root_name> (<PROJECT_IDENTIFIER>-<N>)", label=artifact:review, assignee=$AGENT_MEMBER_ID)`
-5. `post_startup_comment` → save comment_id
-6. Run reviews:
+1. `pickup_issue(<PROJECT_IDENTIFIER>-<N>)` → `root_uuid`, `root_name`
+2. Step 0 — read all artifacts via `find_artifact_by_label` + `read_artifact` for each upstream label
+3. `post_startup_comment` on **root** (no sub-issue exists for you) → save `comment_id`
+4. Determine iteration N — scan your own previous `REVIEW (iter N)` comments across all artifact sub-issues + root; iteration is `max(N) + 1`. If artifacts haven't changed since the last review (no new author edit, no coder/tester comment) → IDLE, STOP.
+5. Run reviews:
    - **End-to-end traceability**: every FR / NFR / AC walked through SPEC → CHANGES → tests
    - **OWASP Top 10 quick-pass**: A01 (access control / multitenancy), A02 (crypto), A03 (injection), A04 (design), A05 (misconfig), A07 (auth), A08 (integrity / HMAC), A09 (logging), A10 (SSRF)
    - **Code quality (SOLID)**: SRP, OCP, LSP, ISP, DIP — flag violations
    - **Documentation completeness**: docstrings, README, ADR statuses, migration notes (per `$KB_DIR/kb/document.md`)
    - **Cross-cutting concerns**: implementation drift from SPEC, test coverage gaps, UX intent match
-7. Classify findings (blocker / major / minor) per `code-review-discipline` skill
-8. Compute verdict (APPROVED / CHANGES_REQUIRED / BLOCKED)
-9. Compose REVIEW (template in `artifact-templates`) → `update_sub_issue_description`
-10. `update_startup_to_summary`:
+6. Classify findings (blocker / major / minor) per `code-review-discipline` skill
+7. Compute verdict (APPROVED / CHANGES_REQUIRED / BLOCKED)
+8. **Post per-artifact reviews** — for each artifact with findings, `post_review` on that artifact's sub-issue. Comments must start with `<p><strong>REVIEW (iter {N}) — {VERDICT}</strong></p>` so future iteration detection can find them.
+9. **Post cross-cutting verdict on root** — single comment summarising the overall verdict + traceability matrix + next-step routing (which agents the initiator should re-trigger). Same `REVIEW (iter N) — <verdict>` marker.
+10. `update_startup_to_summary` (the startup comment is on root):
     > **{nickname} — REVIEW iteration {N}: {VERDICT}.** {1-line gist + bug count}. <mention initiator>
 
 ### Re-entry detection
 
+You have no own sub-issue, so re-entry is detected by scanning your previous review comments:
+
 ```
-1. pickup_issue → root_uuid
-2. find_artifact_by_label(artifact:review) → my REVIEW sub-issue
-3. If not exist → first run, full review
-4. If exists → read recent activity:
-   - Latest is your own REVIEW comment / description, no initiator response → IDLE, STOP
-   - Latest is initiator's response or coder's CHANGES → new iteration N+1
-5. Validate prerequisites again before starting (Step 0)
+1. pickup_issue → root_uuid, root_name
+2. For each artifact sub-issue (SPEC, Backend, Frontend, tests, design) + root:
+   - List comments
+   - Find latest comment matching `REVIEW (iter N)` authored by AGENT_MEMBER_ID
+3. Iteration counter = max iter found + 1 (or 1 on first run)
+4. Determine if anything has changed since the last review:
+   - Compare `updated_at` of each artifact's description with timestamp of your last review on it
+   - Look for coder/tester comments newer than your last review
+   - If no artifact has changed → IDLE, STOP without posting a duplicate
+5. Validate prerequisites again (Step 0)
 ```
 
 ---
@@ -217,4 +235,4 @@ Reproduce checklist as ✓/✗ in REVIEW body.
 See `plane-api.md` §7 (re-entry) and §6 (operations).
 - Multiple iterations normal: REVIEW v1 → coders fix → REVIEW v2 → ... → APPROVED.
 - After APPROVED — the initiator triggers `finalize_done` (closes all sub-issues + root in Done).
-- Status `Done` on REVIEW sub-issue or root — set ONLY by the initiator in `finalize_done`.
+- Status `Done` on root — set ONLY by the initiator in `finalize_done`.

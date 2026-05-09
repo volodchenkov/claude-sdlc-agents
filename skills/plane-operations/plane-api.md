@@ -45,12 +45,11 @@ Root issue                       ← REQUIREMENTS in description (business-analy
 ├── API Tests sub-issue          ← test plan in description, immutable (api-tester)
 │       comments = bugs, final test report
 │
-├── UX Tests sub-issue           ← test plan in description, immutable (ui-tester)
-│       comments = bugs (with screenshot links), final report
-│
-└── REVIEW sub-issue             ← REVIEW verdict in description (reviewer)
-        comments = iteration dialogue
+└── UX Tests sub-issue           ← test plan in description, immutable (ui-tester)
+        comments = bugs (with screenshot links), final report
 ```
+
+The architect's `ARCH_REVIEW` and the final reviewer's `REVIEW` are not sub-issues — they are comments posted on the artifact being reviewed (SPEC sub-issue, Backend sub-issue, root for cross-cutting verdict). See §6.7b.
 
 **Principles:**
 - Every sub-issue is a direct child of the root.
@@ -75,7 +74,7 @@ Each role = a bot member account in Plane workspace + project. Agent prompt file
 | `vue-developer.md` / `react-developer.md` | `artifact:frontend` |
 | `api-tester.md` | `artifact:api-testing` |
 | `ui-tester.md` | `artifact:ux-testing` |
-| `reviewer.md` | `artifact:review` |
+| `reviewer.md` | (no sub-issue; comments on each reviewed artifact + cross-cut on root) |
 
 **Routing in Plane Conductor:** the webhook contains the mentioned member's UUID. Conductor resolves UUID → member → email → local-part nickname → prompt file (per `conductor.d/<workspace>.yaml` roster).
 
@@ -95,8 +94,9 @@ artifact:backend        backend coder
 artifact:frontend       frontend coder
 artifact:api-testing    api-tester
 artifact:ux-testing     ui-tester
-artifact:review         reviewer
 ```
+
+There is no `artifact:review` label — the reviewer (and the architect) post review comments on the relevant artifact's sub-issue rather than owning their own sub-issue.
 
 **Role labels** — reserved for cases where a role posts on another role's sub-issue:
 
@@ -165,10 +165,15 @@ items = mcp__plane-<workspace>__list_work_items(
     label_ids=["<artifact:role_label_uuid>"],
 )
 my = [i for i in items if i["parent"] == "<root_uuid>"]
-# my == []           → not yet created
-# len(my) == 1       → found
-# len(my) > 1        → consistency error: STOP, ask the initiator
+# my == []           → not yet created → first run
+# len(my) == 1       → found            → re-entry, update existing
+# len(my) > 1        → fatal consistency error → see below
 ```
+
+**Hard invariant: one sub-issue per role per root.** There must never be more than one sub-issue with the same `artifact:*` label sharing the same root. If `len(my) > 1`:
+1. Do **not** pick one and continue. Do **not** create another.
+2. Post a `BLOCKED — duplicate sub-issues for <label>` comment on the **root** issue, list every duplicate UUID, mention the initiator, STOP.
+3. The initiator merges manually (one survives, others archived) before re-triggering you.
 
 ### 6.4 read_artifact
 Read full artifact = description + comments of a sub-issue.
@@ -206,7 +211,10 @@ sub = mcp__plane-<workspace>__create_work_item(
 - `Frontend: Add user dashboard (QSALE-42)` (vue) or `Frontend (React): Add user dashboard (QSALE-42)` (react — `(React)` qualifier prevents collision with vue-developer when both run)
 - `API Tests: Add user dashboard (QSALE-42)` (api-tester)
 - `UX Tests: Add user dashboard (QSALE-42)` (ui-tester)
-- `REVIEW: Add user dashboard (QSALE-42)` (reviewer)
+
+**Reviews live as comments on the artifact being reviewed** — same pattern the architect already uses for `ARCH_REVIEW` on SPEC. Review of SPEC → comment on SPEC sub-issue. Review of Backend → comment on Backend sub-issue. Cross-cutting end-to-end verdict → comment on root. See §6.7b for the full pattern, including the iteration marker.
+
+**One sub-issue per role per root, ever.** Iterations, follow-ups, per-feature splits, "prerequisite" work — none of these are reasons to create a second sub-issue with the same role label. The single sub-issue's `description_html` is the canonical artifact and is updated in place; intermediate findings live in comments on it. If scope genuinely outgrows the root → create a **new root issue** with `relation: related-to`, not a nested sub-issue (see §6.13).
 
 ### 6.6 update_sub_issue_description
 Replace your sub-issue's description (used on rework and incremental phase fills).
@@ -223,7 +231,7 @@ mcp__plane-<workspace>__update_work_item(
 Post an intermediate or final comment in your own sub-issue. Used for:
 - Coders — final CHANGES summary
 - Testers — bug reports, final test report
-- Architect — ARCH_REVIEW + SPEC_APPROVED marker
+- Architect — ARCH_REVIEW + SPEC_APPROVED marker (on the SPEC sub-issue)
 
 ```python
 mcp__plane-<workspace>__create_work_item_comment(
@@ -232,6 +240,75 @@ mcp__plane-<workspace>__create_work_item_comment(
     comment_html="<...>",
 )
 ```
+
+**Coders' rule: never split CHANGES across multiple sub-issues.** If the SPEC has FR-1, FR-2, FR-3, you do NOT create a sub-issue per FR. You produce **one** Backend (or Frontend) sub-issue whose `description_html` covers all FRs in one CHANGES artifact, updated as you progress. Split inside the artifact (sections, headings) — never in Plane's tree.
+
+### 6.7b post_review (reviewer + architect)
+
+A review is a comment posted on the sub-issue (or root) whose contents you reviewed — the location encodes the scope. Agents invoke this by name (`post_review(target='backend', verdict='CHANGES_REQUIRED', body=…)`); the recipe below is what that means in MCP terms.
+
+**Targets and routing:**
+
+| `target=` | Resolves to | Use for |
+|---|---|---|
+| `spec` | sub-issue with `artifact:spec` | SPEC consistency, traceability, ADRs (architect uses this for `ARCH_REVIEW`) |
+| `backend` | sub-issue with `artifact:backend` | Backend implementation review |
+| `frontend` | sub-issue with `artifact:frontend` | Frontend implementation review |
+| `api-tests` | sub-issue with `artifact:api-testing` | API test plan / report review |
+| `ux-tests` | sub-issue with `artifact:ux-testing` | UX test plan / report review |
+| `design` | sub-issue with `artifact:design` | Design brief or Mode B verdict review |
+| `root` | the root issue itself | Cross-cutting end-to-end verdict |
+
+**Recipe:**
+
+```python
+# 1. Resolve target_uuid:
+#    target == 'root'  → root_uuid
+#    else              → find_artifact_by_label(f"artifact:{target_to_label}", parent=root_uuid)
+target_uuid = ...
+
+# 2. Determine iteration N by scanning target's comments for prior markers
+#    `REVIEW (iter X) —` or `ARCH_REVIEW (iter X) —` authored by AGENT_MEMBER_ID:
+prior = [c for c in list_comments(target_uuid) if c.author == AGENT_MEMBER_ID and re.search(r"(REVIEW|ARCH_REVIEW) \(iter (\d+)\)", c.html)]
+N = (max(int(re.search(r"\(iter (\d+)\)", c.html).group(1)) for c in prior) + 1) if prior else 1
+
+# 3. Idempotency guard — if your last review on this target is the most recent activity AND
+#    nothing has changed since (no newer comment by anyone else, no description edit) → IDLE, STOP.
+
+# 4. Post:
+mcp__plane-<workspace>__create_work_item_comment(
+    project_id=PROJECT_ID,
+    work_item_id=target_uuid,
+    comment_html=(
+        f"<p><strong>{marker} (iter {N}) — {verdict}.</strong></p>"
+        "<p>{findings, severity, traceability}</p>"
+        "<p><mention-component entity_identifier=\"<INITIATOR_UUID>\" entity_name=\"user_mention\"></mention-component></p>"
+    ),
+)
+```
+
+`marker` is `ARCH_REVIEW` for the architect and `REVIEW` for the final reviewer. `verdict` is `APPROVED` / `CHANGES_REQUIRED` / `BLOCKED`.
+
+A single run may invoke `post_review` against multiple targets (one per artifact with findings) plus a cross-cutting `target='root'`. Each call is independent; iteration counters are per-target.
+
+### 6.7c escalate_upstream_gap (any agent finding a defect upstream)
+When a downstream agent (coder, tester, designer, reviewer) discovers a gap that belongs upstream — missing FR in SPEC, ambiguous AC, contradictory requirement, design decision needed — do NOT create a `prerequisite` sub-issue. Do NOT silently fix it locally. Escalate:
+
+```python
+mcp__plane-<workspace>__create_work_item_comment(
+    project_id=PROJECT_ID,
+    work_item_id="<my_sub_uuid>",   # post inside MY sub, not the upstream's
+    comment_html=(
+        "<p><strong>BLOCKED — upstream gap.</strong></p>"
+        "<p>Affected: <code>{SPEC §X.Y | REQUIREMENTS FR-N | Design Frame Z}</code></p>"
+        "<p>Issue: {1-2 sentences describing what is missing or contradictory}.</p>"
+        "<p>Proposed resolution: re-trigger {role} to update {artifact}; I'll resume on the next run.</p>"
+        "<p><mention-component entity_identifier=\"<INITIATOR_UUID>\" entity_name=\"user_mention\"></mention-component></p>"
+    ),
+)
+```
+
+Then STOP. The initiator decides whether to re-trigger the upstream role; that role updates its **existing** artifact (no new sub-issue) and the initiator re-triggers you. This is how nuance is handled: artifacts are mutable, sub-issues are stable.
 
 ### 6.8 update_startup_to_summary
 At end of run — promote the startup comment (§6.2) into the final summary by editing it. Reuse the saved `comment_id`.
@@ -308,6 +385,13 @@ mcp__plane-<workspace>__update_work_item(
 )
 ```
 
+### 6.13 phase_split — when scope outgrows the root
+Sometimes mid-pipeline it becomes clear the work spans more than one cohesive deliverable: a follow-up phase, a parallel feature, a prerequisite that deserves its own SPEC. The wrong move is to add another SPEC sub-issue, or to nest sub-issues two levels deep. The right move:
+
+- Agents do not split scope themselves. They post a `BLOCKED — scope growth` comment in their own sub-issue (per §6.7c structure but with `Issue: scope of root <PROJECT-N> has grown beyond original SPEC; <one-line description of split>`), mention initiator, STOP.
+- The initiator creates a **new root issue** describing the new phase / feature, links it with `relation: related-to` (or `blocks` / `blocked-by` as appropriate), and triggers the pipeline against the new root.
+- Sub-issues never have grandchildren. The tree is exactly two levels deep: root → role sub-issue → (comments). Any work that doesn't fit in the role sub-issue's `description_html` belongs in a different root.
+
 ---
 
 ## 7. Re-entry — first run / continuation / rework / idle
@@ -340,6 +424,8 @@ Every agent run is one of: first run, continuation, rework, or idle. Algorithm:
 ```
 
 **Idempotency:** on continuation/rework — never create a second sub-issue, never post a fresh startup comment. Reuse the existing ones.
+
+**Reviewers (final reviewer + architect) skip steps 4a/4b — they have no own sub-issue.** They detect re-entry by reading their own previous review comments (markers `REVIEW (iter N)` / `ARCH_REVIEW (iter N)`) on the artifact they're reviewing (§6.7b). New iteration if and only if the artifact has changed since the last review.
 
 Phase-decomposed agents (BA, SA) layer a "Phase status" checklist inside the description on top of this. The first `[ ]` marks the next phase; their role prompt defines per-phase entry/exit.
 

@@ -62,6 +62,12 @@ The runtime protocol is in the bundled `plane-api.md` (sibling of the `plane-ope
 
 ## Input / Output
 
+**Hard rules** (full statement in `plane-operations` SKILL §"Hard rules"):
+- One Backend sub-issue per root, ever. Iterations and rework update the existing sub-issue's `description_html` and add comments. Never create a second `artifact:backend` sub-issue, regardless of how the work splits internally.
+- **Never split CHANGES across multiple sub-issues per FR / per feature / per migration.** The single Backend sub-issue covers all FRs in one CHANGES artifact. Structure inside the artifact (sections, headings, checklists) — never in Plane's tree.
+- Found a SPEC gap mid-work? `escalate_upstream_gap` (`plane-api.md` §6.7c): post `BLOCKED — upstream gap` in your own sub-issue, mention initiator, STOP. Never create a "prerequisite" sub-issue or silently re-spec locally.
+- Tree depth is two: root → role sub-issue. Never spawn grandchild sub-issues. Scope growth is escalated to initiator (`plane-api.md` §6.13), who creates a new root.
+
 **Read** (via `read_artifact`):
 - Root issue description = REQUIREMENTS (FR/NFR/Acceptance Criteria)
 - SPEC sub-issue (especially §1 affected frontends, §3 API contract, §4 Frontend Behaviour)

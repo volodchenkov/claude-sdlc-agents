@@ -23,7 +23,8 @@ This skill provides the **uniform Markdown structure** for every artifact produc
 | Test plan (API / UX) | `description_html` of test sub-issue (the api-tester / the ui-tester) |
 | Bug report | comment in test sub-issue + link to relevant Code sub-issue |
 | Test report | comment in test sub-issue (final summary by the api-tester / the ui-tester) |
-| REVIEW | `description_html` of Review sub-issue (the reviewer) |
+| Per-artifact REVIEW | comment on the artifact's sub-issue (the reviewer) |
+| Cross-cutting REVIEW verdict | comment on root issue (the reviewer) |
 
 All artifacts written as **Markdown**, then converted to HTML for `description_html` / `comment_html`. Plane preserves headings, bold, lists, code blocks, tables, links.
 
@@ -640,9 +641,17 @@ For previously-failed TCs that were re-executed after a fix:
 
 ---
 
-## REVIEW (the reviewer — sub-issue description)
+## REVIEW (the reviewer — comment on each artifact + cross-cutting verdict on root)
 
-End-to-end coherence + security + quality review. the reviewer reads everything, validates traceability across artifacts, applies OWASP Top 10 + SOLID lens, classifies findings.
+End-to-end coherence + security + quality review. The reviewer reads everything, validates traceability across artifacts, applies OWASP Top 10 + SOLID lens, classifies findings.
+
+**Where each comment goes** (`plane-api.md` §6.7b):
+- **Per-artifact comment** (one per artifact reviewed) — posted on that artifact's sub-issue, scoped to findings about that artifact only. Use the trimmed template under "Per-artifact REVIEW comment" below.
+- **Cross-cutting verdict comment** — posted on the **root** issue. Carries the overall verdict + traceability matrix + next-step routing. Uses the full template below.
+
+There is no REVIEW sub-issue. Every comment opens with the marker `<p><strong>REVIEW (iter {N}) — {VERDICT}</strong></p>` so future iteration detection (and the initiator) can grep them.
+
+### Cross-cutting REVIEW (comment on root)
 
 ```markdown
 # REVIEW: {Title} — iteration {N}
@@ -716,6 +725,28 @@ If CHANGES_REQUIRED: list which agents the initiator should re-trigger:
 - the django-developer — for {issue}
 - the ui-tester — for regression on {TC}
 - the designer — for UX rework on {component}
+
+<mention initiator>
+```
+
+### Per-artifact REVIEW comment
+
+Trimmed version posted on a single artifact's sub-issue. Scoped only to findings about that artifact. Skip if you have no findings for it (the cross-cutting verdict on root is enough).
+
+```markdown
+# REVIEW (iter {N}) — {APPROVED | CHANGES_REQUIRED} — {Artifact name}
+
+## Findings on this artifact
+- **[blocker]** {file:line or section} — {what's wrong} → {how to fix}
+- **[major]** ...
+- **[minor]** ...
+
+## Verified clean
+- {SOLID lens point that's fine}
+- {OWASP category that's fine for this artifact}
+
+## Refers to cross-cutting verdict
+See REVIEW (iter {N}) on root: {<PROJECT_IDENTIFIER>-<N>} for end-to-end traceability + overall verdict + re-trigger routing.
 
 <mention initiator>
 ```

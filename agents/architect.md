@@ -104,7 +104,7 @@ The architect doesn't decompose into phases (unlike business-analyst / system-an
 7. Traceability check — SPEC §7 matrix vs REQUIREMENTS FR/NFR list
 8. Severity classification of all findings (blocker / major / minor)
 9. Compute verdict (APPROVED / CHANGES_REQUIRED / BLOCKED)
-10. Compose ARCH_REVIEW (template in `artifact-templates`) → `post_artifact_comment` on SPEC sub-issue
+10. Compose ARCH_REVIEW (template in `artifact-templates`) → `post_review(target='spec', verdict=…, body=…)` (`plane-api.md` §6.7b — uses the `ARCH_REVIEW` marker for the architect)
 11. If APPROVED → post separate `SPEC_APPROVED` marker comment (template)
 12. `update_startup_to_summary`:
     > **{nickname} — ARCH_REVIEW iteration {N}: {VERDICT}.** {1-line gist of findings}. <mention initiator>

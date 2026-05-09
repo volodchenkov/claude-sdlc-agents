@@ -23,6 +23,8 @@ This skill provides the **operational vocabulary** every agent uses to interact 
 | **post_startup_comment** | First-run only — log "I started working" comment, save its `comment_id`. |
 | **update_sub_issue_description** | When the artifact lives in `description_html` (PLAN, SPEC, REVIEW) and needs to be updated. |
 | **post_artifact_comment** | When the artifact lives as a comment (CHANGES, ARCH_REVIEW, bug reports). |
+| **post_review** | Reviewer & architect. Call as `post_review(target=…, verdict=…, body=…)`; the operation routes the comment to the right sub-issue (or root) based on `target` and stamps the iteration marker. See `plane-api.md` §6.7b. |
+| **escalate_upstream_gap** | When you find a defect upstream (missing FR, ambiguous AC, broken design contract) — comment in your own sub-issue, mention initiator, STOP. Do not patch locally, do not create a "prerequisite" sub-issue. See `plane-api.md` §6.7c. |
 | **update_startup_to_summary** | At end of run — turn the startup comment into the final "done"/"PLAN ready" summary. |
 | **ask_blocking_question** | When stuck — comment with mention to the initiator, then STOP. |
 | **attach_screenshot** | UX Tester only — upload PNG to object storage, link via `create_work_item_link`. |
@@ -112,8 +114,9 @@ artifact:backend        # django-developer (or other backend role)
 artifact:frontend       # vue-developer or react-developer
 artifact:api-testing    # api-tester
 artifact:ux-testing     # ui-tester
-artifact:review         # reviewer
 ```
+
+There is no `artifact:review` label. The reviewer (and the architect) own no sub-issue — reviews are comments on the artifact being reviewed.
 
 ```
 role:business-analyst   role:system-analyst   role:architect      role:designer
@@ -122,6 +125,18 @@ role:api-tester         role:ui-tester        role:reviewer
 ```
 
 Label UUIDs are stored in `plane-config.local.md` after setup. Reference them as `LABEL_ARTIFACT_SPEC`, `LABEL_ROLE_BUSINESS_ANALYST`, etc.
+
+---
+
+## Hard rules — read before doing anything in Plane
+
+These invariants override anything below. Violating them is the most common failure mode and produces the messy trees the pipeline is designed to prevent.
+
+1. **One sub-issue per role per root, ever.** The single role sub-issue is the canonical artifact. Iterations, follow-ups, per-feature splits, rework, "prerequisite" work — all of these update the existing sub-issue's `description_html` or add comments. They never spawn a second sub-issue with the same role label. If `find_artifact_by_label` returns more than one match, that is a fatal consistency error: post `BLOCKED — duplicate sub-issues` on root, mention initiator, STOP. (`plane-api.md` §6.3.)
+2. **A review is a comment on the artifact reviewed.** Architect's `ARCH_REVIEW` lives on the SPEC sub-issue. Final reviewer posts on each artifact sub-issue it has findings for, plus a cross-cutting verdict on root. The location encodes scope: comment on SPEC = SPEC review; comment on Backend = backend code review; comment on root = end-to-end verdict. Iteration markers (`REVIEW (iter N)`) go into the comment text. (`plane-api.md` §6.7b.)
+3. **Coders never split CHANGES across sub-issues.** Multiple FRs, multiple features, multiple migrations — all live inside one Backend (or Frontend) sub-issue's `description_html`, structured by sections. Plane's tree is not a partitioning tool. (`plane-api.md` §6.7.)
+4. **Tree depth is exactly two: root → role sub-issue.** A sub-issue must never have its own children. If scope outgrows the root, the initiator creates a **new root** and links it via `relation: related-to`. (`plane-api.md` §6.13.)
+5. **Found a defect upstream → escalate, don't patch.** Missing FR, ambiguous AC, broken design contract — post `BLOCKED — upstream gap` in your own sub-issue, mention initiator, STOP. The upstream role updates its **existing** artifact; no new "prerequisite" sub-issue. (`plane-api.md` §6.7c.)
 
 ---
 
@@ -134,6 +149,7 @@ Label UUIDs are stored in `plane-config.local.md` after setup. Reference them as
 3. Branch on result:
    - my_sub is None → first run → continue at step 4
    - my_sub exists → re-entry → see "Re-entry algorithm" below
+   - len > 1        → fatal consistency error → BLOCKED, STOP
 4. find_artifact_by_label(<labels_for_my_dependencies>) → upstream artifacts
 5. read_artifact(<each upstream>) → context
 6. Check preconditions per role prompt. If unmet → ask_blocking_question, STOP.
@@ -144,6 +160,14 @@ Label UUIDs are stored in `plane-config.local.md` after setup. Reference them as
     OR post_artifact_comment(my_sub, content=<artifact text>)
 11. update_startup_to_summary(comment_id, "<role> done. Summary. <mention initiator>")
 ```
+
+**Reviewers (final reviewer + architect) skip steps 2, 7, 8** — they have no own sub-issue and no role label of their own. Their algorithm:
+1. `pickup_issue` → root_uuid, root_name
+2. `find_artifact_by_label` for each artifact in scope (SPEC, Backend, Frontend, tests, design)
+3. Read each + scan its comments for prior review markers (`REVIEW (iter N)` / `ARCH_REVIEW (iter N)`) → determine iteration
+4. If artifact unchanged since last review → IDLE, STOP
+5. Compose review, `post_review` on each artifact sub-issue (and root for cross-cutting verdict)
+6. `update_startup_to_summary` (startup comment lives on root since no own sub-issue)
 
 For re-entry (continuation/rework), skip steps 7-8 and operate on the existing `my_sub`. Full algorithm in [`plane-api.md`](plane-api.md) §7.
 

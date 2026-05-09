@@ -117,6 +117,7 @@ Each phase = **one agent run**. Between phases — the initiator triggers next.
         - Latest = architect's "ARCH_REVIEW: CHANGES_REQUIRED" → REWORK (jump to relevant phase)
         - Latest = architect's "SPEC_APPROVED" → IDLE (your work done, coders take over). STOP.
         - Latest = initiator asking for change → REWORK that phase
+        - Latest = downstream `BLOCKED — upstream gap` (coder/tester/designer/reviewer found a SPEC defect) → REWORK the affected SPEC section. Update the existing SPEC `description_html` in place — do NOT create a "prerequisite" or "Phase X+1" sub-issue, do NOT spawn a sibling SPEC. The protocol invariant (`plane-api.md` §6.5, §6.13): one SPEC sub-issue per root. Bump iteration semantics inside the SPEC artifact (e.g. `## Revision N — addresses upstream gap from <BLOCKED comment URL>`), then re-trigger architect for ARCH_REVIEW on the updated section.
         - Latest = your own startup awaiting answer → IDLE if no initiator response yet. STOP.
       Otherwise: continue normal phase-by-phase flow.
 
