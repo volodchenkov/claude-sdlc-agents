@@ -269,7 +269,8 @@ After all PLAN steps marked `[x]` and final step (Step N) executed:
   - [ ] Every new/changed `View` class has a docstring (first line = summary, body = description; drf-spectacular publishes both into ReDoc/Swagger)
   - [ ] Where the docstring is not enough — `@extend_schema(...)` on the view method with `request=`, `responses={…}`, `parameters=[…]` as appropriate
   - [ ] Non-trivial Serializer fields have `help_text="..."`
-  - [ ] **Run** `python manage.py spectacular --validate --fail-on-warn --file /tmp/openapi.yml` — exit 0 AND zero warnings. Capture the exact command + result in CHANGES `verification`. Without this line `post_changes(ready_for_review=True)` refuses (`plane-api.md` §6.7d "API documentation defense").
+  - [ ] **Run the project's OpenAPI verifier** (slash-command listed in `$KB_DIR/kb/verify.md`, e.g. `/verify-openapi`; wraps `make.sh openapi-check`) — exit 0 AND zero warnings. Capture the slash-command + observed result in CHANGES `verification`. Without this line `post_changes(ready_for_review=True)` refuses (`plane-api.md` §6.7d "API documentation defense").
+  - [ ] If the project does not expose this verifier yet → `escalate_upstream_gap` (`plane-api.md` §6.7c) and STOP. Don't substitute raw `manage.py spectacular` calls in CHANGES.
 - [ ] CHANGES comment posted (template in `artifact-templates`)
 - [ ] Verification results actually observed (not assumed)
 

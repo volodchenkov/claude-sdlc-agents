@@ -207,10 +207,18 @@ sub = mcp__plane-<workspace>__create_work_item(
     parent="<root_uuid>",
     name="<Role>: <root_name> (<PROJECT_IDENTIFIER>-<N>)",
     description_html="<initial artifact body>",
-    labels=["<artifact:role_label_uuid>"],
+    labels=["<artifact:role_label_uuid>"],     # MUST be non-empty — see "Label invariant" below
     assignees=[AGENT_MEMBER_ID],
 )
 ```
+
+**Label invariant — do not call `create_sub_issue` without resolving your artifact label UUID first.** An unlabelled sub-issue is invisible to `find_artifact_by_label` (§6.3) → next agent run treats the work as "not yet started" → creates a duplicate sub-issue → Phase progress is lost. This was the root cause of the Sark COIN-37 / COIN-48 incident on 2026-05-09.
+
+Resolution path:
+1. Read `$KB_DIR/../plane-config.local.md` (or wherever your project keeps it — usually project root). It declares `LABEL_ARTIFACT_<ROLE>` constants pointing to the project's actual label UUIDs.
+2. Look up your role's `LABEL_ARTIFACT_*` value. Pass it as `labels=[…]`.
+3. **If the file is missing OR doesn't contain your role's label UUID** → do NOT proceed. `escalate_upstream_gap` (§6.7c) with `Issue: plane-config.local.md missing label UUID for <role>; cannot create sub-issue without it`, mention initiator, STOP. The initiator runs `plane-conductor verify` (or generates the file from the live Plane labels) before re-triggering you.
+4. **Defensive check after creation**: re-read your freshly-created sub-issue and assert `len(labels) >= 1`. If empty (Plane silently dropped the labels list, e.g. UUID typo) → fail loudly: post `BLOCKED — sub-issue created without label` on root, mention initiator, STOP.
 
 **Sub-issue title format:** `<Role>: <root_name> (<PROJECT_IDENTIFIER>-<N>)`. The root name comes from `pickup_issue` (§6.1). Don't truncate — Plane handles UI overflow itself. Always include the parent identifier in parentheses so the title remains traceable when sub-issues are listed out of context (e.g. global "assigned to me" view).
 
@@ -375,11 +383,7 @@ Validations the operation enforces:
 - If `migrations` is non-empty → the rendered HTML includes a "## Migrations" section.
 - If `ready_for_review=True` → all DoD checkboxes from your role prompt must be reflected in the body (no gaps).
 - The same `target` always resolves to the same single sub-issue (one-sub-per-role invariant, §6.5).
-- **API documentation defense (Django coders).** When `target='backend'` and any path in `files` matches `**/views.py` / `**/serializers.py` / `**/schemas.py` (or a file diff touches a `class .*View` / `class .*Serializer` / `@extend_schema`), the op refuses `ready_for_review=True` unless `verification` contains a passing line for the OpenAPI schema validator — exact command:
-  ```
-  python manage.py spectacular --validate --fail-on-warn --file /tmp/openapi.yml
-  ```
-  Zero warnings, zero errors. Catches the common pattern where coders ship endpoints without docstrings → ReDoc/Swagger empty in production. Full requirements (view docstring, `@extend_schema`, serializer `help_text`) live in `documentation-discipline` SKILL §"API endpoint documentation — drf-spectacular contract".
+- **API documentation defense (Django coders).** When `target='backend'` and any path in `files` matches `**/views.py` / `**/serializers.py` / `**/schemas.py` (or a file diff touches a `class .*View` / `class .*Serializer` / `@extend_schema`), the op refuses `ready_for_review=True` unless `verification` contains a passing run of the project's OpenAPI verifier slash-command (typically `/verify-openapi`, defined in `$KB_DIR/kb/verify.md`; under the hood it wraps `manage.py spectacular --validate --fail-on-warn`). Zero warnings, zero errors. Catches the common pattern where coders ship endpoints without docstrings → ReDoc/Swagger empty in production. Full requirements (view docstring, `@extend_schema`, serializer `help_text`) live in `documentation-discipline` SKILL §"API endpoint documentation — drf-spectacular contract". If the project hasn't yet registered the verifier — `escalate_upstream_gap` (§6.7c).
 - **Frontend coders** (target='frontend') — analogous defense pending; for now `verification` must include the project's own type-check (e.g. `tsc --noEmit`) and lint runs as separate lines.
 
 ### 6.7e post_bug_report (api-tester, ui-tester)

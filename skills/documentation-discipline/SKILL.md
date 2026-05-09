@@ -218,17 +218,14 @@ For every new / modified API endpoint, do all of this — these are **measurable
 
 2. **Override only when the docstring is not enough** — use `@extend_schema(...)` on the view method (`get`, `post`, etc.) to add precise request/response schemas, status codes, examples. Keep the docstring as the human-readable description; let `@extend_schema` carry the structured contract.
 
-3. **Run validation locally as part of CHANGES verification** — this is the test that catches missing/stale docs:
+3. **Run the project's OpenAPI verifier as part of CHANGES verification.** The exact command is project-specific and lives in `$KB_DIR/kb/verify.md` — typically a slash-command like `/verify-openapi` wrapping a `make.sh openapi-check` target that runs `python manage.py spectacular --validate --fail-on-warn …` under the hood. Do NOT inline raw `manage.py` commands in your CHANGES — call the project's wrapper so behaviour stays consistent across runs and projects. The wrapper must:
 
-   ```bash
-   python manage.py spectacular --validate --fail-on-warn --file /tmp/openapi.yml
-   ```
+   - run `spectacular --validate --fail-on-warn` (or equivalent) to make missing-description / missing-help_text warnings fatal,
+   - exit non-zero on any warning or error.
 
-   - `--validate` checks the generated schema against OpenAPI spec.
-   - `--fail-on-warn` makes drf-spectacular's "operation has no description" / "field has no help_text" warnings fatal.
-   - Exit code 0 + zero warnings ⇒ pass. Exit non-zero or any warning ⇒ failure, fix before posting CHANGES.
+   The CHANGES `verification` field MUST include this command and its result (e.g. `✅ /verify-openapi — 0 warnings, 0 errors`). `post_changes(ready_for_review=True)` (`plane-api.md` §6.7d) refuses without it.
 
-   The CHANGES `verification` field MUST include this command as one of the lines (e.g. `✅ python manage.py spectacular --validate --fail-on-warn — 0 warnings`). `post_changes(ready_for_review=True)` (`plane-api.md` §6.7d) refuses to mark the work ready without it.
+   If the project does not yet expose this verifier in `kb/verify.md`, that's a project-side gap — surface it via `escalate_upstream_gap` (`plane-api.md` §6.7c) before claiming `ready_for_review=True`.
 
 4. **Help text on serializer fields** — every non-trivial Serializer field should pass `help_text="..."`. drf-spectacular pulls it into the schema's field description; without it, ReDoc shows naked field names.
 
