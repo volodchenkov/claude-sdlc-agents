@@ -265,6 +265,11 @@ After all PLAN steps marked `[x]` and final step (Step N) executed:
   - [ ] If an ADR was implemented → posted "Implemented" status comment on SPEC sub-issue
   - [ ] If new env var / CLI / public API → relevant README / docs updated
   - [ ] Test names descriptive (read like documentation)
+- [ ] **OpenAPI schema (drf-spectacular) — mandatory if you touched views/serializers/schemas**:
+  - [ ] Every new/changed `View` class has a docstring (first line = summary, body = description; drf-spectacular publishes both into ReDoc/Swagger)
+  - [ ] Where the docstring is not enough — `@extend_schema(...)` on the view method with `request=`, `responses={…}`, `parameters=[…]` as appropriate
+  - [ ] Non-trivial Serializer fields have `help_text="..."`
+  - [ ] **Run** `python manage.py spectacular --validate --fail-on-warn --file /tmp/openapi.yml` — exit 0 AND zero warnings. Capture the exact command + result in CHANGES `verification`. Without this line `post_changes(ready_for_review=True)` refuses (`plane-api.md` §6.7d "API documentation defense").
 - [ ] CHANGES comment posted (template in `artifact-templates`)
 - [ ] Verification results actually observed (not assumed)
 

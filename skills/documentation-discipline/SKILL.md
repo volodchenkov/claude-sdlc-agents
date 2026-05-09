@@ -197,12 +197,42 @@ When your change includes a migration:
 - In CHANGES (Plane comment): explain whether the migration is reversible, expected runtime on prod data volume, any manual ops needed (CONCURRENTLY index in separate deploy, etc.).
 - If the migration is part of a multi-step transition (per SPEC §5 Migration plan): mark this step number explicitly.
 
-### 6. API endpoint documentation
+### 6. API endpoint documentation — drf-spectacular contract
 
-For every new / changed API endpoint:
-- DRF view should have a class docstring describing the endpoint's purpose.
-- If the project uses OpenAPI / drf-spectacular: ensure the schema includes correct request/response types.
-- For non-standard endpoints (idempotency keys, custom headers): document in the view docstring.
+Both qsale (`qa-server`) and coinex (`coinex-server`) use **drf-spectacular** to generate OpenAPI schema → ReDoc / Swagger UI. The schema is built from the view's source code: by default, **the view's docstring becomes the operation description in the published API docs**. No docstring → empty docs in production.
+
+For every new / modified API endpoint, do all of this — these are **measurable** requirements, not formalities:
+
+1. **View class has a docstring**, single-line summary on the first line + structured body. drf-spectacular splits the first line as `summary` and the rest as `description`. Example:
+
+   ```python
+   class OrderTrackingView(APIView):
+       """Return tracking info for a customer's order.
+
+       Path:    GET /api/v1/orders/{id}/tracking/
+       Returns: 200 with {tracking_number, carrier, last_event}
+                404 if the order does not belong to the authenticated tenant
+       Errors:  401 unauthenticated, 403 wrong role
+       """
+   ```
+
+2. **Override only when the docstring is not enough** — use `@extend_schema(...)` on the view method (`get`, `post`, etc.) to add precise request/response schemas, status codes, examples. Keep the docstring as the human-readable description; let `@extend_schema` carry the structured contract.
+
+3. **Run validation locally as part of CHANGES verification** — this is the test that catches missing/stale docs:
+
+   ```bash
+   python manage.py spectacular --validate --fail-on-warn --file /tmp/openapi.yml
+   ```
+
+   - `--validate` checks the generated schema against OpenAPI spec.
+   - `--fail-on-warn` makes drf-spectacular's "operation has no description" / "field has no help_text" warnings fatal.
+   - Exit code 0 + zero warnings ⇒ pass. Exit non-zero or any warning ⇒ failure, fix before posting CHANGES.
+
+   The CHANGES `verification` field MUST include this command as one of the lines (e.g. `✅ python manage.py spectacular --validate --fail-on-warn — 0 warnings`). `post_changes(ready_for_review=True)` (`plane-api.md` §6.7d) refuses to mark the work ready without it.
+
+4. **Help text on serializer fields** — every non-trivial Serializer field should pass `help_text="..."`. drf-spectacular pulls it into the schema's field description; without it, ReDoc shows naked field names.
+
+5. **For non-standard endpoints** (idempotency keys, custom headers, file upload, async polling) — document in the view docstring AND mirror in `@extend_schema(parameters=[...])` so they appear in the published docs.
 
 ### 7. Test names as documentation
 

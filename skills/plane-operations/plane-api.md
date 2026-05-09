@@ -375,6 +375,12 @@ Validations the operation enforces:
 - If `migrations` is non-empty → the rendered HTML includes a "## Migrations" section.
 - If `ready_for_review=True` → all DoD checkboxes from your role prompt must be reflected in the body (no gaps).
 - The same `target` always resolves to the same single sub-issue (one-sub-per-role invariant, §6.5).
+- **API documentation defense (Django coders).** When `target='backend'` and any path in `files` matches `**/views.py` / `**/serializers.py` / `**/schemas.py` (or a file diff touches a `class .*View` / `class .*Serializer` / `@extend_schema`), the op refuses `ready_for_review=True` unless `verification` contains a passing line for the OpenAPI schema validator — exact command:
+  ```
+  python manage.py spectacular --validate --fail-on-warn --file /tmp/openapi.yml
+  ```
+  Zero warnings, zero errors. Catches the common pattern where coders ship endpoints without docstrings → ReDoc/Swagger empty in production. Full requirements (view docstring, `@extend_schema`, serializer `help_text`) live in `documentation-discipline` SKILL §"API endpoint documentation — drf-spectacular contract".
+- **Frontend coders** (target='frontend') — analogous defense pending; for now `verification` must include the project's own type-check (e.g. `tsc --noEmit`) and lint runs as separate lines.
 
 ### 6.7e post_bug_report (api-tester, ui-tester)
 A bug found during testing. Single op writes the ISTQB-structured comment on your test sub-issue and links the affected coder's sub-issue, so the bug is discoverable from both sides.
