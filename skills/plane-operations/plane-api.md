@@ -503,6 +503,22 @@ Sometimes mid-pipeline it becomes clear the work spans more than one cohesive de
 - The initiator creates a **new root issue** describing the new phase / feature, links it with `relation: related-to` (or `blocks` / `blocked-by` as appropriate), and triggers the pipeline against the new root.
 - Sub-issues never have grandchildren. The tree is exactly two levels deep: root → role sub-issue → (comments). Any work that doesn't fit in the role sub-issue's `description_html` belongs in a different root.
 
+### 6.13b Short pipelines — when the full SDLC is overkill
+
+A documentation update or a one-line config tweak doesn't need 7 sub-issues + ARCH_REVIEW + REVIEW. Two short pipelines are supported:
+
+**`pipeline:doc-only`** — pure documentation work (README, ADR notes, internal `kb/*.md`, docstrings). No code paths, no test coverage, no architecture decisions.
+
+Flow:
+1. Initiator creates the root issue with the label `pipeline:doc-only` (in addition to any artifact label).
+2. Initiator triggers the relevant **coder** (django / react / vue) directly — there is no BA, SA, architect, designer, or tester run.
+3. The coder works in **doc-only mode**: skips PLAN, writes only documentation, posts `post_changes(target=…, files=[…doc files…], ready_for_review=False, summary='docs only')`.
+4. Initiator reviews the diff in the repo and closes manually. No final reviewer pass.
+
+Every other agent (BA, SA, architect, designer, testers, reviewer) MUST detect this label at startup and `redirect_task` to the coder before doing any work — see role prompts.
+
+**`pipeline:trivial`** — reserved for future use (e.g. a typo fix, a one-line config nudge). Not implemented yet; placeholder so initiators don't repurpose `pipeline:doc-only` for code work.
+
 ### 6.14 link_related_root (initiator only)
 Connect a newly-created phase / parallel-feature root to its predecessor. Used right after the initiator creates the new root in response to a `phase_split` escalation. Agents do not run this — but the operation is documented here for completeness and for future tooling.
 

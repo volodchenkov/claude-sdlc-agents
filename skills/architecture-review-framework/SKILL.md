@@ -147,13 +147,7 @@ Failures here are **blockers** — SPEC cannot be APPROVED with traceability gap
 
 ## SOLID lens — for code-level review (Mode B)
 
-When reviewing CHANGES from coders, apply SOLID alongside the 6 areas:
-
-- **S — Single Responsibility:** classes/functions do one thing. Models with 50 methods → split.
-- **O — Open / Closed:** extension via new types, not modification of existing
-- **L — Liskov Substitution:** subclasses honor parent contracts
-- **I — Interface Segregation:** narrow interfaces; don't force clients to depend on methods they don't use
-- **D — Dependency Inversion:** depend on abstractions (services, ports), not concretions (specific HTTP client)
+In Mode B (code-level review of CHANGES), apply SOLID alongside the 6 architectural areas. Full breakdown of SRP / OCP / LSP / ISP / DIP with concrete signals lives in `code-review-discipline` SKILL §"SOLID — code quality lens" — read it once and keep the same lens here. The architectural angle: SRP at the **module / service** boundary (not method), OCP via new types, LSP at the **adapter** layer (port/adapter substitutability).
 
 In Django / web-framework context this often means: thin views, fat models, services layer for cross-cutting flows, testable without DB hits.
 
@@ -175,16 +169,11 @@ After APPROVED → post separate `SPEC_APPROVED` marker comment (see `artifact-t
 
 ## Severity classification for findings
 
-Each finding gets a severity:
+The architect uses the same blocker / major / minor scale as the final reviewer. Definitions + verdict logic live in `code-review-discipline` SKILL §"Severity classification" — read it once. Architecture-specific examples per severity:
 
-- **blocker** — ship-stopping. Examples: missing tenant filter (multitenancy leak), no transition plan for breaking change, cross-context import violating import contracts
-- **major** — should be fixed before APPROVED. Examples: missing index for a hot query, no idempotency on payment endpoint, ADR alternatives not analyzed
-- **minor** — preferable to fix but not blocking. Examples: naming inconsistency, missing optional field documentation, "could also do X" optimisations
-
-Verdict logic:
-- Any blocker → CHANGES_REQUIRED
-- 0 blockers + any major → CHANGES_REQUIRED (architect's discretion if minor enough)
-- 0 blockers + 0 majors → APPROVED (with minor notes for system-analyst to address in next iteration if helpful)
+- **blocker** — missing tenant filter (multitenancy leak), no transition plan for breaking change, cross-context import violating import contracts
+- **major** — missing index for a hot query, no idempotency on payment endpoint, ADR alternatives not analyzed
+- **minor** — naming inconsistency, missing optional field documentation, "could also do X" optimisations
 
 ---
 

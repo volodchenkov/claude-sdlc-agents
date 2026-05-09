@@ -344,19 +344,7 @@ Briefly note what's done right — so the system-analyst keeps it on iteration N
 
 ## SPEC_APPROVED marker (the architect — final comment after APPROVED ARCH_REVIEW)
 
-Single short comment after the final approving ARCH_REVIEW. Marks "ready for coders to start".
-
-```markdown
-**SPEC_APPROVED**
-
-Ready for implementation. Coders can pick up.
-
-- Backend scope: {2-line summary}
-- Frontend scope: {2-line summary}
-- Design dependency: {required / not required}
-
-<mention initiator>
-```
+Posted via `mark_spec_approved(spec_sub_uuid, backend_scope=…, frontend_scope=…, design_required=…)` (`plane-api.md` §6.7f). The named op renders the canonical "**SPEC_APPROVED** / Ready for implementation" comment from these fields and posts it on the SPEC sub-issue with a mention to the initiator. Coders find it by scanning SPEC comments for the leading `**SPEC_APPROVED**` token.
 
 ---
 
@@ -471,34 +459,25 @@ Frontend version (the vue-developer / the react-developer) is the same shape wit
 
 ---
 
-## CHANGES (the django-developer / the vue-developer / the react-developer — comment after implementation)
+## CHANGES (the django-developer / the vue-developer / the react-developer)
 
-```markdown
-# {Backend|Frontend} CHANGES: {Title}
+Posted via `post_changes(target='backend'|'frontend', …)` (`plane-api.md` §6.7d). The named op resolves the role's sub-issue, renders the canonical "Files / Migrations / Verification / Performance / Deviations from PLAN / Not implemented" sections from your fields, and posts as a comment.
 
-## Files modified
-### {path}
-- {bullet list of edits}
+**Fields you must supply** (all but `migrations` and `perf` mandatory):
 
-## Migrations
-- `{app}/migrations/{name}.py` — {description}
+| Field | Type | Notes |
+|---|---|---|
+| `target` | `'backend'` / `'frontend'` | resolves the role sub-issue |
+| `summary` | str | one-line gist for the comment header |
+| `files` | list[(path, oneline)] | every changed file with a one-line edit summary |
+| `migrations` | list[(name, descr)] | empty list if none; if non-empty the rendered comment includes a Migrations section |
+| `verification` | list[(cmd, result)] | every DoD check from your role prompt — linter, tests, build/type-check, etc. |
+| `perf` | dict / None | metric/before/after/delta; only when SPEC declared a perf objective |
+| `deviations_from_plan` | list[str] | empty list if none |
+| `not_implemented` | list[str] | deferred items + reason; empty list if none |
+| `ready_for_review` | bool | only `True` when DoD met |
 
-## Verification
-- ✅ {linter command} — 0 errors
-- ✅ {test command} — N passed, 0 failed
-- ✅ {build / type-check command} — clean
-
-## Performance (if perf task)
-| Metric | Before | After | Δ |
-|---|---|---|---|
-| {cmd} | {value} | {value} | {%} |
-
-## Deviations from PLAN
-- {if any} — what changed and why.
-
-## Not implemented (deferred)
-- {if any} — what was deferred and why.
-```
+The op refuses to post with `ready_for_review=True` if `verification` is empty or any DoD line in your role prompt is unaddressed.
 
 ---
 
@@ -549,51 +528,27 @@ Every FR / NFR / Acceptance Criterion has at least one TC. Gaps = test plan inco
 
 ---
 
-## Bug report (the api-tester / the ui-tester — comment in test sub-issue) — ISTQB defect template
+## Bug report (the api-tester / the ui-tester) — ISTQB defect
 
-Severity (technical impact) is set by tester. Priority (business urgency) is the initiator's decision — leave as TBD.
+Posted via `post_bug_report(target=…, affected_role=…, …)` (`plane-api.md` §6.7e). The named op renders the canonical ISTQB defect comment (Failing TC / Steps / Actual / Expected / Environment / Suggested area / Attachments) on your test sub-issue and adds a back-link from the affected coder's sub-issue.
 
-```markdown
-# Bug: {Short title — bug name + affected component}
+**Fields you must supply:**
 
-**Severity:** blocker / major / minor / cosmetic
-**Priority:** TBD by the initiator
-**Reproducible:** always / intermittent / once-only
+| Field | Type | Notes |
+|---|---|---|
+| `target` | `'api-tests'` / `'ux-tests'` | your test sub-issue |
+| `affected_role` | `'backend'` / `'frontend'` | the coder's sub-issue to back-link |
+| `severity` | `'blocker'` / `'major'` / `'minor'` / `'cosmetic'` | technical impact, set by you. Priority stays TBD by the initiator |
+| `title` | str | bug name + affected component |
+| `failing_tc` | str | `TC-{N}` from your test plan + technique cited (e.g. "BVA — boundary value 0") |
+| `repro_steps` | list[str] | numbered actions |
+| `actual` | str | what happens, with exact errors / status codes / observed UI |
+| `expected` | str | per FR-{N} / AC-{N}: what should happen |
+| `environment` | dict | `commit_sha`, `stack`, `browser` (ui-tester), `viewport`, `test_data_state` |
+| `fix_hint` | str / None | optional pointer to file/function from log analysis. Don't prescribe the fix |
+| `screenshots` | list[str] | URLs from S3 (use `attach_screenshot` first to upload). Empty for the api-tester |
 
-## Failing test case
-TC-{N} from test plan (for traceability). Cite the technique (e.g. "BVA — boundary value 0").
-
-## Steps to reproduce
-1. ...
-2. ...
-3. ...
-
-## Actual result
-{what happens, with exact error messages / status codes / observed UI}
-
-## Expected result
-Per FR-{N} / Acceptance Criterion AC-{N}: {what should happen}
-
-## Environment
-- Backend: <backend-app> commit {SHA}, Python 3.11, Postgres 16
-- Frontend (the ui-tester only): {browser + version, viewport, OS}
-- Test data state: {fixtures / specific setup}
-- Plane: <PROJECT_IDENTIFIER>-{N} (root issue)
-
-## Affected sub-issue
-{Backend — <PROJECT_IDENTIFIER>-N | Frontend — <PROJECT_IDENTIFIER>-N} — link to the sub-issue whose work introduced this.
-
-## Suggested area to investigate (optional)
-{If tester has insight from logs / error message — point coder at likely file/function. Don't prescribe fix.}
-
-## Attachments (UX bugs only)
-- {Screenshot URLs from S3, attached via Operation §6.10 `attach_screenshot`}
-- {Optional: screen recording link}
-
-<mention initiator>
-```
-
-### Severity legend (ISTQB-aligned)
+**Severity legend (ISTQB-aligned):**
 - **blocker** — release-stopping, data loss / corruption, security breach, core flow broken
 - **major** — significant function broken, common scenario fails, no acceptable workaround
 - **minor** — limited function broken, edge case fails, workaround exists
