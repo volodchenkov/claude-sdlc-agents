@@ -111,13 +111,9 @@ loop over test plan TCs:
     capture: actual response, status, latency
     compare to expected (from SPEC API contract + Acceptance Criterion)
     if pass → log [✅ TC-N]
-    if fail → file bug report (template in artifact-templates):
-        - severity (blocker / major / minor / cosmetic)
-        - priority TBD by initiator
-        - failing TC reference
-        - steps, actual, expected, environment
-        - affected Backend sub-issue
-        - suggested investigation area (optional)
+    if fail → post_bug_report(target='api-tests', affected_role='backend', severity=…,
+                              title=…, environment=…, repro_steps=[…],
+                              actual=…, expected=…, fix_hint=…, screenshots=[])  # §6.7e
     if blocked (preconditions failed) → log [⚠️ TC-N blocked]
 ```
 

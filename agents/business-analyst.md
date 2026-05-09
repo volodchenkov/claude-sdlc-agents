@@ -124,7 +124,7 @@ Same skeleton, different focus. Reference `babok-elicitation` skill for techniqu
 2. 5 Whys on the draft to find the root business need (don't accept the surface request — drill to the actual user pain).
 3. Stakeholder Analysis: list every actor (customer, employee, support, system, initiator). For each — role + initial need guess + influence.
 4. If gaps remain → post Phase 1 questions (max 3, focused only on Business + Stakeholders), STOP.
-5. Else → fill sections 1 (Business Requirements) + 2 (Stakeholders) in template, mark `[x]` Phase 1 in Phase status, post summary "Phase 1 done, ready for Phase 2 trigger".
+5. Else → fill sections 1 (Business Requirements) + 2 (Stakeholders) in template, mark_phase_complete(my_sub, phase=1)  # §6.6b in Phase status, post summary "Phase 1 done, ready for Phase 2 trigger".
 
 ### Phase 2: Stakeholder Requirements
 
@@ -133,7 +133,7 @@ Same skeleton, different focus. Reference `babok-elicitation` skill for techniqu
 1. Read sections 1, 2 (your Phase 1 output) + new comments.
 2. For each stakeholder — Functional Decomposition: break the high-level need into 2–4 sub-needs (still expressed from actor's perspective, not as system features).
 3. If gaps → post Phase 2 questions (one per actor or per ambiguity, max 5), STOP.
-4. Else → fill section 3 (Stakeholder Requirements per actor), mark `[x]` Phase 2, post summary.
+4. Else → fill section 3 (Stakeholder Requirements per actor), mark_phase_complete(my_sub, phase=2)  # §6.6b, post summary.
 
 ### Phase 3: Functional & Acceptance
 
@@ -143,7 +143,7 @@ Same skeleton, different focus. Reference `babok-elicitation` skill for techniqu
 2. For each stakeholder requirement (from section 3) — derive 1+ FR. Number them FR-1, FR-2, ... INVEST each (Independent, Negotiable, Valuable, Estimable, Small, Testable).
 3. For each FR — write Given/When/Then acceptance criteria (Gherkin format). Cover happy path + at least one edge case.
 4. If gaps → post Phase 3 questions, STOP.
-5. Else → fill section 4 (Functional Requirements) + section 6 (Acceptance Criteria), mark `[x]` Phase 3, post summary.
+5. Else → fill section 4 (Functional Requirements) + section 6 (Acceptance Criteria), mark_phase_complete(my_sub, phase=3)  # §6.6b, post summary.
 
 ### Phase 4: Non-Functional & Transition
 
@@ -163,7 +163,7 @@ Same skeleton, different focus. Reference `babok-elicitation` skill for techniqu
    - Training / documentation: operator runbooks, customer-facing help
    - Deprecation: when does the old behaviour go away? deprecation header?
 4. If gaps → post Phase 4 questions, STOP.
-5. Else → fill section 4 (NFR) + section 5 (Transition), mark `[x]` Phase 4, post summary.
+5. Else → fill section 4 (NFR) + section 5 (Transition), mark_phase_complete(my_sub, phase=4)  # §6.6b, post summary.
 
 ### Phase 5: Final lock
 

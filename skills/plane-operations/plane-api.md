@@ -175,6 +175,16 @@ my = [i for i in items if i["parent"] == "<root_uuid>"]
 2. Post a `BLOCKED — duplicate sub-issues for <label>` comment on the **root** issue, list every duplicate UUID, mention the initiator, STOP.
 3. The initiator merges manually (one survives, others archived) before re-triggering you.
 
+### 6.3b list_sub_issues
+Return every direct child of a root issue, regardless of label. Used by reviewer's Step 0 (audit which artifacts exist) and by anyone needing the full tree map without N separate label queries.
+
+```python
+items = mcp__plane-<workspace>__list_work_items(project_id=PROJECT_ID)
+children = [i for i in items if i["parent"] == "<root_uuid>"]
+```
+
+The MCP tool has no `parent` filter; post-filter in code. Plane caps results — for large projects pass `per_page=100` and paginate.
+
 ### 6.4 read_artifact
 Read full artifact = description + comments of a sub-issue.
 
@@ -226,6 +236,30 @@ mcp__plane-<workspace>__update_work_item(
     description_html="<new content>",
 )
 ```
+
+### 6.6b mark_phase_complete (business-analyst, system-analyst)
+Phase-decomposed agents (BA, SA) carry a "Phase status" checklist inside their sub-issue's `description_html`. At the end of every phase they flip `- [ ] Phase N: …` to `- [x] Phase N: …`. The named operation hides the read-modify-write cycle and enforces ordering.
+
+```python
+# 1. Read current description
+sub = mcp__plane-<workspace>__retrieve_work_item(project_id=PROJECT_ID, work_item_id=my_sub_uuid)
+desc = sub["description_html"]
+
+# 2. Validate ordering — refuse to close phase N if any earlier phase is still open
+#    (parses checklist, asserts all "[ ] Phase 1..N-1" are now "[x]")
+
+# 3. Replace `- [ ] Phase N:` with `- [x] Phase N:`
+new_desc = desc.replace(f"- [ ] Phase {N}:", f"- [x] Phase {N}:", 1)
+
+# 4. Persist
+mcp__plane-<workspace>__update_work_item(
+    project_id=PROJECT_ID,
+    work_item_id=my_sub_uuid,
+    description_html=new_desc,
+)
+```
+
+If you're closing the final phase, also append a Phase status note like `- All phases complete — ready for ARCH_REVIEW`. The agent's role prompt defines the next-phase trigger conditions.
 
 ### 6.7 post_artifact_comment
 Post an intermediate or final comment in your own sub-issue. Used for:
@@ -310,6 +344,83 @@ mcp__plane-<workspace>__create_work_item_comment(
 
 Then STOP. The initiator decides whether to re-trigger the upstream role; that role updates its **existing** artifact (no new sub-issue) and the initiator re-triggers you. This is how nuance is handled: artifacts are mutable, sub-issues are stable.
 
+### 6.7d post_changes (coders)
+The coders' final CHANGES summary on a Backend / Frontend sub-issue. Wraps the `artifact-templates` CHANGES template — agent supplies fields, operation renders the canonical HTML and posts as a comment.
+
+```python
+post_changes(
+    target='backend',           # 'backend' or 'frontend'
+    files=[                     # list of changed files with one-line summaries
+        ("apps/orders/models.py", "Add `Order.tracking_number`"),
+        ("apps/orders/serializers.py", "URL-encode tracking_number"),
+    ],
+    migrations=[                # may be empty list
+        ("0042_order_tracking_number", "adds nullable column, default null"),
+    ],
+    perf=None,                  # optional dict with N+1 / latency notes
+    docs=[
+        "docstrings on Order.tracking_url",
+        "README §API: tracking endpoint section",
+    ],
+    ready_for_review=True,      # only set True when DoD met (see role prompt)
+)
+```
+
+Recipe:
+1. Resolve `target_uuid = find_artifact_by_label('artifact:' + target, parent=root_uuid)`.
+2. Render the canonical CHANGES section per `artifact-templates` SKILL (sections: Summary, Files, Migrations, Performance, Documentation, READY FOR REVIEW).
+3. `create_work_item_comment(target_uuid, comment_html)`.
+
+Validations the operation enforces:
+- If `migrations` is non-empty → the rendered HTML includes a "## Migrations" section.
+- If `ready_for_review=True` → all DoD checkboxes from your role prompt must be reflected in the body (no gaps).
+- The same `target` always resolves to the same single sub-issue (one-sub-per-role invariant, §6.5).
+
+### 6.7e post_bug_report (api-tester, ui-tester)
+A bug found during testing. Single op writes the ISTQB-structured comment on your test sub-issue and links the affected coder's sub-issue, so the bug is discoverable from both sides.
+
+```python
+post_bug_report(
+    target='api-tests',          # or 'ux-tests'
+    affected_role='backend',     # role whose sub-issue contains the broken artifact
+    severity='major',            # blocker | major | minor
+    title='Order tracking link returns 500 when tracking_number contains special chars',
+    environment='storefront-app Vue 3, Chrome 120',
+    repro_steps=[
+        'Login as customer (test acc 1)',
+        "Open /account/orders/{id} where order has tracking_number='ABC/123'",
+        'Click tracking link',
+    ],
+    actual='500 Internal Server Error, browser console "URLError: invalid char"',
+    expected='per FR-2, opens https://cdek.ru/track/ABC%2F123 in new tab',
+    fix_hint='slash not URL-encoded in serializer.tracking_url',
+    screenshots=['<https-url>'],   # ui-tester only; api-tester passes []
+)
+```
+
+Recipe:
+1. `target_uuid = find_artifact_by_label('artifact:' + target, parent=root_uuid)` → your test sub-issue.
+2. `affected_uuid = find_artifact_by_label('artifact:' + affected_role, parent=root_uuid)` → coder's sub-issue.
+3. Render ISTQB bug template per `artifact-templates`/`istqb-test-design`.
+4. `create_work_item_comment(target_uuid, comment_html)` — the bug lives in the test sub-issue.
+5. `create_work_item_link(affected_uuid, url=<URL of the comment from step 4>)` — back-link from the affected sub-issue.
+
+The two-way link prevents bugs from getting lost when reviewer or coder reads only one side.
+
+### 6.7f mark_spec_approved (architect)
+After the final APPROVED `post_review(target='spec', verdict='APPROVED')`, the architect posts a separate flag comment that downstream coders look for as their "ready to start" signal.
+
+```python
+mark_spec_approved(spec_sub_uuid)
+```
+
+Recipe:
+1. Verify the most recent `post_review` on `spec_sub_uuid` is yours and its verdict is `APPROVED` (refuse otherwise).
+2. `create_work_item_comment(spec_sub_uuid, comment_html=template)` — single short comment per `artifact-templates` "SPEC_APPROVED marker".
+3. The marker carries the SPEC iteration number and a mention to the initiator.
+
+Coders find this marker by listing comments on the SPEC sub-issue and matching the canonical opening `<p><strong>SPEC_APPROVED</strong>`.
+
 ### 6.8 update_startup_to_summary
 At end of run — promote the startup comment (§6.2) into the final summary by editing it. Reuse the saved `comment_id`.
 
@@ -391,6 +502,22 @@ Sometimes mid-pipeline it becomes clear the work spans more than one cohesive de
 - Agents do not split scope themselves. They post a `BLOCKED — scope growth` comment in their own sub-issue (per §6.7c structure but with `Issue: scope of root <PROJECT-N> has grown beyond original SPEC; <one-line description of split>`), mention initiator, STOP.
 - The initiator creates a **new root issue** describing the new phase / feature, links it with `relation: related-to` (or `blocks` / `blocked-by` as appropriate), and triggers the pipeline against the new root.
 - Sub-issues never have grandchildren. The tree is exactly two levels deep: root → role sub-issue → (comments). Any work that doesn't fit in the role sub-issue's `description_html` belongs in a different root.
+
+### 6.14 link_related_root (initiator only)
+Connect a newly-created phase / parallel-feature root to its predecessor. Used right after the initiator creates the new root in response to a `phase_split` escalation. Agents do not run this — but the operation is documented here for completeness and for future tooling.
+
+```python
+link_related_root(
+    other_root_uuid="<predecessor-root-uuid>",
+    kind="related-to",   # "related-to" | "blocks" | "blocked-by"
+)
+```
+
+Recipe:
+1. `mcp__plane-<workspace>__create_work_item_relation(project_id, work_item_id=<new_root>, related_issue=<other_root>, relation_type=<kind>)`.
+2. Plane creates the inverse relation automatically on the other side.
+
+Use `blocks` / `blocked-by` only when the dependency is hard (the new phase cannot start until the old one merges). Otherwise prefer `related-to` so neither root is gated by the other.
 
 ---
 

@@ -18,12 +18,17 @@ This skill provides the **operational vocabulary** every agent uses to interact 
 | **read_project_context** | At session start — fetches the Plane project's `description` field for operational orientation (repo URL, staging, initiator, pipeline notes). Optional: returns `None` if empty. Wraps `mcp__plane-<workspace_slug>__retrieve_project(PROJECT_ID)`. |
 | **pickup_issue** | At the start of every run. Resolves `<PROJECT_IDENTIFIER>-<N>` to a UUID. |
 | **find_artifact_by_label** | To locate an upstream artifact (SPEC, Backend CHANGES, etc.) among root sub-issues. |
+| **list_sub_issues** | All children of a root in one call (regardless of label). Used by reviewer's audit pass. See `plane-api.md` §6.3b. |
 | **read_artifact** | To read full content of an artifact = description + comments of its sub-issue. |
 | **create_sub_issue** | First-run only — create your role's sub-issue with proper label and assignee. |
 | **post_startup_comment** | First-run only — log "I started working" comment, save its `comment_id`. |
-| **update_sub_issue_description** | When the artifact lives in `description_html` (PLAN, SPEC, REVIEW) and needs to be updated. |
-| **post_artifact_comment** | When the artifact lives as a comment (CHANGES, ARCH_REVIEW, bug reports). |
+| **update_sub_issue_description** | When the artifact lives in `description_html` (PLAN, SPEC, Design brief) and needs to be updated. |
+| **mark_phase_complete** | BA / SA — flip `[ ] Phase N` → `[x] Phase N` in your sub-issue's description with ordering check. See `plane-api.md` §6.6b. |
+| **post_artifact_comment** | When the artifact lives as a comment (intermediate notes, ad-hoc updates). For canonical CHANGES / bug reports / reviews use the dedicated ops below. |
+| **post_changes** | Coder finals — `post_changes(target='backend', files=…, migrations=…, ready_for_review=True)` renders the canonical CHANGES from fields and posts on the role sub-issue. See `plane-api.md` §6.7d. |
+| **post_bug_report** | Testers — `post_bug_report(target='api-tests', affected_role='backend', severity=…, …)` writes the ISTQB bug on the test sub-issue and back-links the affected coder's sub-issue. See `plane-api.md` §6.7e. |
 | **post_review** | Reviewer & architect. Call as `post_review(target=…, verdict=…, body=…)`; the operation routes the comment to the right sub-issue (or root) based on `target` and stamps the iteration marker. See `plane-api.md` §6.7b. |
+| **mark_spec_approved** | Architect — after the final APPROVED ARCH_REVIEW, post the SPEC_APPROVED marker that coders watch for. See `plane-api.md` §6.7f. |
 | **escalate_upstream_gap** | When you find a defect upstream (missing FR, ambiguous AC, broken design contract) — comment in your own sub-issue, mention initiator, STOP. Do not patch locally, do not create a "prerequisite" sub-issue. See `plane-api.md` §6.7c. |
 | **update_startup_to_summary** | At end of run — turn the startup comment into the final "done"/"PLAN ready" summary. |
 | **ask_blocking_question** | When stuck — comment with mention to the initiator, then STOP. |

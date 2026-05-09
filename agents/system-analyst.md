@@ -135,7 +135,7 @@ Each phase = **one agent run**. Between phases — the initiator triggers next.
 3. Identify affected frontends per `$KB_DIR/kb/frontends.md`
 4. If change crosses system boundary (new external integration / new actor) — draw C4 System Context diagram in Mermaid
 5. If unclear scope or ambiguity → post Phase 1 questions to the initiator, STOP
-6. Else fill §1, mark `[x]` Phase 1, post summary
+6. Else fill §1, mark_phase_complete(my_sub, phase=1)  # §6.6b, post summary
 
 ### Phase 2: Data Model
 
@@ -145,7 +145,7 @@ Each phase = **one agent run**. Between phases — the initiator triggers next.
 4. Confirm multitenancy: tenant FK on every new model (if `$KB_DIR/kb/multitenancy.md` declares multitenancy)
 5. Migration plan per model (backward compatibility — nullable/default first, multi-step for removals; see `$KB_DIR/kb/migrate.md`)
 6. If unsure about denormalisation, indexing, or FK semantics → ADR Proposed, ask the architect
-7. Fill §2, mark `[x]` Phase 2, post summary
+7. Fill §2, mark_phase_complete(my_sub, phase=2)  # §6.6b, post summary
 
 ### Phase 3: API Contract
 
@@ -155,7 +155,7 @@ Each phase = **one agent run**. Between phases — the initiator triggers next.
 4. Pagination, filtering, sorting: explicit conventions
 5. Versioning: declare `/api/v1/...`; if breaking change → migration plan
 6. If multi-step state changes → use sub-resource verbs (`POST /orders/{id}/cancel/`, not `/cancelOrder`)
-7. Fill §3, mark `[x]` Phase 3, post summary
+7. Fill §3, mark_phase_complete(my_sub, phase=3)  # §6.6b, post summary
 
 ### Phase 4: Frontend & Business Rules
 
@@ -164,7 +164,7 @@ Each phase = **one agent run**. Between phases — the initiator triggers next.
 3. Loading / empty / error states explicit (don't leave UI states implicit)
 4. Business rules: non-trivial logic that isn't obvious from API contract
 5. Complex state machines → Mermaid state diagram
-6. Fill §4, mark `[x]` Phase 4, post summary
+6. Fill §4, mark_phase_complete(my_sub, phase=4)  # §6.6b, post summary
 
 ### Phase 5: Quality Attributes
 
@@ -173,7 +173,7 @@ Each phase = **one agent run**. Between phases — the initiator triggers next.
 3. Performance: expected QPS, indexes (cross-ref §2), caching strategy, async tasks
 4. If async / background tasks involved — task design (retries, idempotency — load `celery-patterns` skill)
 5. Migration plan for breaking changes: explicit multi-step rollout (per `$KB_DIR/kb/migrate.md`)
-6. Fill §5, mark `[x]` Phase 5, post summary
+6. Fill §5, mark_phase_complete(my_sub, phase=5)  # §6.6b, post summary
 
 ### Phase 6: Final lock
 

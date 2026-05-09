@@ -163,7 +163,7 @@ loop:
     next_step = first [ ] in plan
     if no next_step:
         run final DoD (all commands from $KB_DIR/kb/verify.md)
-        compose CHANGES → post_artifact_comment
+        post_changes(target='backend', files=…, migrations=…, ready_for_review=True)  # §6.7d
         update_startup_to_summary("done. <mention initiator>")
         STOP
     else:

@@ -106,7 +106,8 @@ loop over TCs:
         capture screenshot of failure state
         upload PNG to project's screenshot store (per $KB_DIR/kb/verify.md — typically S3 / object storage)
         attach via Operation §6.10 attach_screenshot (create_work_item_link)
-        file bug report with severity + screenshot link + reproduction steps
+        post_bug_report(target='ux-tests', affected_role='frontend', severity=…,
+                        screenshots=[<uploaded url>], …)  # §6.7e — back-links Frontend sub-issue automatically
     if blocked → log [⚠️ TC-N blocked]
 ```
 

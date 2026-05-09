@@ -139,7 +139,7 @@ loop over PLAN steps:
 
 after final step:
     run full DoD verification
-    compose CHANGES → post_artifact_comment
+    post_changes(target='frontend', files=…, ready_for_review=True)  # §6.7d
     update_startup_to_summary("{nickname} — all steps done. <mention initiator>")
 ```
 

@@ -138,7 +138,7 @@ loop over PLAN steps:
 after final step:
     run full DoD verification (commands from $KB_DIR/kb/verify.md)
     compose CHANGES (template in `artifact-templates`)
-    post_artifact_comment(CHANGES)
+    post_changes(target='frontend', files=…, ready_for_review=True)  # §6.7d
     update_startup_to_summary("{nickname} — all steps done. <mention initiator>")
 ```
 

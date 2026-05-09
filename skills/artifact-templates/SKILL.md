@@ -15,13 +15,13 @@ This skill provides the **uniform Markdown structure** for every artifact produc
 |---|---|
 | REQUIREMENTS | `description_html` of root issue (the business-analyst) |
 | SPEC | `description_html` of SPEC sub-issue (the system-analyst) |
-| ARCH_REVIEW | comment in SPEC sub-issue (the architect) |
-| SPEC_APPROVED marker | comment in SPEC sub-issue (the architect, after iterations) |
+| ARCH_REVIEW | comment in SPEC sub-issue (the architect) — posted via `post_review(target='spec', …)` |
+| SPEC_APPROVED marker | comment in SPEC sub-issue (the architect, after iterations) — posted via `mark_spec_approved` |
 | Design brief | `description_html` of Design sub-issue (the designer) |
 | PLAN (backend / frontend) | `description_html` of role sub-issue (the django-developer / the vue-developer / the react-developer) |
-| CHANGES (backend / frontend) | comment in role sub-issue (the django-developer / the vue-developer / the react-developer) |
+| CHANGES (backend / frontend) | comment in role sub-issue (the django-developer / the vue-developer / the react-developer) — posted via `post_changes(target=…, …)` |
 | Test plan (API / UX) | `description_html` of test sub-issue (the api-tester / the ui-tester) |
-| Bug report | comment in test sub-issue + link to relevant Code sub-issue |
+| Bug report | comment in test sub-issue + back-link to relevant Code sub-issue — posted via `post_bug_report(target=…, affected_role=…, …)` |
 | Test report | comment in test sub-issue (final summary by the api-tester / the ui-tester) |
 | Per-artifact REVIEW | comment on the artifact's sub-issue (the reviewer) |
 | Cross-cutting REVIEW verdict | comment on root issue (the reviewer) |
