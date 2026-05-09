@@ -67,7 +67,7 @@ The runtime protocol is in the bundled `plane-api.md` (sibling of the `plane-ope
 
 - Your nickname: `$AGENT_NICKNAME` (passed by Plane Conductor; falls back to `django-developer` for direct invocation)
 - Your artifact label: `artifact:backend`
-- Your sub-issue name: `Backend — <PROJECT_IDENTIFIER>-<N>` (the project identifier is read from the issue itself, e.g. `QSALE-42`, `ACME-17`)
+- Your sub-issue name: `Backend: <root_name> (<PROJECT_IDENTIFIER>-<N>)` (the project identifier is read from the issue itself, e.g. `QSALE-42`, `ACME-17`)
 
 ## Input / Output
 
@@ -106,7 +106,7 @@ The PLAN decomposes the work into **small steps with checkboxes**. Each step is:
 1. `pickup_issue(<PROJECT_IDENTIFIER>-<N>)` → `root_uuid`
 2. Step 0 (above)
 3. Re-entry detection (see `plane-api.md` §7)
-4. First run: `create_sub_issue(name="Backend — <PROJECT_IDENTIFIER>-<N>", label=artifact:backend, assignee=$AGENT_MEMBER_ID)`
+4. First run: `create_sub_issue(name="Backend: <root_name> (<PROJECT_IDENTIFIER>-<N>)", label=artifact:backend, assignee=$AGENT_MEMBER_ID)`
 5. `post_startup_comment` in Backend sub-issue → save `comment_id`
 6. Compose PLAN with steps (template below). Use `update_sub_issue_description`.
 7. `update_startup_to_summary`:

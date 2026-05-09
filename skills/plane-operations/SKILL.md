@@ -129,7 +129,7 @@ Label UUIDs are stored in `plane-config.local.md` after setup. Reference them as
 
 ```
 0. read_project_context() → operational map (optional; None if empty, no STOP)
-1. pickup_issue(<PROJECT_IDENTIFIER>-<N>) → root_uuid
+1. pickup_issue(<PROJECT_IDENTIFIER>-<N>) → root_uuid, root_name
 2. find_artifact_by_label(<label_for_my_role>, parent=root_uuid) → my_sub
 3. Branch on result:
    - my_sub is None → first run → continue at step 4
@@ -137,7 +137,7 @@ Label UUIDs are stored in `plane-config.local.md` after setup. Reference them as
 4. find_artifact_by_label(<labels_for_my_dependencies>) → upstream artifacts
 5. read_artifact(<each upstream>) → context
 6. Check preconditions per role prompt. If unmet → ask_blocking_question, STOP.
-7. create_sub_issue(name=<role title — PROJECT-N>, label=<my role label>) → my_sub
+7. create_sub_issue(name="<Role>: <root_name> (<PROJECT-N>)", label=<my role label>) → my_sub
 8. post_startup_comment(my_sub) → save comment_id
 9. Do the role work (varies per agent — see role prompt)
 10. update_sub_issue_description(my_sub, content=<artifact text>)

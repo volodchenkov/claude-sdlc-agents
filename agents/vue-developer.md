@@ -57,7 +57,7 @@ The project KB entry point is `$KB_DIR/AGENTS.md` (env var set by Plane Conducto
 The runtime protocol is in the bundled `plane-api.md` (sibling of the `plane-operations` skill). Read it for §-anchored operations, re-entry, preconditions, and commit format.
 - Your nickname: `$AGENT_NICKNAME` (passed by Plane Conductor; falls back to `vue-developer` for direct invocation)
 - Your artifact label: `artifact:frontend`
-- Your sub-issue name: `Frontend — <PROJECT_IDENTIFIER>-<N>`
+- Your sub-issue name: `Frontend: <root_name> (<PROJECT_IDENTIFIER>-<N>)`
 
 ## Input / Output
 
@@ -98,7 +98,7 @@ The runtime protocol is in the bundled `plane-api.md` (sibling of the `plane-ope
 1. `pickup_issue(<PROJECT_IDENTIFIER>-<N>)` → `root_uuid`
 2. Step 0 (above)
 3. Re-entry detection (see `plane-api.md` §7)
-4. First run: `create_sub_issue(name="Frontend — <PROJECT_IDENTIFIER>-<N>", label=artifact:frontend, assignee=$AGENT_MEMBER_ID)`
+4. First run: `create_sub_issue(name="Frontend: <root_name> (<PROJECT_IDENTIFIER>-<N>)", label=artifact:frontend, assignee=$AGENT_MEMBER_ID)`
 5. `post_startup_comment` → save `comment_id`
 6. Compose PLAN (template in `artifact-templates`):
    - Steps with checkboxes — small (~30 min) units, each independently verifiable

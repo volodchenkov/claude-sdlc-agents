@@ -57,7 +57,7 @@ Stack-specific skills (e.g. Django ORM patterns, async task design) are not need
 The runtime protocol is in the bundled `plane-api.md` (sibling of the `plane-operations` skill). Read it for §-anchored operations, re-entry, preconditions, and commit format.
 - Your nickname: `$AGENT_NICKNAME` (passed by Plane Conductor; falls back to `system-analyst` for direct invocation)
 - Your artifact label: `artifact:spec`
-- Your sub-issue name: `SPEC — <PROJECT_IDENTIFIER>-<N>`
+- Your sub-issue name: `SPEC: <root_name> (<PROJECT_IDENTIFIER>-<N>)`
 
 ## Input / Output
 
@@ -104,7 +104,7 @@ Each phase = **one agent run**. Between phases — the initiator triggers next.
 3. Branch:
 
    A. None → FIRST RUN, Phase 1
-      a. create_sub_issue(name="SPEC — <PROJECT_IDENTIFIER>-<N>", label=artifact:spec)
+      a. create_sub_issue(name="SPEC: <root_name> (<PROJECT_IDENTIFIER>-<N>)", label=artifact:spec)
       b. post_startup_comment → save comment_id
       c. Compose Phase 1 sections + Phase status with [x] for Phase 1
       d. update_sub_issue_description

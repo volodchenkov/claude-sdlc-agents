@@ -143,7 +143,7 @@ mcp__plane-<workspace>__retrieve_work_item_by_identifier(
     issue_identifier="<N>",
 )
 ```
-Save the response's `id` as `<root_uuid>` for later operations.
+Save the response's `id` as `<root_uuid>` and `name` as `<root_name>` for later operations (the root name goes into sub-issue titles — see §6.5).
 
 ### 6.2 post_startup_comment
 At the start of work, post a comment in **your own sub-issue** (if it exists) or the **root issue** (if not yet). Save the returned `comment_id` for §6.8.
@@ -190,21 +190,23 @@ Create your sub-issue with your artifact label, parent = root, assignee = your b
 sub = mcp__plane-<workspace>__create_work_item(
     project_id=PROJECT_ID,
     parent="<root_uuid>",
-    name="<Display Title> — <PROJECT_IDENTIFIER>-<N>",
+    name="<Role>: <root_name> (<PROJECT_IDENTIFIER>-<N>)",
     description_html="<initial artifact body>",
     labels=["<artifact:role_label_uuid>"],
     assignees=[AGENT_MEMBER_ID],
 )
 ```
 
-**Sub-issue names per role:**
-- `SPEC — <PROJECT_IDENTIFIER>-<N>` (system-analyst)
-- `Design — <PROJECT_IDENTIFIER>-<N>` (designer)
-- `Backend — <PROJECT_IDENTIFIER>-<N>` (backend coder)
-- `Frontend — <PROJECT_IDENTIFIER>-<N>` (vue) or `Frontend (React) — <PROJECT_IDENTIFIER>-<N>` (react)
-- `API Tests — <PROJECT_IDENTIFIER>-<N>` (api-tester)
-- `UX Tests — <PROJECT_IDENTIFIER>-<N>` (ui-tester)
-- `REVIEW — <PROJECT_IDENTIFIER>-<N>` (reviewer)
+**Sub-issue title format:** `<Role>: <root_name> (<PROJECT_IDENTIFIER>-<N>)`. The root name comes from `pickup_issue` (§6.1). Don't truncate — Plane handles UI overflow itself. Always include the parent identifier in parentheses so the title remains traceable when sub-issues are listed out of context (e.g. global "assigned to me" view).
+
+**Sub-issue names per role** (root issue named `Add user dashboard`, key `QSALE-42`, for illustration):
+- `SPEC: Add user dashboard (QSALE-42)` (system-analyst)
+- `Design: Add user dashboard (QSALE-42)` (designer)
+- `Backend: Add user dashboard (QSALE-42)` (backend coder)
+- `Frontend: Add user dashboard (QSALE-42)` (vue) or `Frontend (React): Add user dashboard (QSALE-42)` (react — `(React)` qualifier prevents collision with vue-developer when both run)
+- `API Tests: Add user dashboard (QSALE-42)` (api-tester)
+- `UX Tests: Add user dashboard (QSALE-42)` (ui-tester)
+- `REVIEW: Add user dashboard (QSALE-42)` (reviewer)
 
 ### 6.6 update_sub_issue_description
 Replace your sub-issue's description (used on rework and incremental phase fills).

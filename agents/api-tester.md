@@ -49,7 +49,7 @@ The project KB entry point is `$KB_DIR/AGENTS.md`. Read it first; then load:
 The runtime protocol is in the bundled `plane-api.md` (sibling of the `plane-operations` skill). Read it for §-anchored operations, re-entry, preconditions, and commit format.
 - Your nickname: `$AGENT_NICKNAME` (passed by Plane Conductor; falls back to `api-tester` for direct invocation)
 - Your artifact label: `artifact:api-testing`
-- Your sub-issue name: `API Tests — <PROJECT_IDENTIFIER>-<N>`
+- Your sub-issue name: `API Tests: <root_name> (<PROJECT_IDENTIFIER>-<N>)`
 
 ## Input / Output
 
@@ -83,7 +83,7 @@ The runtime protocol is in the bundled `plane-api.md` (sibling of the `plane-ope
 1. `pickup_issue(<PROJECT_IDENTIFIER>-<N>)` → `root_uuid`
 2. Step 0 — read everything
 3. `find_artifact_by_label(artifact:api-testing, parent=root_uuid)` → my sub-issue or None
-4. First run: `create_sub_issue(name="API Tests — <PROJECT_IDENTIFIER>-<N>", label=artifact:api-testing, assignee=$AGENT_MEMBER_ID)`
+4. First run: `create_sub_issue(name="API Tests: <root_name> (<PROJECT_IDENTIFIER>-<N>)", label=artifact:api-testing, assignee=$AGENT_MEMBER_ID)`
 5. `post_startup_comment` → save comment_id
 6. Compose test plan (template in `artifact-templates`):
    - Scope (in / out)

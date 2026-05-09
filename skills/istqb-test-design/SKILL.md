@@ -165,7 +165,7 @@ Every bug = one comment in the test sub-issue. Follow ISTQB defect template.
 >   3. Click tracking link
 > Actual: 500 Internal Server Error, browser console shows "URLError: invalid char"
 > Expected: per FR-2, opens https://cdek.ru/track/ABC%2F123 in new tab
-> Affected: Backend — <PROJECT_IDENTIFIER>-<N> (slash not URL-encoded in serializer.tracking_url)
+> Affected: Backend: <root_name> (<PROJECT_IDENTIFIER>-<N>) (slash not URL-encoded in serializer.tracking_url)
 > Attachments: https://storage.yandexcloud.net/.../bug-tracking-500.png
 
 ---

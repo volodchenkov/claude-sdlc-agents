@@ -50,7 +50,7 @@ The project KB entry point is `$KB_DIR/AGENTS.md`. Read it first; then load:
 The runtime protocol is in the bundled `plane-api.md` (sibling of the `plane-operations` skill). Read it for §-anchored operations, re-entry, preconditions, and commit format.
 - Your nickname: `$AGENT_NICKNAME` (passed by Plane Conductor; falls back to `designer` for direct invocation)
 - Your artifact label: `artifact:design`
-- Your sub-issue name: `Design — <PROJECT_IDENTIFIER>-<N>`
+- Your sub-issue name: `Design: <root_name> (<PROJECT_IDENTIFIER>-<N>)`
 - **Two modes**, distinguished by re-entry detection:
   - **Mode A (Design brief)**: Frontend sub-issue does NOT exist or is not Done → produce / iterate on Design brief.
   - **Mode B (UX review)**: Frontend sub-issue Done with CHANGES posted → review implementation, post findings as comments in **Frontend sub-issue** (not Design sub-issue).
@@ -103,7 +103,7 @@ The runtime protocol is in the bundled `plane-api.md` (sibling of the `plane-ope
 ### Process
 
 1. Step 0 — read REQUIREMENTS, SPEC
-2. First run: `create_sub_issue(name="Design — <PROJECT_IDENTIFIER>-<N>", label=artifact:design, assignee=$AGENT_MEMBER_ID)`
+2. First run: `create_sub_issue(name="Design: <root_name> (<PROJECT_IDENTIFIER>-<N>)", label=artifact:design, assignee=$AGENT_MEMBER_ID)`
 3. `post_startup_comment` → save comment_id
 4. Compose design (`ux-design-discipline` skill provides the lens, `artifact-templates` provides format):
    - UX flow (5–10 step user journey)

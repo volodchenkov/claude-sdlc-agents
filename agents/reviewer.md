@@ -48,7 +48,7 @@ The project KB entry point is `$KB_DIR/AGENTS.md`. Read it first; then load **al
 The runtime protocol is in the bundled `plane-api.md` (sibling of the `plane-operations` skill). Read it for §-anchored operations, re-entry, preconditions, and commit format.
 - Your nickname: `$AGENT_NICKNAME` (passed by Plane Conductor; falls back to `reviewer` for direct invocation)
 - Your artifact label: `artifact:review`
-- Your sub-issue name: `REVIEW — <PROJECT_IDENTIFIER>-<N>`
+- Your sub-issue name: `REVIEW: <root_name> (<PROJECT_IDENTIFIER>-<N>)`
 
 ## Input / Output
 
@@ -92,7 +92,7 @@ Like the architect's ARCH_REVIEW, the reviewer doesn't decompose into phases. On
 1. `pickup_issue(<PROJECT_IDENTIFIER>-<N>)` → `root_uuid`
 2. Step 0 — read all artifacts
 3. `find_artifact_by_label(artifact:review, parent=root_uuid)` → my sub-issue or None
-4. First run: `create_sub_issue(name="REVIEW — <PROJECT_IDENTIFIER>-<N>", label=artifact:review, assignee=$AGENT_MEMBER_ID)`
+4. First run: `create_sub_issue(name="REVIEW: <root_name> (<PROJECT_IDENTIFIER>-<N>)", label=artifact:review, assignee=$AGENT_MEMBER_ID)`
 5. `post_startup_comment` → save comment_id
 6. Run reviews:
    - **End-to-end traceability**: every FR / NFR / AC walked through SPEC → CHANGES → tests
