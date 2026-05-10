@@ -1,0 +1,50 @@
+{
+  "allow": [
+    "Bash(gh pr view:*)",
+    "Bash(gh pr list:*)",
+    "Bash(gh pr diff:*)",
+    "Bash(gh pr checks:*)",
+    "Bash(gh issue view:*)",
+    "Bash(gh issue list:*)",
+    "Bash(gh repo view:*)",
+    "Bash(gh run view:*)",
+    "Bash(gh run list:*)",
+    "Bash(gh api -X GET:*)",
+    "Bash(gh api repos/*:*)",
+
+    "Bash(glab mr view:*)",
+    "Bash(glab mr list:*)",
+    "Bash(glab issue view:*)",
+    "Bash(glab issue list:*)",
+    "Bash(glab ci status:*)",
+    "Bash(glab ci view:*)",
+
+    "Bash(kubectl get:*)",
+    "Bash(kubectl describe:*)",
+    "Bash(kubectl logs:*)",
+    "Bash(kubectl top:*)",
+    "Bash(kubectl events:*)",
+    "Bash(kubectl config get-contexts:*)",
+    "Bash(kubectl config current-context:*)",
+    "Bash(kubectl config view:*)",
+
+    "Bash(helm list:*)",
+    "Bash(helm status:*)",
+    "Bash(helm get:*)",
+    "Bash(helm history:*)",
+    "Bash(helm template:*)",
+    "Bash(helm diff:*)",
+    "Bash(helm version:*)",
+    "Bash(helm plugin list:*)",
+
+    "Bash(git status:*)",
+    "Bash(git log:*)",
+    "Bash(git diff:*)",
+    "Bash(git show:*)",
+    "Bash(git branch:*)",
+    "Bash(git remote:*)",
+
+    "Bash(jq:*)",
+    "Bash(yq:*)"
+  ]
+}

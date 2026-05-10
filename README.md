@@ -1,8 +1,8 @@
 # claude-sdlc-agents
 
 > SDLC agent pack for [Plane Conductor](https://github.com/volodchenkov/plane-conductor)
-> — 10 Claude Code agents grounded in industry methodologies (BABOK,
-> C4, ISTQB, OWASP, WCAG).
+> — 10 pipeline agents + 2 meta-agents, grounded in industry methodologies
+> (BABOK, C4, ISTQB, OWASP, WCAG).
 
 A starter pack of specialised Claude Code agents wired to follow
 standard software-engineering methodologies, designed to drop into
@@ -18,7 +18,9 @@ directory in this repo.
 
 ## What's inside
 
-### `agents/` — 10 generic agent definitions
+### `agents/` — generic agent definitions
+
+#### SDLC pipeline (10) — triggered by Plane @-mentions
 
 | File (also the `name:` for `claude --agent <name>`) | Role | Methodology |
 |---|---|---|
@@ -33,10 +35,18 @@ directory in this repo.
 | `ui-tester.md` | UX/E2E Tester | ISTQB + WCAG 2.1 AA |
 | `reviewer.md` | Final Reviewer | OWASP Top 10 + SOLID + Google review checklist |
 
+#### Meta agents (2) — invoked directly by the user, not by Plane
+
+| File | `name:` (alias) | What it does |
+|---|---|---|
+| `prompt-architect.md` | `zuse` | Designs and audits agent prompts, skills, and KB reference docs. Plan-then-edit; runs a 9-block audit on every prompt before changing it. |
+| `project-manager.md` | `tron` | Personal PM. Triages incoming work into "fix it myself" / "file in Plane and run the pipeline" / "clarify first". Reads GitHub / GitLab / kubectl / helm freely; every state change requires explicit approval. |
+
 Each file is a [Claude Code agent definition](https://docs.claude.com/en/docs/claude-code/sub-agents)
 with YAML frontmatter (`name`, `description`, `model`, `tools`) and a
-long-form prompt body. Prompts read project-specific KB files (see
-below) and the matching skill before composing artifacts.
+long-form prompt body. SDLC prompts read project-specific KB files (see
+below) and the matching skill before composing artifacts. Meta-agent
+prompts have no project-specific reads — they work in any repo.
 
 ### `skills/` — 9 reusable [Claude Code skills](https://docs.claude.com/en/docs/claude-code/skills)
 
@@ -127,8 +137,10 @@ claude plugin marketplace add volodchenkov/claude-sdlc-agents
 claude plugin install sdlc-agents@sdlc-agents-marketplace
 ```
 
-This makes 10 agents (`claude --agent business-analyst`,
-`system-analyst`, …) and 9 skills available globally.
+This makes 12 agents (10 SDLC pipeline + 2 meta) and 9 skills
+available globally — `claude --agent business-analyst`, `system-analyst`,
+`tron`, `zuse`, …. Updates are pulled from the github default branch on
+each Claude Code session start; force a refresh with `/plugin update`.
 
 For local-development install pointing at a checkout:
 
@@ -140,6 +152,15 @@ claude plugin install sdlc-agents@sdlc-agents-marketplace
 The same commands are available as slash-commands inside an
 interactive Claude Code session (`/plugin marketplace add …`,
 `/plugin install …`).
+
+#### Optional: dev-tooling bootstrap
+
+`setup.sh` at the repo root is a one-shot helper for new machines: it
+checks for `gh` / `glab` / `kubectl` / `helm` / `jq` / `helm-diff` and
+offers to install whichever is missing, verifies the `plane-tower` MCP
+is registered, and (with consent) merges a read-only Bash allowlist
+from `docs/settings-allowlist.json` into `~/.claude/settings.json`.
+It does **not** install agents — that's the marketplace's job above.
 
 ### 2. Drop the KB template into your project
 
