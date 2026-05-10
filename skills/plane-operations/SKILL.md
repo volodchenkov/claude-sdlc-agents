@@ -93,17 +93,16 @@ The agent itself reads `$AGENT_NICKNAME` and `$AGENT_MEMBER_ID` at runtime; the 
 
 ---
 
-## Mention syntax — strict rule
+## Mentions — tower-managed
 
-The initiator is a real Plane user; agents need to notify them → use full HTML component:
+**Agents never type `<mention-component>` HTML.** The tower constructs it from structured params; free-form `post_comment` / `update_comment` reject any `<mention-component>` in the body and raise `MentionInBodyError`.
 
-```html
-<mention-component entity_identifier="<INITIATOR_UUID>" entity_name="user_mention"></mention-component>
-```
+How agents declare intent:
 
-Plain text `@<username>` does **not** trigger Plane notifications.
+- Structured artifact tools (`post_review`, `post_changes`, `post_bug_report`, `mark_spec_approved`, `mark_phase_complete`, `escalate_upstream_gap`) auto-stamp the **initiator** mention. Pass `next_role='<role>'` (or `upstream_role` on escalations) to add a second mention to whoever should pick up next.
+- Standalone routing or pings: `mcp__plane-tower__request_handoff(sub_uuid, target_role, message_html='', workspace=…)`. `target_role='initiator'` is the special case for pinging the human; any other value (`reviewer`, `architect`, `system-analyst`, `django-developer`, …) matches the workspace's agents roster.
 
-**Agents never @mention each other** — only the initiator triggers the next role. If you feel like writing `@<other-nickname>` in your summary — stop. The initiator sees the artifact, decides who runs next, mentions them.
+The old rule «mention initiator only, never the next agent» still holds in spirit, but you don't enforce it by writing UUIDs by hand — you enforce it by choosing the right tool. See `plane-api.md` §5 for the full table.
 
 ---
 
@@ -163,7 +162,7 @@ These invariants override anything below. Violating them is the most common fail
 9. Do the role work (varies per agent — see role prompt)
 10. update_sub_issue_description(my_sub, content=<artifact text>)
     OR post_artifact_comment(my_sub, content=<artifact text>)
-11. update_startup_to_summary(comment_id, "<role> done. Summary. <mention initiator>")
+11. update_comment(work_item_uuid, comment_id, "<role> done. Summary.")  # body only, no mention HTML
 ```
 
 **Reviewers (final reviewer + architect) skip steps 2, 7, 8** — they have no own sub-issue and no role label of their own. Their algorithm:
