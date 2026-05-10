@@ -110,15 +110,22 @@ role:api-tester         role:ui-tester        role:reviewer
 
 ---
 
-## 5. Mentions
+## 5. Mentions — tower-managed, never hand-rolled
 
-Plane mentions require the full HTML component. Plain `@username` does NOT trigger notifications.
+**Agents never construct `<mention-component>` HTML.** The tower owns it. Free-form `post_comment` / `update_comment` refuse `<mention-component>` in the body and raise `MentionInBodyError` before the POST. This eliminates the self-mention class of bugs (typing your own UUID instead of the target's).
 
-```html
-<mention-component entity_identifier="<INITIATOR_UUID>" entity_name="user_mention"></mention-component>
-```
+How to ping someone:
 
-**Rule for agents:** mention the initiator only. Never mention the next agent — only the initiator triggers downstream runs.
+| Intent | API |
+|---|---|
+| Pre-stamped initiator mention on a structured artifact comment (CHANGES, REVIEW, bug report, SPEC_APPROVED, escalation) | Auto — tower already adds it. Pass `next_role='reviewer'` (or any role) to the same call to add a second mention. |
+| Standalone routing comment on any sub/root | `mcp__plane-tower__request_handoff(sub_uuid, target_role, message_html='', workspace=…)` — tower resolves the role to the bot's UUID and stamps the mention. |
+| Ping the human who started the workflow | `request_handoff(target_role='initiator', message_html=…)` |
+| Heartbeat / status update with no mention | `update_comment(comment_html='…')` — no mention in body, tower allows it. |
+
+Role names (`target_role`, `next_role`, `upstream_role`) are matched against the workspace's `agents` roster by `prompt_role` bare name. Both `sdlc-agents:reviewer` and `reviewer` work. The special value `'initiator'` resolves to the workspace's human initiator UUID.
+
+The old rule «mention initiator, never mention the next agent» still holds in spirit — but you don't enforce it by writing UUIDs by hand. You enforce it by choosing the right tool: `next_role=`/`request_handoff` for routing, structured-tool defaults for artifact comments, plain `update_comment` for heartbeats.
 
 ---
 
@@ -150,15 +157,31 @@ mcp__plane-<workspace>__retrieve_work_item_by_identifier(
 Save the response's `id` as `<root_uuid>` and `name` as `<root_name>` for later operations (the root name goes into sub-issue titles — see §6.5).
 
 ### 6.2 post_startup_comment
-At the start of work, post a comment in **your own sub-issue** (if it exists) or the **root issue** (if not yet). Save the returned `comment_id` for §6.8.
+At the start of work, post a startup comment via `request_handoff` (it auto-stamps the initiator mention so the human sees the pickup). Save the returned `comment_id` for the heartbeat updates (§6.2b) and the final summary (§6.8).
 
 ```python
-mcp__plane-<workspace>__create_work_item_comment(
-    project_id=PROJECT_ID,
-    work_item_id="<sub_issue_uuid_or_root_uuid>",
-    comment_html="<p><strong>{Agent} picked up.</strong> Reading {inputs}.</p>",
+result = mcp__plane-tower__request_handoff(
+    sub_uuid="<sub_uuid_or_root_uuid>",   # your own sub-issue if it exists, else root
+    target_role="initiator",
+    message_html="<p><strong>{Agent} picked up.</strong> Reading {inputs}.</p>",
+    workspace="<workspace_slug>",
+)
+startup_comment_id = result["comment_id"]
+```
+
+### 6.2b Progress heartbeat
+While the run executes, update the startup comment at every meaningful step — phase boundaries, before any operation expected to take >60 seconds, after it returns. **No mentions in the body** — it's a status line, not a routing event. Minimum interval 60 seconds between updates (don't spam).
+
+```python
+mcp__plane-tower__update_comment(
+    work_item_uuid="<same_as_above>",
+    comment_id=startup_comment_id,
+    comment_html="<p><strong>{Agent}:</strong> Phase 2/5 — about to: pytest --create-db tests/users.</p>",
+    workspace="<workspace_slug>",
 )
 ```
+
+This makes silent runs observable: the operator can `mcp__plane-conductor__list_active_agents` + `read_log`; if stdout is empty BUT the Plane comment shows recent updates, the agent is alive (likely doing a long op), not zombie.
 
 ### 6.3 find_artifact_by_label
 Find a sub-issue with a given `artifact:*` label among root's children.
@@ -318,19 +341,18 @@ N = (max(int(re.search(r"\(iter (\d+)\)", c.html).group(1)) for c in prior) + 1)
 # 3. Idempotency guard — if your last review on this target is the most recent activity AND
 #    nothing has changed since (no newer comment by anyone else, no description edit) → IDLE, STOP.
 
-# 4. Post:
-mcp__plane-<workspace>__create_work_item_comment(
-    project_id=PROJECT_ID,
-    work_item_id=target_uuid,
-    comment_html=(
-        f"<p><strong>{marker} (iter {N}) — {verdict}.</strong></p>"
-        "<p>{findings, severity, traceability}</p>"
-        "<p><mention-component entity_identifier=\"<INITIATOR_UUID>\" entity_name=\"user_mention\"></mention-component></p>"
-    ),
+# 4. Post via tower (auto-stamps initiator mention; pass next_role to also ping the role that should pick up next):
+mcp__plane-tower__post_review(
+    target=target,                # 'spec' | 'backend' | 'frontend' | 'api-tests' | 'ux-tests' | 'design' | 'root'
+    verdict=verdict,              # 'APPROVED' | 'CHANGES_REQUIRED' | 'BLOCKED'
+    body_html="<p>{findings, severity, traceability}</p>",   # NO <mention-component> — tower refuses
+    root_uuid=root_uuid,
+    next_role=None,               # e.g. 'system-analyst' if you want to ping the SA on CHANGES_REQUIRED
+    workspace="<workspace_slug>",
 )
 ```
 
-`marker` is `ARCH_REVIEW` for the architect and `REVIEW` for the final reviewer. `verdict` is `APPROVED` / `CHANGES_REQUIRED` / `BLOCKED`.
+`marker` is `ARCH_REVIEW` for the architect and `REVIEW` for the final reviewer; tower picks it from `AGENT_NICKNAME`. `verdict` is `APPROVED` / `CHANGES_REQUIRED` / `BLOCKED`. The body must not contain `<mention-component>` — the tower stamps initiator (and optional `next_role`) itself.
 
 A single run may invoke `post_review` against multiple targets (one per artifact with findings) plus a cross-cutting `target='root'`. Each call is independent; iteration counters are per-target.
 
@@ -338,16 +360,13 @@ A single run may invoke `post_review` against multiple targets (one per artifact
 When a downstream agent (coder, tester, designer, reviewer) discovers a gap that belongs upstream — missing FR in SPEC, ambiguous AC, contradictory requirement, design decision needed — do NOT create a `prerequisite` sub-issue. Do NOT silently fix it locally. Escalate:
 
 ```python
-mcp__plane-<workspace>__create_work_item_comment(
-    project_id=PROJECT_ID,
-    work_item_id="<my_sub_uuid>",   # post inside MY sub, not the upstream's
-    comment_html=(
-        "<p><strong>BLOCKED — upstream gap.</strong></p>"
-        "<p>Affected: <code>{SPEC §X.Y | REQUIREMENTS FR-N | Design Frame Z}</code></p>"
-        "<p>Issue: {1-2 sentences describing what is missing or contradictory}.</p>"
-        "<p>Proposed resolution: re-trigger {role} to update {artifact}; I'll resume on the next run.</p>"
-        "<p><mention-component entity_identifier=\"<INITIATOR_UUID>\" entity_name=\"user_mention\"></mention-component></p>"
-    ),
+mcp__plane-tower__escalate_upstream_gap(
+    my_sub_uuid="<my_sub_uuid>",
+    affected="SPEC §X.Y | REQUIREMENTS FR-N | Design Frame Z",
+    issue="{1-2 sentences describing what is missing or contradictory}",
+    proposed_resolution="re-trigger {role} to update {artifact}; I'll resume on the next run",
+    upstream_role=None,           # e.g. 'system-analyst' to also ping SA alongside the initiator
+    workspace="<workspace_slug>",
 )
 ```
 
@@ -436,34 +455,32 @@ Coders find this marker by listing comments on the SPEC sub-issue and matching t
 At end of run — promote the startup comment (§6.2) into the final summary by editing it. Reuse the saved `comment_id`.
 
 ```python
-mcp__plane-<workspace>__update_work_item_comment(
-    project_id=PROJECT_ID,
-    work_item_id="<sub_or_root_uuid>",
+mcp__plane-tower__update_comment(
+    work_item_uuid="<sub_or_root_uuid>",
     comment_id="<startup_comment_id>",
     comment_html=(
         "<p><strong>{Agent} done.</strong> {one-line-summary}.<br>"
-        "<a href=\"<sub_issue_url>\">{ArtifactName}</a><br>"
-        "<mention-component entity_identifier=\"<INITIATOR_UUID>\" entity_name=\"user_mention\"></mention-component> — your call.</p>"
+        "<a href=\"<sub_issue_url>\">{ArtifactName}</a> — your call.</p>"
     ),
+    workspace="<workspace_slug>",
 )
 ```
 
+The body cannot contain `<mention-component>` — tower refuses. The initiator was already pinged once at startup (§6.2); a second ping here adds no signal and noise. If you genuinely need to re-ping the human at end (e.g. blocking question still unanswered), post a *new* comment via `request_handoff(target_role='initiator', message_html=…)` after the summary update.
+
 **Summary format:**
 - Line 1: `{Agent} done. {one-line summary}.`
-- Line 2: link to your sub-issue (if comment lives in root) or artifact marker
-- Line 3: `<mention-component>` to initiator. **Never mention the next agent.**
+- Line 2: link to your sub-issue (if comment lives in root) or artifact marker. **No mentions in the body.**
 
 ### 6.9 ask_blocking_question
-A blocking question. Comment in your sub-issue if it exists, else root. Mention the initiator. STOP after.
+A blocking question. Post in your sub-issue if it exists, else root. Tower stamps the initiator mention. STOP after.
 
 ```python
-mcp__plane-<workspace>__create_work_item_comment(
-    project_id=PROJECT_ID,
-    work_item_id="<sub_or_root_uuid>",
-    comment_html=(
-        "<p><strong>BLOCKED.</strong> {question}<br>"
-        "<mention-component entity_identifier=\"<INITIATOR_UUID>\" entity_name=\"user_mention\"></mention-component></p>"
-    ),
+mcp__plane-tower__request_handoff(
+    sub_uuid="<sub_or_root_uuid>",
+    target_role="initiator",
+    message_html="<p><strong>BLOCKED.</strong> {question}</p>",
+    workspace="<workspace_slug>",
 )
 ```
 
@@ -481,17 +498,14 @@ mcp__plane-<workspace>__create_work_item_link(
 ```
 
 ### 6.11 redirect_task
-The mention reached the wrong role. Comment on root, mention the correct role member (if known) and the initiator.
+The mention reached the wrong role. Hand off to the correct role on root via `request_handoff` — tower stamps both the target-role mention and the initiator mention.
 
 ```python
-mcp__plane-<workspace>__create_work_item_comment(
-    project_id=PROJECT_ID,
-    work_item_id="<root_uuid>",
-    comment_html=(
-        "<p>Not my task. Looks like work for "
-        "<mention-component entity_identifier=\"<correct_role_member_id>\" entity_name=\"user_mention\"></mention-component>. "
-        "<mention-component entity_identifier=\"<INITIATOR_UUID>\" entity_name=\"user_mention\"></mention-component> — please re-route.</p>"
-    ),
+mcp__plane-tower__request_handoff(
+    sub_uuid="<root_uuid>",
+    target_role="<correct_role>",      # e.g. 'react-developer' if SPEC mentions UI work
+    message_html="<p>Not my task. Looks like work for the {target_role} — please re-route.</p>",
+    workspace="<workspace_slug>",
 )
 ```
 
