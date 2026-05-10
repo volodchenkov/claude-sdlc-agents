@@ -78,18 +78,8 @@ These trigger STOP regardless of role. Role prompts add role-specific STOPs on t
 
 - **Tool / permission denied** — any required MCP tool or shell command refuses → `ask_blocking_question` on root, mention initiator, STOP.
 - **Required upstream artifact missing** — the role prompt names which upstream artifact you need; if it's not present → STOP, list what's missing, mention initiator.
-- **Duplicate sub-issue with your label** — `find_artifact_by_label` returns more than one match → fatal consistency error per `plane-api.md` §6.3. Post `BLOCKED — duplicate sub-issues` on root, list every UUID, mention initiator, STOP. Do NOT pick one and continue.
-- **`plane-config.local.md` missing your role's label UUID** — without `LABEL_ARTIFACT_<your role>` you cannot label the sub-issue you create, and the next run will treat your work as missing and duplicate it (this was the Sark COIN-37 / COIN-48 incident, 2026-05-09). `escalate_upstream_gap` per `plane-api.md` §6.7c with `Issue: plane-config.local.md missing or stale; cannot resolve label UUID for <role>`, mention initiator, STOP.
+- **`plane-tower` raises a `TowerError`** — the tool layer enforces every pipeline invariant (one-sub-per-role, label-non-empty, phase ordering, OpenAPI defense, etc.). When it raises, do NOT retry blindly: read the error message, address the root cause, then resume. Common errors and how to react are in `plane-api.md` §6.
 - **Workspace KB missing** — see §2 above.
-
-## 4a. Pre-create_sub_issue checklist
-
-Before your first call to `create_sub_issue` in any run, verify all of:
-
-- [ ] `plane-config.local.md` exists at the path declared by your project (usually `$KB_DIR/..` or repo root).
-- [ ] It defines `LABEL_ARTIFACT_<your role>` (e.g. `LABEL_ARTIFACT_SPEC` for system-analyst).
-- [ ] The labels list you pass is non-empty: `labels=[LABEL_ARTIFACT_<your role>]`, and the same after creation when you re-read the sub-issue (Plane silently drops invalid UUIDs, so verify).
-- [ ] If any check fails → `escalate_upstream_gap` with the missing item, STOP. Do not proceed and create an unlabelled sub-issue.
 
 ---
 

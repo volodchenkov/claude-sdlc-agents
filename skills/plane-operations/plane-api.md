@@ -124,7 +124,11 @@ Plane mentions require the full HTML component. Plain `@username` does NOT trigg
 
 ## 6. Operations — named procedures
 
-Each operation is an atomic pattern agent prompts invoke by name (e.g. "execute §6.5 create_sub_issue"). All calls go through MCP tools. Substitute `<workspace>` with your Plane workspace slug.
+All pipeline operations are tools on the **`plane-tower` MCP** — a single virtual server (one process per host, no per-workspace prefix). Workspace routing happens inside the tower from the `WORKSPACE_SLUG` env Plane Conductor injects on agent spawn. Agents call `mcp__plane-tower__<op>(…)` with role names (`spec`, `backend`, …) instead of raw label/state/member UUIDs; the tower resolves them from its in-memory snapshot of Plane state.
+
+Most invariants documented in this section (one-sub-per-role, label-non-empty, iteration counters, OpenAPI defense, phase ordering, etc.) are enforced **inside the tower** — see `plane-conductor/src/plane_conductor/mcp_tower.py`. Agents that try to violate them get a `TowerError` back, not a silent data-corruption.
+
+The named-operation bodies below stay as documentation of behaviour: what the tool does, when it raises, what shape it returns. Agents read them to know the contract; they do not re-implement them.
 
 ### 6.0 read_project_context
 Fetch the project description (operational map) at session start. Optional — `None` if empty.
@@ -199,26 +203,23 @@ comments = mcp__plane-<workspace>__list_work_item_comments(
 ```
 
 ### 6.5 create_sub_issue
-Create your sub-issue with your artifact label, parent = root, assignee = your bot member id.
 
 ```python
-sub = mcp__plane-<workspace>__create_work_item(
-    project_id=PROJECT_ID,
-    parent="<root_uuid>",
-    name="<Role>: <root_name> (<PROJECT_IDENTIFIER>-<N>)",
+mcp__plane-tower__create_sub_issue(
+    role="spec",                                  # symbolic; tower resolves to artifact:spec UUID
+    root_uuid="<root_uuid>",
     description_html="<initial artifact body>",
-    labels=["<artifact:role_label_uuid>"],     # MUST be non-empty — see "Label invariant" below
-    assignees=[AGENT_MEMBER_ID],
+    nickname="<your bot nickname>",               # tower resolves to assignee UUID
 )
 ```
 
-**Label invariant — do not call `create_sub_issue` without resolving your artifact label UUID first.** An unlabelled sub-issue is invisible to `find_artifact_by_label` (§6.3) → next agent run treats the work as "not yet started" → creates a duplicate sub-issue → Phase progress is lost. This was the root cause of the Sark COIN-37 / COIN-48 incident on 2026-05-09.
+The tower (see plane-conductor `mcp_tower.py`) enforces:
+- one-sub-per-role-per-root → raises `DuplicateSubIssueError` if a sub with this role already exists; use re-entry path on the existing one instead
+- label resolution from live Plane state at boot → no missing-label-UUID class of bug
+- post-create assert that the labels list is non-empty → raises `UnlabelledSubIssueError` on Plane data-corruption (UUID typo dropped silently)
+- title shape `<Role>: <root_name> (<PROJECT_IDENTIFIER>-<N>)` from the root's name + identifier — agents do not type the title
 
-Resolution path:
-1. Read `$KB_DIR/../plane-config.local.md` (or wherever your project keeps it — usually project root). It declares `LABEL_ARTIFACT_<ROLE>` constants pointing to the project's actual label UUIDs.
-2. Look up your role's `LABEL_ARTIFACT_*` value. Pass it as `labels=[…]`.
-3. **If the file is missing OR doesn't contain your role's label UUID** → do NOT proceed. `escalate_upstream_gap` (§6.7c) with `Issue: plane-config.local.md missing label UUID for <role>; cannot create sub-issue without it`, mention initiator, STOP. The initiator runs `plane-conductor verify` (or generates the file from the live Plane labels) before re-triggering you.
-4. **Defensive check after creation**: re-read your freshly-created sub-issue and assert `len(labels) >= 1`. If empty (Plane silently dropped the labels list, e.g. UUID typo) → fail loudly: post `BLOCKED — sub-issue created without label` on root, mention initiator, STOP.
+Returns `{id, sequence_id, name, labels, parent, ...}`.
 
 **Sub-issue title format:** `<Role>: <root_name> (<PROJECT_IDENTIFIER>-<N>)`. The root name comes from `pickup_issue` (§6.1). Don't truncate — Plane handles UI overflow itself. Always include the parent identifier in parentheses so the title remains traceable when sub-issues are listed out of context (e.g. global "assigned to me" view).
 

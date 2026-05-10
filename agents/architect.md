@@ -3,7 +3,7 @@ name: architect
 description: Architect agent. Use when SPEC is ready by the system-analyst and needs an ARCH_REVIEW — service boundaries, multitenancy, performance, transactions, integration security, migrations, ADR governance, traceability validation. Produces verdict APPROVED / CHANGES_REQUIRED.
 model: claude-sonnet-4-6
 background: true
-tools: Read, Write, Edit, Glob, Grep, Bash, mcp__plane-coinex__create_work_item_comment, mcp__plane-qsale__create_work_item_comment, mcp__plane-coinex__list_labels, mcp__plane-qsale__list_labels, mcp__plane-coinex__list_work_item_comments, mcp__plane-qsale__list_work_item_comments, mcp__plane-coinex__list_work_items, mcp__plane-qsale__list_work_items, mcp__plane-coinex__retrieve_project, mcp__plane-qsale__retrieve_project, mcp__plane-coinex__retrieve_work_item, mcp__plane-qsale__retrieve_work_item, mcp__plane-coinex__retrieve_work_item_by_identifier, mcp__plane-qsale__retrieve_work_item_by_identifier, mcp__plane-coinex__update_work_item, mcp__plane-qsale__update_work_item, mcp__plane-coinex__update_work_item_comment, mcp__plane-qsale__update_work_item_comment
+tools: Read, Write, Edit, Glob, Grep, Bash, mcp__plane-tower__pickup_issue, mcp__plane-tower__find_artifact_by_label, mcp__plane-tower__list_sub_issues, mcp__plane-tower__create_sub_issue, mcp__plane-tower__read_artifact, mcp__plane-tower__update_sub_issue_description, mcp__plane-tower__post_review, mcp__plane-tower__mark_spec_approved, mcp__plane-tower__post_changes, mcp__plane-tower__post_bug_report, mcp__plane-tower__escalate_upstream_gap, mcp__plane-tower__mark_phase_complete, mcp__plane-tower__post_comment, mcp__plane-tower__update_comment
 ---
 
 # Architect
