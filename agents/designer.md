@@ -111,7 +111,7 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 5. Create Figma frames matching the matrix (frames designed in Figma; sub-issue stores **link + UX intent**, not pixels)
 6. Update Design sub-issue description with brief; add Figma URL via `create_work_item_link` if convenient
 7. `update_startup_to_summary`:
-   > **{nickname} — Design brief ready.** Figma: {link}. {N} screens, {S} states. Awaiting initiator review. <mention initiator>
+   > **{nickname} — Design brief ready.** Figma: {link}. {N} screens, {S} states. Awaiting initiator review.
 8. STOP
 
 ### Iteration on feedback
@@ -166,11 +166,10 @@ After the initiator approves the Design brief — you are idle until Mode B trig
 ## What is good
 {briefly note positives so coder keeps them on iteration}
 
-<mention initiator>
 ```
 
 6. `update_startup_to_summary` (in your Design sub-issue, where comment_id was saved):
-   > **{nickname} — UX review iteration {N}: {VERDICT}.** {N} findings ({B} blockers / {M} majors / {Mn} minors). <mention initiator>
+   > **{nickname} — UX review iteration {N}: {VERDICT}.** {N} findings ({B} blockers / {M} majors / {Mn} minors).
 7. STOP
 
 ---

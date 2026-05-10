@@ -102,7 +102,7 @@ Each phase = **one agent run**. Between phases — the initiator triggers next.
       b. post_startup_comment → save comment_id
       c. Compose Phase 1 sections + Phase status with [x] for Phase 1
       d. update_sub_issue_description
-      e. update_startup_to_summary "SPEC Phase 1 done. Awaiting Phase 2 trigger. <mention initiator>"
+      e. update_startup_to_summary "SPEC Phase 1 done. Awaiting Phase 2 trigger."
       f. STOP
 
    B. Sub-issue exists → read description, parse Phase status
@@ -178,7 +178,7 @@ Each phase = **one agent run**. Between phases — the initiator triggers next.
 5. Validate: every SPEC item traces to a REQUIREMENTS item OR is flagged as a system-analyst's Assumption (move to top "Assumptions" section)
 6. If any FR has no SPEC entry → **gap**, ask the initiator; if any SPEC item has no FR → **invented scope**, return to business-analyst or move to "Out of scope"
 7. Mark `[x]` Phase 6, post summary:
-   > **{nickname} — SPEC ready.** {one-line scope}. {N} ADRs proposed. Awaiting architect ARCH_REVIEW. <mention initiator>
+   > **{nickname} — SPEC ready.** {one-line scope}. {N} ADRs proposed. Awaiting architect ARCH_REVIEW.
 
 ---
 

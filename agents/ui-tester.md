@@ -87,7 +87,7 @@ At session start, run the `agent-base` checklist (greeting, project context, com
    - Coverage matrix
 7. `update_sub_issue_description(test plan)`
 8. `update_startup_to_summary`:
-   > **{nickname} — UX test plan ready ({N} TCs, {A} a11y checks).** Awaiting confirmation. <mention initiator>
+   > **{nickname} — UX test plan ready ({N} TCs, {A} a11y checks).** Awaiting confirmation.
 9. STOP — wait initiator's OK before execution
 
 ### Phase 2: Execute, capture, report
@@ -111,7 +111,7 @@ loop over TCs:
 After all TCs — post final test report (template in `artifact-templates`).
 
 `update_startup_to_summary`:
-> **{nickname} — Phase 2 complete. {P} passed / {F} failed / {B} blocked.** Screenshots attached. <mention initiator>
+> **{nickname} — Phase 2 complete. {P} passed / {F} failed / {B} blocked.** Screenshots attached.
 
 ### Phase 2 (regression iteration)
 If the frontend coder ships a fix, the initiator re-triggers you:

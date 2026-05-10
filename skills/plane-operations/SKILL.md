@@ -62,34 +62,9 @@ If `read_project_context()` returns `None` (empty description) — no STOP. Cont
 
 ## Configuration values
 
-Project-specific identifiers (project UUID, workspace slug, base URL, member UUIDs, state UUIDs, label UUIDs) are configured by Plane Conductor and passed via environment variables, or stored in your project's gitignored `plane-config.local.md` after `plane-conductor setup` runs.
+Project-specific identifiers (workspace slug, project UUID, base URL, initiator UUID, label UUIDs, member UUIDs) are held by the tower MCP server, hydrated at boot from `conductor.d/<workspace>.yaml`. **Agents never read a config file for these.** Pass `workspace=…` to a tower tool when one workspace can't be inferred; everything else (label resolution, member UUID for mentions, project ID) is resolved server-side.
 
-Reference template for `plane-config.local.md`:
-
-```python
-PROJECT_ID         = "<uuid>"           # set by Plane Conductor PLANE_PROJECT_ID env var
-PROJECT_IDENTIFIER = "<SHORTCODE>"      # e.g. "ACME", "TODO"
-WORKSPACE_SLUG     = "<slug>"           # set by PLANE_WORKSPACE_SLUG
-PLANE_BASE_URL     = "<https://...>"    # set by PLANE_BASE_URL
-
-# Initiator (real user)
-INITIATOR_UUID = "<uuid>"               # set by INITIATOR_UUID env var
-
-# State IDs (read once via mcp__plane__list_states; usually only Backlog / In Progress / Done are used)
-STATE_BACKLOG     = "<uuid>"            # default for new sub-issues
-STATE_IN_PROGRESS = "<uuid>"
-STATE_DONE        = "<uuid>"            # only set by initiator at finalize_done
-
-# Bot member UUIDs (one per role nickname, populated after `plane-conductor setup`)
-# Reference them by nickname for clarity in code:
-NICKNAME_TO_MEMBER_UUID = {
-    "<nickname-1>": "<uuid>",
-    "<nickname-2>": "<uuid>",
-    # ...
-}
-```
-
-The agent itself reads `$AGENT_NICKNAME` and `$AGENT_MEMBER_ID` at runtime; the rest is from config.
+The agent itself reads two env vars at runtime: `AGENT_NICKNAME` (own bot nickname for greetings + identifying own comments) and `AGENT_MEMBER_ID` (own bot UUID for `assignees` field). That's it — there is no `plane-config.local.md` to load.
 
 ---
 
@@ -128,7 +103,7 @@ role:python-developer   role:vue-developer    role:react-developer
 role:api-tester         role:ui-tester        role:reviewer
 ```
 
-Label UUIDs are stored in `plane-config.local.md` after setup. Reference them as `LABEL_ARTIFACT_SPEC`, `LABEL_ROLE_BUSINESS_ANALYST`, etc.
+Label UUIDs are hydrated server-side by the tower from `conductor.d/<workspace>.yaml`. Agents pass labels by role name (`'spec'`, `'backend'`, `'reviewer'`, …) to structured tools (`find_artifact_by_label`, `create_sub_issue`, `post_review`, …); the tower resolves to UUIDs internally. No label-UUID constants in agent prompts.
 
 ---
 

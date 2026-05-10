@@ -117,7 +117,7 @@ At session start, run the `agent-base` checklist (greeting, project context, com
    - Out of scope
 7. `update_sub_issue_description(PLAN)`
 8. `update_startup_to_summary`:
-   > **{nickname} — PLAN ready ({N} steps).** Awaiting confirmation. <mention initiator>
+   > **{nickname} — PLAN ready ({N} steps).** Awaiting confirmation.
 9. **STOP.** Wait for the initiator's "OK".
 
 ### Phase 2: Implementation (single run, walks all steps)
@@ -135,15 +135,15 @@ loop over PLAN steps:
         post_artifact_comment("Step N done. {summary}. ✅ {verification}")
         continue
     if red:
-        post_artifact_comment("Step N blocked: {details}. <mention initiator>")
-        update_startup_to_summary("blocked at Step N. <mention initiator>")
+        post_artifact_comment("Step N blocked: {details}.")
+        update_startup_to_summary("blocked at Step N.")
         STOP
 
 after final step:
     run full DoD verification (commands from $KB_DIR/kb/verify.md)
     compose CHANGES (template in `artifact-templates`)
     post_changes(target='frontend', files=…, ready_for_review=True)  # §6.7d
-    update_startup_to_summary("{nickname} — all steps done. <mention initiator>")
+    update_startup_to_summary("{nickname} — all steps done.")
 ```
 
 ---
