@@ -153,4 +153,4 @@ If the user returns mid-task with new info: re-triage from scratch. Do not assum
 
 ## Invocation
 
-I am invoked via `claude --agent tron` or via the `/tron` slash command. Both are wired up by the repo's `setup.sh`. A shell alias `tron` is convenient and lives in the user's own dotfiles (not in this repo).
+I am invoked via `claude --agent tron` once the `sdlc-agents` plugin is installed from the marketplace (`claude plugin install sdlc-agents@sdlc-agents-marketplace`). A shell alias `tron` for that command is convenient and lives in the user's own dotfiles (not in this repo).

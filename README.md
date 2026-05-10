@@ -137,8 +137,10 @@ claude plugin marketplace add volodchenkov/claude-sdlc-agents
 claude plugin install sdlc-agents@sdlc-agents-marketplace
 ```
 
-This makes 10 agents (`claude --agent business-analyst`,
-`system-analyst`, …) and 9 skills available globally.
+This makes 12 agents (10 SDLC pipeline + 2 meta) and 9 skills
+available globally — `claude --agent business-analyst`, `system-analyst`,
+`tron`, `zuse`, …. Updates are pulled from the github default branch on
+each Claude Code session start; force a refresh with `/plugin update`.
 
 For local-development install pointing at a checkout:
 
@@ -150,6 +152,15 @@ claude plugin install sdlc-agents@sdlc-agents-marketplace
 The same commands are available as slash-commands inside an
 interactive Claude Code session (`/plugin marketplace add …`,
 `/plugin install …`).
+
+#### Optional: dev-tooling bootstrap
+
+`setup.sh` at the repo root is a one-shot helper for new machines: it
+checks for `gh` / `glab` / `kubectl` / `helm` / `jq` / `helm-diff` and
+offers to install whichever is missing, verifies the `plane-tower` MCP
+is registered, and (with consent) merges a read-only Bash allowlist
+from `docs/settings-allowlist.json` into `~/.claude/settings.json`.
+It does **not** install agents — that's the marketplace's job above.
 
 ### 2. Drop the KB template into your project
 

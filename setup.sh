@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # setup.sh — install the SDLC agent pack.
 #
-# Interactive: pick which CLIs to install (gh, glab, kubectl, helm, jq) and
-# which integration points to wire up (agent symlinks into ~/.claude/agents/,
-# slash-command symlinks into ~/.claude/commands/, plane-tower MCP check).
+# Interactive: pick which CLIs to install (gh, glab, kubectl, helm, jq),
+# check the plane-tower MCP registration, and (optionally) merge the
+# read-only Bash allowlist into ~/.claude/settings.json.
 #
-# Pure check + install — does NOT modify ~/.claude/settings.json. The
-# permissions allowlist for read-only patterns is documented in
-# `docs/settings-snippet.md`; merge it into your settings.json yourself.
+# Agents, skills, and slash-commands ship via the Claude Code plugin
+# marketplace — this script does NOT install them. After the marketplace
+# install, plugin updates are pulled automatically by Claude Code on
+# session start.
 #
 # Re-run safe: every step skips work that's already done.
 
@@ -193,48 +194,27 @@ if have helm; then
   green "  ✓ helm $(helm version --short 2>/dev/null)"
 fi
 
-# ---------- step 3: install agent prompts as symlinks ----------
+# ---------- step 3: plugin install hint ----------
 
 hr
-green "=== Step 3: install agent prompts ==="
+green "=== Step 3: agents + skills + slash-commands ==="
+yellow "  Agents, skills, and slash-commands are NOT installed by this script."
+yellow "  Install via the Claude Code plugin marketplace (one-time):"
+yellow ""
+yellow "    claude plugin marketplace add volodchenkov/claude-sdlc-agents"
+yellow "    claude plugin install sdlc-agents@sdlc-agents-marketplace"
+yellow ""
+yellow "  After install, the plugin auto-fetches updates from the github"
+yellow "  default branch on every Claude Code session start. Run"
+yellow "  '/plugin update' inside Claude Code to force a refresh."
+yellow ""
+yellow "  Local checkout install (development): pass this path instead of"
+yellow "  the github short-name."
 
-if ask_yn "  symlink agent prompts into $CLAUDE_HOME/agents/?" Y; then
-  mkdir -p "$CLAUDE_HOME/agents"
-  for f in "$REPO/agents/"*.md; do
-    name="$(basename "$f")"
-    target="$CLAUDE_HOME/agents/$name"
-    if [[ -L "$target" || -e "$target" ]]; then
-      yellow "  ~ $name already exists — skipping (remove manually if you want a fresh symlink)"
-      continue
-    fi
-    ln -s "$f" "$target"
-    green "  ✓ linked $name"
-  done
-fi
-
-# ---------- step 4: install slash commands ----------
+# ---------- step 4: plane-tower MCP check ----------
 
 hr
-green "=== Step 4: install slash commands ==="
-if [[ -d "$REPO/commands" ]] && ask_yn "  symlink slash commands into $CLAUDE_HOME/commands/?" Y; then
-  mkdir -p "$CLAUDE_HOME/commands"
-  for f in "$REPO/commands/"*.md; do
-    [[ -e "$f" ]] || continue
-    name="$(basename "$f")"
-    target="$CLAUDE_HOME/commands/$name"
-    if [[ -L "$target" || -e "$target" ]]; then
-      yellow "  ~ /$name already exists — skipping"
-      continue
-    fi
-    ln -s "$f" "$target"
-    green "  ✓ linked /$name"
-  done
-fi
-
-# ---------- step 5: plane-tower MCP check ----------
-
-hr
-green "=== Step 5: plane-tower MCP ==="
+green "=== Step 4: plane-tower MCP ==="
 if [[ -f "$HOME/.claude.json" ]] && grep -q '"plane-tower"' "$HOME/.claude.json" 2>/dev/null; then
   green "  ✓ plane-tower MCP is registered in ~/.claude.json"
 else
@@ -243,10 +223,10 @@ else
   yellow "    https://github.com/volodchenkov/plane-conductor"
 fi
 
-# ---------- step 6: settings.json allowlist ----------
+# ---------- step 5: settings.json allowlist ----------
 
 hr
-green "=== Step 6: settings.json read-only allowlist ==="
+green "=== Step 5: settings.json read-only allowlist ==="
 SETTINGS="$CLAUDE_HOME/settings.json"
 SNIPPET="$REPO/docs/settings-allowlist.json"
 if [[ ! -f "$SNIPPET" ]]; then
