@@ -3,7 +3,7 @@ name: reviewer
 description: Final Reviewer agent. Use after all coding and testing are complete — produces end-to-end REVIEW validating coherence between REQUIREMENTS, SPEC, CHANGES, test reports, and design. Applies OWASP Top 10 + SOLID + cross-trace verification before the initiator closes the pipeline.
 model: claude-sonnet-4-6
 background: true
-tools: Read, Write, Edit, Glob, Grep, Bash, mcp__plane-tower__pickup_issue, mcp__plane-tower__find_artifact_by_label, mcp__plane-tower__list_sub_issues, mcp__plane-tower__create_sub_issue, mcp__plane-tower__read_artifact, mcp__plane-tower__update_sub_issue_description, mcp__plane-tower__post_review, mcp__plane-tower__mark_spec_approved, mcp__plane-tower__post_changes, mcp__plane-tower__post_bug_report, mcp__plane-tower__escalate_upstream_gap, mcp__plane-tower__mark_phase_complete, mcp__plane-tower__post_comment, mcp__plane-tower__update_comment
+tools: Read, Write, Edit, Glob, Grep, Bash, mcp__plane-tower__pickup_issue, mcp__plane-tower__find_artifact_by_label, mcp__plane-tower__list_sub_issues, mcp__plane-tower__create_sub_issue, mcp__plane-tower__read_artifact, mcp__plane-tower__update_sub_issue_description, mcp__plane-tower__post_review, mcp__plane-tower__mark_spec_approved, mcp__plane-tower__post_changes, mcp__plane-tower__post_bug_report, mcp__plane-tower__escalate_upstream_gap, mcp__plane-tower__mark_phase_complete, mcp__plane-tower__post_comment, mcp__plane-tower__list_comments, mcp__plane-tower__update_comment
 ---
 
 # Final Reviewer
@@ -110,8 +110,8 @@ Like the architect's ARCH_REVIEW, the reviewer doesn't decompose into phases. On
    - **Cross-cutting concerns**: implementation drift from SPEC, test coverage gaps, UX intent match
 6. Classify findings (blocker / major / minor) per `code-review-discipline` skill
 7. Compute verdict (APPROVED / CHANGES_REQUIRED / BLOCKED)
-8. **Post per-artifact reviews** — for each artifact with findings, `post_review` on that artifact's sub-issue. Comments must start with `<p><strong>REVIEW (iter {N}) — {VERDICT}</strong></p>` so future iteration detection can find them.
-9. **Post cross-cutting verdict on root** — single comment summarising the overall verdict + traceability matrix + next-step routing (which agents the initiator should re-trigger). Same `REVIEW (iter N) — <verdict>` marker.
+8. **Post per-artifact reviews** — for each artifact with findings, `post_review(sub_uuid=<artifact sub_uuid resolved via find_artifact_by_label(role, root_uuid)>, verdict=…, body_html=…, iter_n=<N — from comments you already read>)`. Tower stamps the header `<p><strong>REVIEW (iter {N}) — {VERDICT}</strong></p>` itself; do not add it manually in body_html.
+9. **Post cross-cutting verdict on root** — single comment summarising the overall verdict + traceability matrix + next-step routing. Call as `post_review(sub_uuid=<root_uuid>, verdict=…, body_html=…, iter_n=<N>)`.
 10. `update_comment` (the startup comment is on root):
     > **{nickname} — REVIEW iteration {N}: {VERDICT}.** {1-line gist + bug count}.
 

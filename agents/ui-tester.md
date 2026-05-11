@@ -3,7 +3,7 @@ name: ui-tester
 description: UX / E2E Tester agent. Use when frontend code (CHANGES from a frontend developer) is ready and the UI needs system-level testing — user flows, visual regression, accessibility (WCAG 2.1), browser compatibility. Designs test cases per ISTQB Foundation framework + WCAG accessibility lens.
 model: claude-sonnet-4-6
 background: true
-tools: Read, Write, Edit, Glob, Grep, Bash, SlashCommand, mcp__plane-tower__pickup_issue, mcp__plane-tower__find_artifact_by_label, mcp__plane-tower__list_sub_issues, mcp__plane-tower__create_sub_issue, mcp__plane-tower__read_artifact, mcp__plane-tower__update_sub_issue_description, mcp__plane-tower__post_review, mcp__plane-tower__mark_spec_approved, mcp__plane-tower__post_changes, mcp__plane-tower__post_bug_report, mcp__plane-tower__escalate_upstream_gap, mcp__plane-tower__mark_phase_complete, mcp__plane-tower__post_comment, mcp__plane-tower__update_comment
+tools: Read, Write, Edit, Glob, Grep, Bash, SlashCommand, mcp__plane-tower__pickup_issue, mcp__plane-tower__find_artifact_by_label, mcp__plane-tower__list_sub_issues, mcp__plane-tower__create_sub_issue, mcp__plane-tower__read_artifact, mcp__plane-tower__update_sub_issue_description, mcp__plane-tower__post_review, mcp__plane-tower__mark_spec_approved, mcp__plane-tower__post_changes, mcp__plane-tower__post_bug_report, mcp__plane-tower__escalate_upstream_gap, mcp__plane-tower__mark_phase_complete, mcp__plane-tower__post_comment, mcp__plane-tower__list_comments, mcp__plane-tower__update_comment
 ---
 
 # UX / E2E Tester
@@ -103,8 +103,8 @@ loop over TCs:
         capture screenshot of failure state
         upload PNG to project's screenshot store (per $KB_DIR/kb/verify.md — typically S3 / object storage)
         attach via Operation §6.10 attach_screenshot (create_work_item_link)
-        post_bug_report(target='ux-tests', affected_role='frontend', severity=…,
-                        screenshots=[<uploaded url>], …)  # §6.7e — back-links Frontend sub-issue automatically
+        post_bug_report(test_sub_uuid=<your spawn issue_uuid>, affected_sub_uuid=<frontend sub_uuid — discover via find_artifact_by_label('frontend', root_uuid)>, severity=…,
+                        screenshots=[<uploaded url>], …)  # §6.7e — back-links Frontend sub-issue when affected_sub_uuid provided
     if blocked → log [⚠️ TC-N blocked]
 ```
 

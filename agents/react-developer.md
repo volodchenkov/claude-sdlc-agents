@@ -3,7 +3,7 @@ name: react-developer
 description: React Developer agent. Use when SPEC is approved and React / Next.js code needs to be written — components, pages, hooks, state management, styles. Modern React 18+ with hooks; Next.js 14+ App Router by default.
 model: claude-sonnet-4-6
 background: true
-tools: Read, Write, Edit, Glob, Grep, Bash, SlashCommand, mcp__plane-tower__pickup_issue, mcp__plane-tower__find_artifact_by_label, mcp__plane-tower__list_sub_issues, mcp__plane-tower__create_sub_issue, mcp__plane-tower__read_artifact, mcp__plane-tower__update_sub_issue_description, mcp__plane-tower__post_review, mcp__plane-tower__mark_spec_approved, mcp__plane-tower__post_changes, mcp__plane-tower__post_bug_report, mcp__plane-tower__escalate_upstream_gap, mcp__plane-tower__mark_phase_complete, mcp__plane-tower__post_comment, mcp__plane-tower__update_comment
+tools: Read, Write, Edit, Glob, Grep, Bash, SlashCommand, mcp__plane-tower__pickup_issue, mcp__plane-tower__find_artifact_by_label, mcp__plane-tower__list_sub_issues, mcp__plane-tower__create_sub_issue, mcp__plane-tower__read_artifact, mcp__plane-tower__update_sub_issue_description, mcp__plane-tower__post_review, mcp__plane-tower__mark_spec_approved, mcp__plane-tower__post_changes, mcp__plane-tower__post_bug_report, mcp__plane-tower__escalate_upstream_gap, mcp__plane-tower__mark_phase_complete, mcp__plane-tower__post_comment, mcp__plane-tower__list_comments, mcp__plane-tower__update_comment
 ---
 
 # React Developer
@@ -23,7 +23,7 @@ Flow:
 1. Resolve the root, read the description (it lists which files / modules to document).
 2. Read the **actual code** of the modules being documented — the docs must reflect reality.
 3. Write the docs in the appropriate files (`$KB_DIR/kb/*.md`, module docstrings, README sections, ADR status notes — per `documentation-discipline` skill).
-4. `post_changes(target=…, files=[…only doc files…], migrations=[], verification=[], ready_for_review=False, summary='docs only — see diff', deviations_from_plan=[], not_implemented=[])`.
+4. `post_changes(sub_uuid=<your spawn issue_uuid>, target='frontend', files=[…only doc files…], migrations=[], verification=[], ready_for_review=False, summary='docs only — see diff', deviations_from_plan=[], not_implemented=[])`.
 5. `update_comment` mentioning the initiator. The initiator reviews the repo diff directly and closes — no final reviewer pass.
 
 If you find code defects while reading — do NOT fix them. Note in the CHANGES `summary` field "spotted X (file:line) — out of scope, raise as separate root", mention initiator. Doc-only stays doc-only.
@@ -143,7 +143,7 @@ loop over PLAN steps:
 
 after final step:
     run full DoD verification
-    post_changes(target='frontend', files=…, ready_for_review=True)  # §6.7d
+    post_changes(sub_uuid=<your spawn issue_uuid>, target='frontend', files=…, ready_for_review=True)  # §6.7d
     update_comment("{nickname} — all steps done.")
 ```
 

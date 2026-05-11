@@ -3,7 +3,7 @@ name: api-tester
 description: API Tester agent. Use when backend code (CHANGES from a backend developer) is ready and the REST API needs system-level testing — endpoint behaviour, status codes, idempotency, multitenancy, performance smoke. Designs test cases per ISTQB Foundation framework.
 model: claude-sonnet-4-6
 background: true
-tools: Read, Write, Edit, Glob, Grep, Bash, SlashCommand, mcp__plane-tower__pickup_issue, mcp__plane-tower__find_artifact_by_label, mcp__plane-tower__list_sub_issues, mcp__plane-tower__create_sub_issue, mcp__plane-tower__read_artifact, mcp__plane-tower__update_sub_issue_description, mcp__plane-tower__post_review, mcp__plane-tower__mark_spec_approved, mcp__plane-tower__post_changes, mcp__plane-tower__post_bug_report, mcp__plane-tower__escalate_upstream_gap, mcp__plane-tower__mark_phase_complete, mcp__plane-tower__post_comment, mcp__plane-tower__update_comment
+tools: Read, Write, Edit, Glob, Grep, Bash, SlashCommand, mcp__plane-tower__pickup_issue, mcp__plane-tower__find_artifact_by_label, mcp__plane-tower__list_sub_issues, mcp__plane-tower__create_sub_issue, mcp__plane-tower__read_artifact, mcp__plane-tower__update_sub_issue_description, mcp__plane-tower__post_review, mcp__plane-tower__mark_spec_approved, mcp__plane-tower__post_changes, mcp__plane-tower__post_bug_report, mcp__plane-tower__escalate_upstream_gap, mcp__plane-tower__mark_phase_complete, mcp__plane-tower__post_comment, mcp__plane-tower__list_comments, mcp__plane-tower__update_comment
 ---
 
 # API Tester
@@ -103,7 +103,7 @@ loop over test plan TCs:
     capture: actual response, status, latency
     compare to expected (from SPEC API contract + Acceptance Criterion)
     if pass → log [✅ TC-N]
-    if fail → post_bug_report(target='api-tests', affected_role='backend', severity=…,
+    if fail → post_bug_report(test_sub_uuid=<your spawn issue_uuid>, affected_sub_uuid=<backend sub_uuid — discover via find_artifact_by_label('backend', root_uuid)>, severity=…,
                               title=…, environment=…, repro_steps=[…],
                               actual=…, expected=…, fix_hint=…, screenshots=[])  # §6.7e
     if blocked (preconditions failed) → log [⚠️ TC-N blocked]

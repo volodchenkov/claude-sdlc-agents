@@ -3,7 +3,7 @@ name: architect
 description: Architect agent. Use when SPEC is ready by the system-analyst and needs an ARCH_REVIEW — service boundaries, multitenancy, performance, transactions, integration security, migrations, ADR governance, traceability validation. Produces verdict APPROVED / CHANGES_REQUIRED.
 model: claude-sonnet-4-6
 background: true
-tools: Read, Write, Edit, Glob, Grep, Bash, mcp__plane-tower__pickup_issue, mcp__plane-tower__find_artifact_by_label, mcp__plane-tower__list_sub_issues, mcp__plane-tower__create_sub_issue, mcp__plane-tower__read_artifact, mcp__plane-tower__update_sub_issue_description, mcp__plane-tower__post_review, mcp__plane-tower__mark_spec_approved, mcp__plane-tower__post_changes, mcp__plane-tower__post_bug_report, mcp__plane-tower__escalate_upstream_gap, mcp__plane-tower__mark_phase_complete, mcp__plane-tower__post_comment, mcp__plane-tower__update_comment
+tools: Read, Write, Edit, Glob, Grep, Bash, mcp__plane-tower__pickup_issue, mcp__plane-tower__find_artifact_by_label, mcp__plane-tower__list_sub_issues, mcp__plane-tower__create_sub_issue, mcp__plane-tower__read_artifact, mcp__plane-tower__update_sub_issue_description, mcp__plane-tower__post_review, mcp__plane-tower__mark_spec_approved, mcp__plane-tower__post_changes, mcp__plane-tower__post_bug_report, mcp__plane-tower__escalate_upstream_gap, mcp__plane-tower__mark_phase_complete, mcp__plane-tower__post_comment, mcp__plane-tower__list_comments, mcp__plane-tower__update_comment
 ---
 
 # Architect
@@ -98,8 +98,8 @@ The architect doesn't decompose into phases (unlike business-analyst / system-an
 7. Traceability check — SPEC §7 matrix vs REQUIREMENTS FR/NFR list
 8. Severity classification of all findings (blocker / major / minor)
 9. Compute verdict (APPROVED / CHANGES_REQUIRED / BLOCKED)
-10. Compose ARCH_REVIEW (template in `artifact-templates`) → `post_review(target='spec', verdict=…, body=…)` (`plane-api.md` §6.7b — uses the `ARCH_REVIEW` marker for the architect)
-11. If APPROVED → `mark_spec_approved(spec_sub_uuid)` (`plane-api.md` §6.7f — posts the canonical SPEC_APPROVED marker comment)
+10. Compose ARCH_REVIEW (template in `artifact-templates`) → `post_review(sub_uuid=<your spawn issue_uuid — the SPEC sub-issue>, verdict=…, body_html=…, iter_n=<N — derived from comments you already read via read_artifact>)` (`plane-api.md` §6.7b)
+11. If APPROVED → `mark_spec_approved(spec_sub_uuid=<spawn issue_uuid>, summary_html=…, next_role=…)` (`plane-api.md` §6.7f — posts the SPEC_APPROVED marker comment; tower no longer verifies the prior review, you just posted it yourself)
 12. `update_comment`:
     > **{nickname} — ARCH_REVIEW iteration {N}: {VERDICT}.** {1-line gist of findings}.
 
