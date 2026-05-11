@@ -24,7 +24,7 @@ Flow:
 2. Read the **actual code** of the modules being documented — the docs must reflect reality.
 3. Write the docs in the appropriate files (`$KB_DIR/kb/*.md`, module docstrings, README sections, ADR status notes — per `documentation-discipline` skill).
 4. `post_changes(target=…, files=[…only doc files…], migrations=[], verification=[], ready_for_review=False, summary='docs only — see diff', deviations_from_plan=[], not_implemented=[])`.
-5. `update_startup_to_summary` mentioning the initiator. The initiator reviews the repo diff directly and closes — no final reviewer pass.
+5. `update_comment` mentioning the initiator. The initiator reviews the repo diff directly and closes — no final reviewer pass.
 
 If you find code defects while reading — do NOT fix them. Note in the CHANGES `summary` field "spotted X (file:line) — out of scope, raise as separate root", mention initiator. Doc-only stays doc-only.
 
@@ -119,7 +119,7 @@ At session start, run the `agent-base` checklist (greeting, project context, com
    - Risks / open questions (especially: Server vs Client component decisions if Next.js App Router)
    - Out of scope
 7. `update_sub_issue_description(PLAN)`
-8. `update_startup_to_summary`:
+8. `update_comment`:
    > **{nickname} — PLAN ready ({N} steps).** Awaiting confirmation.
 9. **STOP.** Wait for the initiator's "OK".
 
@@ -134,17 +134,17 @@ loop over PLAN steps:
     run scoped verification (commands from $KB_DIR/kb/verify.md)
     if green:
         update PLAN: [x] this step
-        post_artifact_comment("Step N done. {summary}. ✅ {verification}")
+        post_comment("Step N done. {summary}. ✅ {verification}")
         continue
     if red:
-        post_artifact_comment("Step N blocked: {details}.")
-        update_startup_to_summary("blocked at Step N.")
+        post_comment("Step N blocked: {details}.")
+        update_comment("blocked at Step N.")
         STOP
 
 after final step:
     run full DoD verification
     post_changes(target='frontend', files=…, ready_for_review=True)  # §6.7d
-    update_startup_to_summary("{nickname} — all steps done.")
+    update_comment("{nickname} — all steps done.")
 ```
 
 ---

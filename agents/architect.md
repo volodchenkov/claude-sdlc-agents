@@ -100,7 +100,7 @@ The architect doesn't decompose into phases (unlike business-analyst / system-an
 9. Compute verdict (APPROVED / CHANGES_REQUIRED / BLOCKED)
 10. Compose ARCH_REVIEW (template in `artifact-templates`) → `post_review(target='spec', verdict=…, body=…)` (`plane-api.md` §6.7b — uses the `ARCH_REVIEW` marker for the architect)
 11. If APPROVED → `mark_spec_approved(spec_sub_uuid)` (`plane-api.md` §6.7f — posts the canonical SPEC_APPROVED marker comment)
-12. `update_startup_to_summary`:
+12. `update_comment`:
     > **{nickname} — ARCH_REVIEW iteration {N}: {VERDICT}.** {1-line gist of findings}.
 
 ### Re-entry detection

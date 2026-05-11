@@ -124,6 +124,18 @@ the business-analyst uses this to track which interview phase has been completed
 
 the system-analyst fills this template across **6 phases** (one per agent run). See `system-design-techniques` skill for the rationale of each section. Re-entry uses the Phase status section at the bottom.
 
+### Conciseness rules — keep SPEC under control
+
+A SPEC is read by the architect, designer, coders, testers, and the final reviewer, often multiple times. A bloated SPEC hits Claude Code's MCP tool-result token cap and silently hangs the reader (the COIN-38 incident: ~110 KB description blocked every downstream agent). Apply these four rules whenever you write or revise the SPEC.
+
+1. **Revisions REPLACE in place. Never accumulate parallel versions.** When the architect's `CHANGES_REQUIRED` or a downstream `BLOCKED — upstream gap` lands on §X.Y, rewrite §X.Y so it reflects the *final, correct* decision — overwrite the prior text. Do not add a "Revision 2" block below the original. Do not paste both versions side-by-side. The whole point of one-sub-per-role is that the SPEC has *exactly one current state*. Record the change as a single line in the `## Revision history` footer (template below): `Rev N — YYYY-MM-DD: <one-line summary; link to the BLOCKED / ARCH_REVIEW comment>`.
+
+2. **ADR-thin by default.** ADRs are decision *records*, not dissertations. The default shape is Context (1–2 sentences) → Decision (1 sentence) → Consequences (2–4 bullets). Skip `Alternatives considered` unless an alternative was actually proposed and rejected with a substantive reason — copy-pasting "Option B: did not pursue because it was worse" adds tokens, not signal. Use the thin template below; only stretch into the long template when the decision is genuinely controversial.
+
+3. **Reference, don't quote.** When SPEC §X.Y addresses a requirement, write `implements FR-3` and stop — do not re-paste the FR text. The reviewer can open REQUIREMENTS to see it; the model can resolve cross-references. Quoting upstream artifacts triples the bytes for zero new information.
+
+4. **Section soft budget: ~400 words per §X.Y subsection, ~2000 words per §X top-level section.** If you blow past, something is wrong: either you're padding, or the subsection should be split into siblings, or it belongs in a separate sub-issue. Word budgets are not hard limits enforced by the tool layer — they are a smell test. Re-read the section; if half of it could be removed without losing meaning, remove that half.
+
 ```markdown
 # SPEC: {Title}
 
@@ -248,12 +260,17 @@ Multi-step deployment to maintain backward compatibility:
 ### Architectural Decision Records (ADR)
 Use this for any non-obvious architectural choice. Status: Proposed → Accepted (the architect approves) / Superseded.
 
-#### ADR-1: {short title}
-**Status:** Proposed
-**Context:** {forces in play}
-**Decision:** {chosen option}
-**Consequences:** {positive / negative / neutral}
-**Alternatives considered:** {with rejection reasons}
+**Thin template (default).** Three required fields, three sentences if possible:
+
+#### ADR-N: {decision in one phrase}
+**Status:** Proposed | Accepted | Superseded by ADR-M
+**Context:** {1–2 sentences — what's the force, why is this even a decision}
+**Decision:** {chosen option, one sentence}
+**Consequences:**
+- {positive bullet}
+- {negative or trade-off bullet}
+
+**Extended template — only when the decision is genuinely controversial** (someone proposed an alternative with a substantive case for it). Add an `Alternatives considered` block listing each rejected option in one sentence with one-line rejection reason. Do not pad with imagined alternatives; an ADR with three theoretical alternatives no one actually argued for is noise.
 
 ### Open questions
 - Numbered. Each addresses the initiator or the architect explicitly.
@@ -283,6 +300,14 @@ the system-analyst uses this for re-entry detection — first unchecked phase = 
 - [ ] Phase 4: Frontend & Business Rules → fills section 4
 - [ ] Phase 5: Quality Attributes → fills section 5
 - [ ] Phase 6: Final lock — ADRs + Open questions resolved + Traceability matrix complete; ready for the architect ARCH_REVIEW
+
+## Revision history
+
+One line per revision after the initial Phase 6 lock. Append only — earlier entries stay. Format: `Rev N — YYYY-MM-DD: <one-line summary; link to ARCH_REVIEW / BLOCKED comment>`.
+
+- Rev 1 — initial Phase 6 lock
+- Rev 2 — YYYY-MM-DD: <summary of CHANGES_REQUIRED resolution, link to ARCH_REVIEW iter K>
+- ...
 ```
 
 ---

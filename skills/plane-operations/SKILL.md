@@ -21,19 +21,19 @@ This skill provides the **operational vocabulary** every agent uses to interact 
 | **list_sub_issues** | All children of a root in one call (regardless of label). Used by reviewer's audit pass. See `plane-api.md` §6.3b. |
 | **read_artifact** | Read a sub-issue's description + a slice of its comments. Returns Markdown by default (`description_format='markdown'`), with the newest 20 comments and `has_more_comments` so you can page back via `comments_offset`. See `plane-api.md` §6.4. |
 | **create_sub_issue** | First-run only — create your role's sub-issue with proper label and assignee. |
-| **post_startup_comment** | First-run only — log "I started working" comment, save its `comment_id`. |
+| **post_startup_comment** | First-run heartbeat. Tool: `mcp__plane-tower__request_handoff(sub_uuid, target_role='initiator', message_html='@<nick> picking up. Working on it — this comment will be updated when the agent finishes.')`. Save the returned `comment_id`; you'll edit the same comment at end of run via `update_comment`. |
 | **update_sub_issue_description** | When the artifact lives in `description_html` (PLAN, SPEC, Design brief) and needs to be updated. |
 | **mark_phase_complete** | BA / SA — flip `[ ] Phase N` → `[x] Phase N` in your sub-issue's description with ordering check. See `plane-api.md` §6.6b. |
-| **post_artifact_comment** | When the artifact lives as a comment (intermediate notes, ad-hoc updates). For canonical CHANGES / bug reports / reviews use the dedicated ops below. |
+| **post_comment** | Free-form comment on any sub-issue or root (intermediate notes, ad-hoc updates). Tool: `mcp__plane-tower__post_comment(work_item_uuid, comment_html=…)`. For canonical CHANGES / bug reports / reviews use the dedicated ops below. Mentions in `comment_html` are rejected by `_assert_no_mentions` — use `request_handoff` for routing. |
 | **post_changes** | Coder finals — `post_changes(target='backend', files=…, migrations=…, ready_for_review=True)` renders the canonical CHANGES from fields and posts on the role sub-issue. See `plane-api.md` §6.7d. |
 | **post_bug_report** | Testers — `post_bug_report(target='api-tests', affected_role='backend', severity=…, …)` writes the ISTQB bug on the test sub-issue and back-links the affected coder's sub-issue. See `plane-api.md` §6.7e. |
 | **post_review** | Reviewer & architect. Call as `post_review(target=…, verdict=…, body=…)`; the operation routes the comment to the right sub-issue (or root) based on `target` and stamps the iteration marker. See `plane-api.md` §6.7b. |
 | **mark_spec_approved** | Architect — after the final APPROVED ARCH_REVIEW, post the SPEC_APPROVED marker that coders watch for. See `plane-api.md` §6.7f. |
 | **escalate_upstream_gap** | When you find a defect upstream (missing FR, ambiguous AC, broken design contract) — comment in your own sub-issue, mention initiator, STOP. Do not patch locally, do not create a "prerequisite" sub-issue. See `plane-api.md` §6.7c. |
-| **update_startup_to_summary** | At end of run — turn the startup comment into the final "done"/"PLAN ready" summary. |
-| **ask_blocking_question** | When stuck — comment with mention to the initiator, then STOP. |
+| **update_comment** | Tool: `mcp__plane-tower__update_comment(work_item_uuid, comment_id, comment_html=…)`. Edits an existing comment in place. At end of run use it to turn the startup heartbeat into the final "done" / "PLAN ready" summary — same `comment_id`, new body. Mentions in body are rejected; routing goes via `request_handoff` instead. |
+| **ask_blocking_question** | When stuck. Tool: `mcp__plane-tower__request_handoff(sub_uuid, target_role='initiator', message_html='BLOCKING: <question>')`. Tower stamps the initiator mention; you cannot embed it yourself. STOP after the call. |
 | **attach_screenshot** | UX Tester only — upload PNG to object storage, link via `create_work_item_link`. |
-| **redirect_task** | When triggered for a task outside your role — comment with mention to the initiator. |
+| **redirect_task** | When triggered for a task outside your role. Tool: `mcp__plane-tower__request_handoff(sub_uuid, target_role='<correct-role>', message_html='Redirecting to <role>: <one-line reason>')`. Tower resolves the role to a member UUID and stamps the mention. STOP after the call. |
 
 Full operation specs with parameter schemas and examples are in the bundled [`plane-api.md`](plane-api.md) §6.
 
@@ -136,7 +136,7 @@ These invariants override anything below. Violating them is the most common fail
 8. post_startup_comment(my_sub) → save comment_id
 9. Do the role work (varies per agent — see role prompt)
 10. update_sub_issue_description(my_sub, content=<artifact text>)
-    OR post_artifact_comment(my_sub, content=<artifact text>)
+    OR post_comment(my_sub, content=<artifact text>)
 11. update_comment(work_item_uuid, comment_id, "<role> done. Summary.")  # body only, no mention HTML
 ```
 
@@ -146,7 +146,7 @@ These invariants override anything below. Violating them is the most common fail
 3. Read each + scan its comments for prior review markers (`REVIEW (iter N)` / `ARCH_REVIEW (iter N)`) → determine iteration
 4. If artifact unchanged since last review → IDLE, STOP
 5. Compose review, `post_review` on each artifact sub-issue (and root for cross-cutting verdict)
-6. `update_startup_to_summary` (startup comment lives on root since no own sub-issue)
+6. `update_comment` (startup comment lives on root since no own sub-issue)
 
 For re-entry (continuation/rework), skip steps 7-8 and operate on the existing `my_sub`. Full algorithm in [`plane-api.md`](plane-api.md) §7.
 
@@ -158,7 +158,7 @@ For re-entry (continuation/rework), skip steps 7-8 and operate on the existing `
 If your sub-issue already exists, you are in re-entry mode. Update it; don't create a second one.
 
 ### Don't post fresh startup comments on re-entry
-Re-use the existing startup `comment_id` via `update_startup_to_summary`. A linear stack of "I started" comments is noise.
+Re-use the existing startup `comment_id` via `update_comment`. A linear stack of "I started" comments is noise.
 
 ### Don't filter `list_work_items` by `parent` — it doesn't support that
 The MCP tool has no `parent` parameter. Filter by `label_ids` then post-filter results in code:

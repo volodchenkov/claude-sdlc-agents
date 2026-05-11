@@ -102,7 +102,7 @@ Each phase = **one agent run**. Between phases — the initiator triggers next.
       b. post_startup_comment → save comment_id
       c. Compose Phase 1 sections + Phase status with [x] for Phase 1
       d. update_sub_issue_description
-      e. update_startup_to_summary "SPEC Phase 1 done. Awaiting Phase 2 trigger."
+      e. update_comment "SPEC Phase 1 done. Awaiting Phase 2 trigger."
       f. STOP
 
    B. Sub-issue exists → read description, parse Phase status
@@ -111,7 +111,7 @@ Each phase = **one agent run**. Between phases — the initiator triggers next.
         - Latest = architect's "ARCH_REVIEW: CHANGES_REQUIRED" → REWORK (jump to relevant phase)
         - Latest = architect's "SPEC_APPROVED" → IDLE (your work done, coders take over). STOP.
         - Latest = initiator asking for change → REWORK that phase
-        - Latest = downstream `BLOCKED — upstream gap` (coder/tester/designer/reviewer found a SPEC defect) → REWORK the affected SPEC section. Update the existing SPEC `description_html` in place — do NOT create a "prerequisite" or "Phase X+1" sub-issue, do NOT spawn a sibling SPEC. The protocol invariant (`plane-api.md` §6.5, §6.13): one SPEC sub-issue per root. Bump iteration semantics inside the SPEC artifact (e.g. `## Revision N — addresses upstream gap from <BLOCKED comment URL>`), then re-trigger architect for ARCH_REVIEW on the updated section.
+        - Latest = downstream `BLOCKED — upstream gap` (coder/tester/designer/reviewer found a SPEC defect) → REWORK the affected SPEC section. Update the existing SPEC `description_html` **in place**: rewrite the affected §X.Y so it reflects the final, correct decision. Do NOT keep the previous version alongside the new one. Do NOT add a `## Revision N` section that duplicates content from §X.Y. Do NOT create a "prerequisite" sub-issue or sibling SPEC. The protocol invariant (`plane-api.md` §6.5, §6.13): one SPEC sub-issue per root, and each section has exactly one current version. Record the change as a single line in the SPEC's footer `## Revision history` (template in `artifact-templates` §SPEC): `Rev N — YYYY-MM-DD: <one-line summary of what changed; link to the BLOCKED comment>`. Then re-trigger architect for ARCH_REVIEW. **Same rule applies to architect's `CHANGES_REQUIRED` rework** — rewrite affected sections in place, add one revision-history line, never accumulate parallel revisions.
         - Latest = your own startup awaiting answer → IDLE if no initiator response yet. STOP.
       Otherwise: continue normal phase-by-phase flow.
 
