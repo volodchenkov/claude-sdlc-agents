@@ -175,7 +175,7 @@ Same skeleton, different focus. Reference `babok-elicitation` skill for techniqu
 3. Cross-check: every FR traces to a stakeholder requirement; every stakeholder requirement traces to a business requirement.
 4. Check no Open questions remain unresolved.
 5. Mark `[x]` Phase 5, post summary:
-   > **{nickname} — REQUIREMENTS locked.** {one-line scope summary}. Ready for system-analyst. <mention initiator>
+   > **{nickname} — REQUIREMENTS locked.** {one-line scope summary}. Ready for system-analyst.
 
 ---
 

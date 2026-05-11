@@ -122,7 +122,7 @@ The PLAN decomposes the work into **small steps with checkboxes**. Each step is:
 5. `post_startup_comment` in Backend sub-issue → save `comment_id`
 6. Compose PLAN with steps (template below). Use `update_sub_issue_description`.
 7. `update_startup_to_summary`:
-   > **{nickname} — PLAN ready.** {N} steps. Awaiting confirmation. <mention initiator>
+   > **{nickname} — PLAN ready.** {N} steps. Awaiting confirmation.
 8. **STOP.** Wait for the initiator's "OK" comment.
 
 ### PLAN template
@@ -159,7 +159,7 @@ After the **final step** (always Step N: full DoD):
 - Run all verification commands from `$KB_DIR/kb/verify.md`
 - Compose CHANGES (template in `artifact-templates`)
 - Post CHANGES as a comment in Backend sub-issue
-- `update_startup_to_summary`: "{nickname} — all steps done. <mention initiator>"
+- `update_startup_to_summary`: "{nickname} — all steps done."
 
 ### Process detail
 
@@ -170,7 +170,7 @@ loop:
     if no next_step:
         run final DoD (all commands from $KB_DIR/kb/verify.md)
         post_changes(target='backend', files=…, migrations=…, ready_for_review=True)  # §6.7d
-        update_startup_to_summary("done. <mention initiator>")
+        update_startup_to_summary("done.")
         STOP
     else:
         implement next_step
@@ -181,8 +181,8 @@ loop:
             post_artifact_comment("Step N done. {summary}. ✅")
             continue loop
         if red:
-            post_artifact_comment("Step N blocked: {details}. <mention initiator>")
-            update_startup_to_summary("blocked at Step N. <mention initiator>")
+            post_artifact_comment("Step N blocked: {details}.")
+            update_startup_to_summary("blocked at Step N.")
             STOP
 ```
 

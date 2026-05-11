@@ -90,7 +90,7 @@ If the root issue carries the label `pipeline:doc-only` (`plane-api.md` §6.13b)
    - Coverage matrix at the end
 7. `update_sub_issue_description(test plan)`
 8. `update_startup_to_summary`:
-   > **{nickname} — Test plan ready ({N} TCs).** Awaiting confirmation. <mention initiator>
+   > **{nickname} — Test plan ready ({N} TCs).** Awaiting confirmation.
 9. STOP — wait initiator's OK before execution
 
 ### Phase 2: Execute & report bugs
@@ -116,7 +116,7 @@ After all TCs done — post final test report (template in artifact-templates) w
 - Verdict (READY FOR REVIEW: yes / no)
 
 `update_startup_to_summary`:
-> **{nickname} — Phase 2 complete. {P} passed / {F} failed / {B} blocked.** <mention initiator>
+> **{nickname} — Phase 2 complete. {P} passed / {F} failed / {B} blocked.**
 
 ### Phase 2 (regression iteration)
 

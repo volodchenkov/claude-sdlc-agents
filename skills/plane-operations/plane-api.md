@@ -8,19 +8,13 @@
 
 ## 1. Configuration
 
-Agents read these from environment variables (set by Plane Conductor) at startup. Project-specific UUIDs live in your project's gitignored `plane-config.local.md` after `plane-conductor setup`.
+Two env vars are read by the agent itself; everything else is held by the tower MCP server (hydrated at boot from `conductor.d/<workspace>.yaml`) and resolved server-side when you call a tool.
 
 | Key | Source | Used for |
 |---|---|---|
-| `PLANE_BASE_URL` | env / `plane-config.local.md` | comment links |
-| `PLANE_WORKSPACE_SLUG` | env | MCP server prefix `mcp__plane-<slug>__*` |
-| `PROJECT_ID` | env | passed to every MCP call |
-| `PROJECT_IDENTIFIER` | env | the short code (e.g. `ACME`) used in `<PROJECT_IDENTIFIER>-<N>` issue keys |
-| `INITIATOR_UUID` | env | the human user agents `@mention` |
 | `AGENT_NICKNAME` | env | this agent's bot nickname for greetings + identifying own comments |
 | `AGENT_MEMBER_ID` | env | this agent's bot member UUID for `assignees` field |
-| State UUIDs (`STATE_BACKLOG`, `STATE_IN_PROGRESS`, `STATE_DONE`) | `plane-config.local.md` | optional decorative status |
-| Label UUIDs (`LABEL_ARTIFACT_SPEC`, etc. — see §4) | `plane-config.local.md` | sub-issue creation + lookup |
+| workspace slug, project UUID, base URL, initiator UUID, label UUIDs, member UUIDs | tower (server-side) | passed implicitly by the structured tools (`pickup_issue`, `find_artifact_by_label`, `post_review`, …); pass `workspace=<slug>` only when one workspace can't be inferred |
 
 ---
 
@@ -640,7 +634,7 @@ Before the first pipeline run, `plane-conductor setup` should:
 - [ ] Create labels per §4 (8 artifact + 10 role)
 - [ ] Optional: create `Review` and `Blocked` states
 - [ ] Configure your screenshot store (S3 bucket / object storage) for §6.10
-- [ ] Persist resolved UUIDs (project, members, labels, states) into `plane-config.local.md` for use in prompts and helpers
+- [ ] Persist resolved UUIDs (project, members, labels, states) into the workspace's `conductor.d/<workspace>.yaml` — the tower hydrates them at boot and exposes them to agents through the structured MCP tools
 
 ---
 
