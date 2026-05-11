@@ -110,8 +110,8 @@ Like the architect's ARCH_REVIEW, the reviewer doesn't decompose into phases. On
    - **Cross-cutting concerns**: implementation drift from SPEC, test coverage gaps, UX intent match
 6. Classify findings (blocker / major / minor) per `code-review-discipline` skill
 7. Compute verdict (APPROVED / CHANGES_REQUIRED / BLOCKED)
-8. **Post per-artifact reviews** — for each artifact with findings, `post_review` on that artifact's sub-issue. Comments must start with `<p><strong>REVIEW (iter {N}) — {VERDICT}</strong></p>` so future iteration detection can find them.
-9. **Post cross-cutting verdict on root** — single comment summarising the overall verdict + traceability matrix + next-step routing (which agents the initiator should re-trigger). Same `REVIEW (iter N) — <verdict>` marker.
+8. **Post per-artifact reviews** — for each artifact with findings, `post_review(sub_uuid=<artifact sub_uuid resolved via find_artifact_by_label(role, root_uuid)>, verdict=…, body_html=…, iter_n=<N — from comments you already read>)`. Tower stamps the header `<p><strong>REVIEW (iter {N}) — {VERDICT}</strong></p>` itself; do not add it manually in body_html.
+9. **Post cross-cutting verdict on root** — single comment summarising the overall verdict + traceability matrix + next-step routing. Call as `post_review(sub_uuid=<root_uuid>, verdict=…, body_html=…, iter_n=<N>)`.
 10. `update_comment` (the startup comment is on root):
     > **{nickname} — REVIEW iteration {N}: {VERDICT}.** {1-line gist + bug count}.
 

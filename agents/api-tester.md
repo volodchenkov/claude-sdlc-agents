@@ -103,7 +103,7 @@ loop over test plan TCs:
     capture: actual response, status, latency
     compare to expected (from SPEC API contract + Acceptance Criterion)
     if pass → log [✅ TC-N]
-    if fail → post_bug_report(target='api-tests', affected_role='backend', severity=…,
+    if fail → post_bug_report(test_sub_uuid=<your spawn issue_uuid>, affected_sub_uuid=<backend sub_uuid — discover via find_artifact_by_label('backend', root_uuid)>, severity=…,
                               title=…, environment=…, repro_steps=[…],
                               actual=…, expected=…, fix_hint=…, screenshots=[])  # §6.7e
     if blocked (preconditions failed) → log [⚠️ TC-N blocked]

@@ -328,50 +328,39 @@ mcp__plane-<workspace>__create_work_item_comment(
 
 ### 6.7b post_review (reviewer + architect)
 
-A review is a comment posted on the sub-issue (or root) whose contents you reviewed — the location encodes the scope. Agents invoke this by name (`post_review(target='backend', verdict='CHANGES_REQUIRED', body=…)`); the recipe below is what that means in MCP terms.
+A review is a comment posted on the sub-issue (or root) whose contents you reviewed — the location encodes the scope. **The caller passes `sub_uuid` directly** — tower no longer re-discovers it from `(target, root_uuid)`.
 
-**Targets and routing:**
+**How to get `sub_uuid`:**
 
-| `target=` | Resolves to | Use for |
-|---|---|---|
-| `spec` | sub-issue with `artifact:spec` | SPEC consistency, traceability, ADRs (architect uses this for `ARCH_REVIEW`) |
-| `backend` | sub-issue with `artifact:backend` | Backend implementation review |
-| `frontend` | sub-issue with `artifact:frontend` | Frontend implementation review |
-| `api-tests` | sub-issue with `artifact:api-testing` | API test plan / report review |
-| `ux-tests` | sub-issue with `artifact:ux-testing` | UX test plan / report review |
-| `design` | sub-issue with `artifact:design` | Design brief or Mode B verdict review |
-| `root` | the root issue itself | Cross-cutting end-to-end verdict |
+- **Architect** / **coders**: `sub_uuid` equals your spawn `issue_uuid` (you were spawned on your own artifact's sub-issue).
+- **Final reviewer** iterating over multiple artifacts: resolve per-artifact via `find_artifact_by_label(role, root_uuid)` where `role` ∈ `spec` / `design` / `backend` / `frontend` / `api-tests` / `ux-tests`. For the cross-cutting verdict use `sub_uuid=root_uuid`.
+
+**How to compute `iter_n`:** read existing comments on the sub-issue (via `read_artifact`, which already returns the latest `comments_limit` comments by default), scan for prior `REVIEW (iter X) —` markers authored by your member id, and pass `iter_n = max(X) + 1` (or `1` if none).
 
 **Recipe:**
 
 ```python
-# 1. Resolve target_uuid:
-#    target == 'root'  → root_uuid
-#    else              → find_artifact_by_label(f"artifact:{target_to_label}", parent=root_uuid)
-target_uuid = ...
+# 1. Determine iteration N from comments you already read via read_artifact:
+prior = [c for c in artifact.comments if c.author == AGENT_MEMBER_ID and re.search(r"REVIEW \(iter (\d+)\)", c.comment)]
+N = (max(int(re.search(r"\(iter (\d+)\)", c.comment).group(1)) for c in prior) + 1) if prior else 1
 
-# 2. Determine iteration N by scanning target's comments for prior markers
-#    `REVIEW (iter X) —` or `ARCH_REVIEW (iter X) —` authored by AGENT_MEMBER_ID:
-prior = [c for c in list_comments(target_uuid) if c.author == AGENT_MEMBER_ID and re.search(r"(REVIEW|ARCH_REVIEW) \(iter (\d+)\)", c.html)]
-N = (max(int(re.search(r"\(iter (\d+)\)", c.html).group(1)) for c in prior) + 1) if prior else 1
-
-# 3. Idempotency guard — if your last review on this target is the most recent activity AND
+# 2. Idempotency guard — if your last review is the most recent activity AND
 #    nothing has changed since (no newer comment by anyone else, no description edit) → IDLE, STOP.
 
-# 4. Post via tower (auto-stamps initiator mention; pass next_role to also ping the role that should pick up next):
+# 3. Post via tower (auto-stamps initiator mention; pass next_role to also ping the role that should pick up next):
 mcp__plane-tower__post_review(
-    target=target,                # 'spec' | 'backend' | 'frontend' | 'api-tests' | 'ux-tests' | 'design' | 'root'
+    sub_uuid=sub_uuid,            # the sub-issue being reviewed; for architect/coders this is your spawn issue_uuid
     verdict=verdict,              # 'APPROVED' | 'CHANGES_REQUIRED' | 'BLOCKED'
     body_html="<p>{findings, severity, traceability}</p>",   # NO <mention-component> — tower refuses
-    root_uuid=root_uuid,
+    iter_n=N,
     next_role=None,               # e.g. 'system-analyst' if you want to ping the SA on CHANGES_REQUIRED
-    workspace="<workspace_slug>",
+    workspace="<workspace_slug>", # usually inferred from WORKSPACE_SLUG env
 )
 ```
 
-`marker` is `ARCH_REVIEW` for the architect and `REVIEW` for the final reviewer; tower picks it from `AGENT_NICKNAME`. `verdict` is `APPROVED` / `CHANGES_REQUIRED` / `BLOCKED`. The body must not contain `<mention-component>` — the tower stamps initiator (and optional `next_role`) itself.
+Tower stamps the header `<p><strong>REVIEW (iter {N}) — {VERDICT}.</strong></p>` itself; do not include it in `body_html`. The body must not contain `<mention-component>` — the tower stamps initiator (and optional `next_role`) itself.
 
-A single run may invoke `post_review` against multiple targets (one per artifact with findings) plus a cross-cutting `target='root'`. Each call is independent; iteration counters are per-target.
+A single run may invoke `post_review` against multiple sub-issues (one per artifact with findings) plus a cross-cutting one on `root_uuid`. Each call is independent; iteration counters are per-sub-issue.
 
 ### 6.7c escalate_upstream_gap (any agent finding a defect upstream)
 When a downstream agent (coder, tester, designer, reviewer) discovers a gap that belongs upstream — missing FR in SPEC, ambiguous AC, contradictory requirement, design decision needed — do NOT create a `prerequisite` sub-issue. Do NOT silently fix it locally. Escalate:
@@ -390,11 +379,12 @@ mcp__plane-tower__escalate_upstream_gap(
 Then STOP. The initiator decides whether to re-trigger the upstream role; that role updates its **existing** artifact (no new sub-issue) and the initiator re-triggers you. This is how nuance is handled: artifacts are mutable, sub-issues are stable.
 
 ### 6.7d post_changes (coders)
-The coders' final CHANGES summary on a Backend / Frontend sub-issue. Wraps the `artifact-templates` CHANGES template — agent supplies fields, operation renders the canonical HTML and posts as a comment.
+The coders' final CHANGES summary on a Backend / Frontend sub-issue. Wraps the `artifact-templates` CHANGES template — agent supplies fields, operation renders the canonical HTML and posts as a comment **on the sub-issue identified by `sub_uuid`** (= your spawn `issue_uuid`).
 
 ```python
 post_changes(
-    target='backend',           # 'backend' or 'frontend'
+    sub_uuid=<your spawn issue_uuid>,
+    target='backend',           # 'backend' or 'frontend' — used for display label + OpenAPI defense
     files=[                     # list of changed files with one-line summaries
         ("apps/orders/models.py", "Add `Order.tracking_number`"),
         ("apps/orders/serializers.py", "URL-encode tracking_number"),
@@ -412,25 +402,23 @@ post_changes(
 ```
 
 Recipe:
-1. Resolve `target_uuid = find_artifact_by_label('artifact:' + target, parent=root_uuid)`.
-2. Render the canonical CHANGES section per `artifact-templates` SKILL (sections: Summary, Files, Migrations, Performance, Documentation, READY FOR REVIEW).
-3. `create_work_item_comment(target_uuid, comment_html)`.
+1. Tower renders the canonical CHANGES section per `artifact-templates` SKILL (sections: Summary, Files, Migrations, Performance, Documentation, READY FOR REVIEW).
+2. `create_work_item_comment(sub_uuid, comment_html)`.
 
 Validations the operation enforces:
 - If `migrations` is non-empty → the rendered HTML includes a "## Migrations" section.
 - If `ready_for_review=True` → all DoD checkboxes from your role prompt must be reflected in the body (no gaps).
-- The same `target` always resolves to the same single sub-issue (one-sub-per-role invariant, §6.5).
 - **API documentation defense (Django coders).** When `target='backend'` and any path in `files` matches `**/views.py` / `**/serializers.py` / `**/schemas.py` (or a file diff touches a `class .*View` / `class .*Serializer` / `@extend_schema`), the op refuses `ready_for_review=True` unless `verification` contains a passing run of the project's OpenAPI verifier slash-command (typically `/verify-openapi`, defined in `$KB_DIR/kb/verify.md`; under the hood it wraps `manage.py spectacular --validate --fail-on-warn`). Zero warnings, zero errors. Catches the common pattern where coders ship endpoints without docstrings → ReDoc/Swagger empty in production. Full requirements (view docstring, `@extend_schema`, serializer `help_text`) live in `documentation-discipline` SKILL §"API endpoint documentation — drf-spectacular contract". If the project hasn't yet registered the verifier — `escalate_upstream_gap` (§6.7c).
 - **Frontend coders** (target='frontend') — analogous defense pending; for now `verification` must include the project's own type-check (e.g. `tsc --noEmit`) and lint runs as separate lines.
 
 ### 6.7e post_bug_report (api-tester, ui-tester)
-A bug found during testing. Single op writes the ISTQB-structured comment on your test sub-issue and links the affected coder's sub-issue, so the bug is discoverable from both sides.
+A bug found during testing. Single op writes the ISTQB-structured comment on **your test sub-issue** (`test_sub_uuid` = your spawn `issue_uuid`) and (optionally) links the affected coder's sub-issue.
 
 ```python
 post_bug_report(
-    target='api-tests',          # or 'ux-tests'
-    affected_role='backend',     # role whose sub-issue contains the broken artifact
-    severity='major',            # blocker | major | minor
+    test_sub_uuid=<your spawn issue_uuid>,
+    affected_sub_uuid=<resolved via find_artifact_by_label('backend' or 'frontend', root_uuid)>,  # or None to skip back-link
+    severity='major',            # blocker | major | minor | cosmetic
     title='Order tracking link returns 500 when tracking_number contains special chars',
     environment='storefront-app Vue 3, Chrome 120',
     repro_steps=[
@@ -446,25 +434,28 @@ post_bug_report(
 ```
 
 Recipe:
-1. `target_uuid = find_artifact_by_label('artifact:' + target, parent=root_uuid)` → your test sub-issue.
-2. `affected_uuid = find_artifact_by_label('artifact:' + affected_role, parent=root_uuid)` → coder's sub-issue.
-3. Render ISTQB bug template per `artifact-templates`/`istqb-test-design`.
-4. `create_work_item_comment(target_uuid, comment_html)` — the bug lives in the test sub-issue.
-5. `create_work_item_link(affected_uuid, url=<URL of the comment from step 4>)` — back-link from the affected sub-issue.
+1. Tower renders the ISTQB bug template per `artifact-templates`/`istqb-test-design`.
+2. `create_work_item_comment(test_sub_uuid, comment_html)` — the bug lives in the test sub-issue.
+3. If `affected_sub_uuid` is provided: `create_work_item_link(affected_sub_uuid, url=<URL of the comment from step 2>)` — back-link from the affected sub-issue.
 
 The two-way link prevents bugs from getting lost when reviewer or coder reads only one side.
 
 ### 6.7f mark_spec_approved (architect)
-After the final APPROVED `post_review(target='spec', verdict='APPROVED')`, the architect posts a separate flag comment that downstream coders look for as their "ready to start" signal.
+After posting an APPROVED `post_review`, the architect posts a separate flag comment that downstream coders look for as their "ready to start" signal.
 
 ```python
-mark_spec_approved(spec_sub_uuid)
+mark_spec_approved(
+    spec_sub_uuid=<your spawn issue_uuid>,
+    summary_html="<p>backend scope: …</p><p>frontend scope: …</p>",
+    next_role='django-developer',     # optional — pings the next coder alongside initiator
+)
 ```
 
 Recipe:
-1. Verify the most recent `post_review` on `spec_sub_uuid` is yours and its verdict is `APPROVED` (refuse otherwise).
-2. `create_work_item_comment(spec_sub_uuid, comment_html=template)` — single short comment per `artifact-templates` "SPEC_APPROVED marker".
-3. The marker carries the SPEC iteration number and a mention to the initiator.
+1. `create_work_item_comment(spec_sub_uuid, comment_html=template)` — single short comment per `artifact-templates` "SPEC_APPROVED marker".
+2. The marker carries a mention to the initiator (and optional `next_role`).
+
+Tower no longer verifies the prior review verdict — the architect just posted it themselves one step earlier, the check was a hang source on long pipelines.
 
 Coders find this marker by listing comments on the SPEC sub-issue and matching the canonical opening `<p><strong>SPEC_APPROVED</strong>`.
 

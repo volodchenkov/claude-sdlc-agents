@@ -15,13 +15,13 @@ This skill provides the **uniform Markdown structure** for every artifact produc
 |---|---|
 | REQUIREMENTS | `description_html` of root issue (the business-analyst) |
 | SPEC | `description_html` of SPEC sub-issue (the system-analyst) |
-| ARCH_REVIEW | comment in SPEC sub-issue (the architect) — posted via `post_review(target='spec', …)` |
-| SPEC_APPROVED marker | comment in SPEC sub-issue (the architect, after iterations) — posted via `mark_spec_approved` |
+| ARCH_REVIEW | comment in SPEC sub-issue (the architect) — posted via `post_review(sub_uuid=<spawn issue_uuid>, …)` |
+| SPEC_APPROVED marker | comment in SPEC sub-issue (the architect, after iterations) — posted via `mark_spec_approved(spec_sub_uuid=<spawn issue_uuid>, …)` |
 | Design brief | `description_html` of Design sub-issue (the designer) |
 | PLAN (backend / frontend) | `description_html` of role sub-issue (the django-developer / the vue-developer / the react-developer) |
-| CHANGES (backend / frontend) | comment in role sub-issue (the django-developer / the vue-developer / the react-developer) — posted via `post_changes(target=…, …)` |
+| CHANGES (backend / frontend) | comment in role sub-issue (the django-developer / the vue-developer / the react-developer) — posted via `post_changes(sub_uuid=<spawn issue_uuid>, target=…, …)` |
 | Test plan (API / UX) | `description_html` of test sub-issue (the api-tester / the ui-tester) |
-| Bug report | comment in test sub-issue + back-link to relevant Code sub-issue — posted via `post_bug_report(target=…, affected_role=…, …)` |
+| Bug report | comment in test sub-issue + back-link to relevant Code sub-issue — posted via `post_bug_report(test_sub_uuid=<spawn issue_uuid>, affected_sub_uuid=…, …)` |
 | Test report | comment in test sub-issue (final summary by the api-tester / the ui-tester) |
 | Per-artifact REVIEW | comment on the artifact's sub-issue (the reviewer) |
 | Cross-cutting REVIEW verdict | comment on root issue (the reviewer) |
@@ -369,7 +369,7 @@ Briefly note what's done right — so the system-analyst keeps it on iteration N
 
 ## SPEC_APPROVED marker (the architect — final comment after APPROVED ARCH_REVIEW)
 
-Posted via `mark_spec_approved(spec_sub_uuid, backend_scope=…, frontend_scope=…, design_required=…)` (`plane-api.md` §6.7f). The named op renders the canonical "**SPEC_APPROVED** / Ready for implementation" comment from these fields and posts it on the SPEC sub-issue with a mention to the initiator. Coders find it by scanning SPEC comments for the leading `**SPEC_APPROVED**` token.
+Posted via `mark_spec_approved(spec_sub_uuid=<spawn issue_uuid>, summary_html=…, next_role=…)` (`plane-api.md` §6.7f). The named op renders the canonical "**SPEC_APPROVED**" comment with the architect's summary and posts it on the SPEC sub-issue with a mention to the initiator (and optional `next_role`). Coders find it by scanning SPEC comments for the leading `**SPEC_APPROVED**` token. Tower no longer verifies that a prior APPROVED REVIEW exists — the architect just posted it one step earlier.
 
 ---
 
@@ -486,7 +486,7 @@ Frontend version (the vue-developer / the react-developer) is the same shape wit
 
 ## CHANGES (the django-developer / the vue-developer / the react-developer)
 
-Posted via `post_changes(target='backend'|'frontend', …)` (`plane-api.md` §6.7d). The named op resolves the role's sub-issue, renders the canonical "Files / Migrations / Verification / Performance / Deviations from PLAN / Not implemented" sections from your fields, and posts as a comment.
+Posted via `post_changes(sub_uuid=<spawn issue_uuid>, target='backend'|'frontend', …)` (`plane-api.md` §6.7d). The named op renders the canonical "Files / Migrations / Verification / Performance / Deviations from PLAN / Not implemented" sections from your fields and posts as a comment on `sub_uuid`.
 
 **Fields you must supply** (all but `migrations` and `perf` mandatory):
 
@@ -555,7 +555,7 @@ Every FR / NFR / Acceptance Criterion has at least one TC. Gaps = test plan inco
 
 ## Bug report (the api-tester / the ui-tester) — ISTQB defect
 
-Posted via `post_bug_report(target=…, affected_role=…, …)` (`plane-api.md` §6.7e). The named op renders the canonical ISTQB defect comment (Failing TC / Steps / Actual / Expected / Environment / Suggested area / Attachments) on your test sub-issue and adds a back-link from the affected coder's sub-issue.
+Posted via `post_bug_report(test_sub_uuid=<spawn issue_uuid>, affected_sub_uuid=<resolved via find_artifact_by_label>, …)` (`plane-api.md` §6.7e). The named op renders the canonical ISTQB defect comment (Failing TC / Steps / Actual / Expected / Environment / Suggested area / Attachments) on your test sub-issue and (when `affected_sub_uuid` is provided) adds a back-link from the affected coder's sub-issue.
 
 **Fields you must supply:**
 
