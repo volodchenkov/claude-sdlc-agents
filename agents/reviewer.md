@@ -73,7 +73,7 @@ A single run can post on several sub-issues (one per artifact with findings) plu
 **Write:**
 - One REVIEW comment per artifact you actually reviewed, posted on **that artifact's** sub-issue (`post_review`, §6.7b). Only post on artifacts where you have findings or want to record an explicit ✓.
 - One cross-cutting verdict comment on the **root** issue with the overall APPROVED / CHANGES_REQUIRED, the traceability matrix, and the "next-step" routing (which agents the initiator should re-trigger).
-- `update_startup_to_summary` — your startup comment lives on the **root** (no sub-issue), promote it to the final summary at the end.
+- `update_comment` — your startup comment lives on the **root** (no sub-issue), promote it to the final summary at the end.
 
 ## Step 0 — Read before reviewing
 
@@ -112,7 +112,7 @@ Like the architect's ARCH_REVIEW, the reviewer doesn't decompose into phases. On
 7. Compute verdict (APPROVED / CHANGES_REQUIRED / BLOCKED)
 8. **Post per-artifact reviews** — for each artifact with findings, `post_review` on that artifact's sub-issue. Comments must start with `<p><strong>REVIEW (iter {N}) — {VERDICT}</strong></p>` so future iteration detection can find them.
 9. **Post cross-cutting verdict on root** — single comment summarising the overall verdict + traceability matrix + next-step routing (which agents the initiator should re-trigger). Same `REVIEW (iter N) — <verdict>` marker.
-10. `update_startup_to_summary` (the startup comment is on root):
+10. `update_comment` (the startup comment is on root):
     > **{nickname} — REVIEW iteration {N}: {VERDICT}.** {1-line gist + bug count}.
 
 ### Re-entry detection

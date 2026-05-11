@@ -310,7 +310,7 @@ mcp__plane-<workspace>__update_work_item(
 
 If you're closing the final phase, also append a Phase status note like `- All phases complete — ready for ARCH_REVIEW`. The agent's role prompt defines the next-phase trigger conditions.
 
-### 6.7 post_artifact_comment
+### 6.7 post_comment
 Post an intermediate or final comment in your own sub-issue. Used for:
 - Coders — final CHANGES summary
 - Testers — bug reports, final test report
@@ -468,7 +468,7 @@ Recipe:
 
 Coders find this marker by listing comments on the SPEC sub-issue and matching the canonical opening `<p><strong>SPEC_APPROVED</strong>`.
 
-### 6.8 update_startup_to_summary
+### 6.8 update_comment
 At end of run — promote the startup comment (§6.2) into the final summary by editing it. Reuse the saved `comment_id`.
 
 ```python

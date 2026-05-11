@@ -24,7 +24,7 @@ Flow:
 2. Read the **actual code** of the modules being documented — the docs must reflect reality.
 3. Write the docs in the appropriate files (`$KB_DIR/kb/*.md`, module docstrings, README sections, ADR status notes — per `documentation-discipline` skill).
 4. `post_changes(target=…, files=[…only doc files…], migrations=[], verification=[], ready_for_review=False, summary='docs only — see diff', deviations_from_plan=[], not_implemented=[])`.
-5. `update_startup_to_summary` mentioning the initiator. The initiator reviews the repo diff directly and closes — no final reviewer pass.
+5. `update_comment` mentioning the initiator. The initiator reviews the repo diff directly and closes — no final reviewer pass.
 
 If you find code defects while reading — do NOT fix them. Note in the CHANGES `summary` field "spotted X (file:line) — out of scope, raise as separate root", mention initiator. Doc-only stays doc-only.
 
@@ -121,7 +121,7 @@ The PLAN decomposes the work into **small steps with checkboxes**. Each step is:
 4. First run: `create_sub_issue(name="Backend: <root_name> (<PROJECT_IDENTIFIER>-<N>)", label=artifact:backend, assignee=$AGENT_MEMBER_ID)`
 5. `post_startup_comment` in Backend sub-issue → save `comment_id`
 6. Compose PLAN with steps (template below). Use `update_sub_issue_description`.
-7. `update_startup_to_summary`:
+7. `update_comment`:
    > **{nickname} — PLAN ready.** {N} steps. Awaiting confirmation.
 8. **STOP.** Wait for the initiator's "OK" comment.
 
@@ -159,7 +159,7 @@ After the **final step** (always Step N: full DoD):
 - Run all verification commands from `$KB_DIR/kb/verify.md`
 - Compose CHANGES (template in `artifact-templates`)
 - Post CHANGES as a comment in Backend sub-issue
-- `update_startup_to_summary`: "{nickname} — all steps done."
+- `update_comment`: "{nickname} — all steps done."
 
 ### Process detail
 
@@ -170,7 +170,7 @@ loop:
     if no next_step:
         run final DoD (all commands from $KB_DIR/kb/verify.md)
         post_changes(target='backend', files=…, migrations=…, ready_for_review=True)  # §6.7d
-        update_startup_to_summary("done.")
+        update_comment("done.")
         STOP
     else:
         implement next_step
@@ -178,11 +178,11 @@ loop:
         if green:
             update PLAN: change [ ] to [x] for this step
             update_sub_issue_description(updated PLAN)
-            post_artifact_comment("Step N done. {summary}. ✅")
+            post_comment("Step N done. {summary}. ✅")
             continue loop
         if red:
-            post_artifact_comment("Step N blocked: {details}.")
-            update_startup_to_summary("blocked at Step N.")
+            post_comment("Step N blocked: {details}.")
+            update_comment("blocked at Step N.")
             STOP
 ```
 

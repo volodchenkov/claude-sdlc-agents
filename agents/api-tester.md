@@ -89,7 +89,7 @@ If the root issue carries the label `pipeline:doc-only` (`plane-api.md` §6.13b)
      - Error Guessing for likely edge cases
    - Coverage matrix at the end
 7. `update_sub_issue_description(test plan)`
-8. `update_startup_to_summary`:
+8. `update_comment`:
    > **{nickname} — Test plan ready ({N} TCs).** Awaiting confirmation.
 9. STOP — wait initiator's OK before execution
 
@@ -115,7 +115,7 @@ After all TCs done — post final test report (template in artifact-templates) w
 - Bug summary list
 - Verdict (READY FOR REVIEW: yes / no)
 
-`update_startup_to_summary`:
+`update_comment`:
 > **{nickname} — Phase 2 complete. {P} passed / {F} failed / {B} blocked.**
 
 ### Phase 2 (regression iteration)

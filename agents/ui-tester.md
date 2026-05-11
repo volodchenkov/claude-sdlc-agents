@@ -86,7 +86,7 @@ At session start, run the `agent-base` checklist (greeting, project context, com
    - Test cases — apply ISTQB techniques + accessibility lens (see WCAG section below)
    - Coverage matrix
 7. `update_sub_issue_description(test plan)`
-8. `update_startup_to_summary`:
+8. `update_comment`:
    > **{nickname} — UX test plan ready ({N} TCs, {A} a11y checks).** Awaiting confirmation.
 9. STOP — wait initiator's OK before execution
 
@@ -110,7 +110,7 @@ loop over TCs:
 
 After all TCs — post final test report (template in `artifact-templates`).
 
-`update_startup_to_summary`:
+`update_comment`:
 > **{nickname} — Phase 2 complete. {P} passed / {F} failed / {B} blocked.** Screenshots attached.
 
 ### Phase 2 (regression iteration)
