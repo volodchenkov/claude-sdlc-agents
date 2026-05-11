@@ -207,17 +207,40 @@ children = [i for i in items if i["parent"] == "<root_uuid>"]
 The MCP tool has no `parent` filter; post-filter in code. Plane caps results — for large projects pass `per_page=100` and paginate.
 
 ### 6.4 read_artifact
-Read full artifact = description + comments of a sub-issue.
+Read a sub-issue's description + a slice of its comments. Tower-managed:
 
 ```python
-sub = mcp__plane-<workspace>__retrieve_work_item(project_id=PROJECT_ID, work_item_id="<sub_uuid>")
-description_html = sub["description_html"]
-
-comments = mcp__plane-<workspace>__list_work_item_comments(
-    project_id=PROJECT_ID,
-    work_item_id="<sub_uuid>",
+mcp__plane-tower__read_artifact(
+    sub_uuid="<sub_uuid>",
+    description_format="markdown",   # default; or "html" if you genuinely need raw markup
+    comments_limit=20,                # default; newest-first
+    comments_offset=0,                # bump to page back into older comments
 )
 ```
+
+Response shape (all keys present on success):
+
+```jsonc
+{
+  "id": "...", "name": "...", "labels": [...], "state": "...", "updated_at": "...",
+  "description": "...",            // markdown by default; raw HTML if format='html'
+  "description_format": "markdown",
+  "description_size_chars": 12345,
+  "comments": [
+    {"id": "...", "comment": "...", "actor": "...", "created_at": "...", "updated_at": "..."},
+    // ... newest first, sliced [offset : offset + limit]
+  ],
+  "comments_order": "desc",
+  "comments_offset": 0,
+  "comments_returned": 20,
+  "total_comments": 36,
+  "has_more_comments": true
+}
+```
+
+**Why markdown by default.** Plane stores the editor's HTML (`<p class="..." style="...">…`) which is ~30% markup by weight. For an agent's reasoning pass markdown carries the same structure (`# headings`, `- lists`, `**bold**`, fenced code, `[text](url)`) but at ~0.7× the size. On bloated SPECs the raw HTML response had been over Claude Code's MCP tool-result token cap, silently hanging agents in `--print` mode. Use `description_format='html'` only when you specifically need raw markup (e.g. relaying it back to Plane verbatim).
+
+**Pagination.** Comments default to the newest 20 — that's the slice that carries the latest verdict, clarification, or re-entry signal. If `has_more_comments` is true and you need older context, call again with `comments_offset=20` (then 40, …). `comments_limit=0` returns no comments at all — use it to read just the description.
 
 ### 6.5 create_sub_issue
 

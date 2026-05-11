@@ -19,7 +19,7 @@ This skill provides the **operational vocabulary** every agent uses to interact 
 | **pickup_issue** | At the start of every run. Resolves `<PROJECT_IDENTIFIER>-<N>` to a UUID. |
 | **find_artifact_by_label** | To locate an upstream artifact (SPEC, Backend CHANGES, etc.) among root sub-issues. |
 | **list_sub_issues** | All children of a root in one call (regardless of label). Used by reviewer's audit pass. See `plane-api.md` §6.3b. |
-| **read_artifact** | To read full content of an artifact = description + comments of its sub-issue. |
+| **read_artifact** | Read a sub-issue's description + a slice of its comments. Returns Markdown by default (`description_format='markdown'`), with the newest 20 comments and `has_more_comments` so you can page back via `comments_offset`. See `plane-api.md` §6.4. |
 | **create_sub_issue** | First-run only — create your role's sub-issue with proper label and assignee. |
 | **post_startup_comment** | First-run only — log "I started working" comment, save its `comment_id`. |
 | **update_sub_issue_description** | When the artifact lives in `description_html` (PLAN, SPEC, Design brief) and needs to be updated. |
