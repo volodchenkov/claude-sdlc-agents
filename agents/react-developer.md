@@ -125,7 +125,20 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 
 ### Phase 2: Implementation (single run, walks all steps)
 
-After the initiator approves PLAN:
+After the initiator approves PLAN.
+
+**What counts as an approve marker** (case-insensitive substring match on the latest initiator/reviewer comment after your `PLAN ready` summary):
+
+- English: `approve`, `approved`, `PLAN approved`, `proceed`, `go ahead`, `ship it`, `OK` (standalone or at sentence start), `LGTM`, `start coding`, `start implementation`, `proceed to Phase 2`, `proceed to implementation`
+- Russian: `приступай`, `приступаем`, `начинай`, `начни`, `го`, `ок`, `да`, `делай`, `вперёд`, `подтверждаю`, `утверждаю`, `апрув`, `апрувлю`
+
+If the latest initiator comment matches any of these → **continuation into Phase 2**, walk the PLAN, do not rewrite it. The PLAN was already approved.
+
+If the latest initiator comment is feedback/clarification with no approve marker (e.g. "add a step for X", "change tech Y", "question about Z") → **PLAN rework**: update PLAN per feedback, post a comment describing the diff, STOP again for re-approval. Do not jump into implementation on ambiguous signals.
+
+**Do NOT re-write the PLAN if it was already approved.** This is the most common failure mode — re-entry sees an initiator comment, interprets it as rework, regenerates PLAN, STOPs. The initiator then has to approve a second time. Lost cycle. Read the comment text first; only treat as rework if there is concrete actionable feedback.
+
+Once approved:
 
 ```
 loop over PLAN steps:
