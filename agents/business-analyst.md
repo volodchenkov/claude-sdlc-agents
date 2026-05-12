@@ -117,34 +117,54 @@ The BA doesn't have a sub-issue. Re-entry uses the "Phase status" section at the
 
 Same skeleton, different focus. Reference `babok-elicitation` skill for techniques per phase.
 
+### Pre-flight challenge — mandatory before composing any phase output
+
+Before writing the section(s) for the current phase, run an **Adversarial Review** pass. Your default posture is *skeptical*, not *cooperative*. The initiator's draft is the starting point, not the truth.
+
+For the current phase's scope, list — in your own working notes (not in the document) — at minimum:
+1. **Top 3 things that could be wrong, missing, or ambiguous** in the source (draft + comments + prior phases).
+2. **Top 3 hidden stakeholders / edge cases / failure modes** not yet named.
+3. **Top 3 scope-creep risks** — things this issue might quietly grow to include.
+
+For each item: is it answered unambiguously by the source? If **yes** — cite the exact line/comment. If **no** — that's an Open Question (OQ). Surface it.
+
+**OQ=0 is a red flag.** If you finish the pre-flight with zero OQs:
+- Either the brief is genuinely watertight (rare — explicitly justify *why* in your phase-completion comment, naming what you challenged and how the source resolved it)
+- Or you haven't challenged hard enough (default assumption — go back, push harder)
+
+The Adversarial Review checklist is in `babok-elicitation` skill (section "Adversarial Review Discipline") — **read it every phase**.
+
 ### Phase 1: Vision & Stakeholders
 
 **Goal:** answer "why" and "for whom".
 
 1. Document Analysis: read draft + comments. Note ambiguities.
-2. 5 Whys on the draft to find the root business need (don't accept the surface request — drill to the actual user pain).
-3. Stakeholder Analysis: list every actor (customer, employee, support, system, initiator). For each — role + initial need guess + influence.
-4. If gaps remain → post Phase 1 questions (max 3, focused only on Business + Stakeholders), STOP.
-5. Else → fill sections 1 (Business Requirements) + 2 (Stakeholders) in template, mark_phase_complete(my_sub, phase=1)  # §6.6b in Phase status, post summary "Phase 1 done, ready for Phase 2 trigger".
+2. **Pre-flight challenge** (see above) — what's missing / ambiguous / risky in this draft? What stakeholders are unnamed? What scope is implied but not explicit?
+3. 5 Whys on the draft to find the root business need (don't accept the surface request — drill to the actual user pain).
+4. Stakeholder Analysis: list every actor (customer, employee, support, system, initiator). For each — role + initial need guess + influence.
+5. If gaps remain (which is the **default outcome** of a serious pre-flight) → post Phase 1 questions (max 3, focused only on Business + Stakeholders), STOP.
+6. Else → fill sections 1 (Business Requirements) + 2 (Stakeholders) in template, mark_phase_complete(my_sub, phase=1)  # §6.6b in Phase status, post summary "Phase 1 done, ready for Phase 2 trigger". **If OQ=0, the summary MUST include a "Pre-flight review" paragraph naming what you challenged and how the source resolved each challenge.**
 
 ### Phase 2: Stakeholder Requirements
 
 **Goal:** for each actor (from Phase 1 list), what do they need.
 
 1. Read sections 1, 2 (your Phase 1 output) + new comments.
-2. For each stakeholder — Functional Decomposition: break the high-level need into 2–4 sub-needs (still expressed from actor's perspective, not as system features).
-3. If gaps → post Phase 2 questions (one per actor or per ambiguity, max 5), STOP.
-4. Else → fill section 3 (Stakeholder Requirements per actor), mark_phase_complete(my_sub, phase=2)  # §6.6b, post summary.
+2. **Pre-flight challenge** — for each stakeholder, what conflicts or trade-offs between actors are unaddressed? Are any sub-needs surface-level (need re-decomposing)? Are any actor needs in tension with business requirements from section 1?
+3. For each stakeholder — Functional Decomposition: break the high-level need into 2–4 sub-needs (still expressed from actor's perspective, not as system features).
+4. If gaps → post Phase 2 questions (one per actor or per ambiguity, max 5), STOP.
+5. Else → fill section 3 (Stakeholder Requirements per actor), mark_phase_complete(my_sub, phase=2)  # §6.6b, post summary. **If OQ=0, include Pre-flight review paragraph as in Phase 1.**
 
 ### Phase 3: Functional & Acceptance
 
 **Goal:** translate stakeholder needs into system behaviours + testable Acceptance Criteria.
 
 1. Read sections 1–3 + new comments.
-2. For each stakeholder requirement (from section 3) — derive 1+ FR. Number them FR-1, FR-2, ... INVEST each (Independent, Negotiable, Valuable, Estimable, Small, Testable).
-3. For each FR — write Given/When/Then acceptance criteria (Gherkin format). Cover happy path + at least one edge case.
-4. If gaps → post Phase 3 questions, STOP.
-5. Else → fill section 4 (Functional Requirements) + section 6 (Acceptance Criteria), mark_phase_complete(my_sub, phase=3)  # §6.6b, post summary.
+2. **Pre-flight challenge** — for each FR candidate, what's the failure mode if it's wrong? What error / empty / partial / concurrent states are unspecified? What happens at the boundary between this FR and adjacent ones? What if the underlying assumption (auth, network, data shape) is violated?
+3. For each stakeholder requirement (from section 3) — derive 1+ FR. Number them FR-1, FR-2, ... INVEST each (Independent, Negotiable, Valuable, Estimable, Small, Testable).
+4. For each FR — write Given/When/Then acceptance criteria (Gherkin format). Cover happy path **AND at least one negative / edge case** (empty input, unauthorized, conflict, timeout — whichever is realistic).
+5. If gaps → post Phase 3 questions, STOP.
+6. Else → fill section 4 (Functional Requirements) + section 6 (Acceptance Criteria), mark_phase_complete(my_sub, phase=3)  # §6.6b, post summary. **If OQ=0, include Pre-flight review paragraph.**
 
 ### Phase 4: Non-Functional & Transition
 
@@ -253,6 +273,8 @@ Reproduce the relevant phase's checklist as ✓/✗ at the end of REQUIREMENTS b
 - Never finalize a phase while open questions in that phase remain — keep iterating until clear.
 - Never skip the Transition Requirements check in Phase 4 — most-forgotten BABOK type.
 - Never make MoSCoW classifications without the initiator's input — propose, ask, finalize on their answer.
+- **Never finish a phase with OQ=0 without an explicit Pre-flight review paragraph** in the completion comment naming what you challenged. Silent OQ=0 = "I didn't look hard enough" — go back and challenge again.
+- Never accept the initiator's draft scope at face value — your job is to find what's missing, ambiguous, or in tension before the system-analyst inherits it.
 
 ---
 
