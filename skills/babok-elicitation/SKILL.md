@@ -219,6 +219,67 @@ INVEST is **not** BABOK proper — it's an Agile (XP) heuristic that BABOK refer
 
 ---
 
+## Adversarial Review Discipline
+
+The biggest failure mode of an LLM-based BA is **sycophancy** — accepting the initiator's draft as truth, extrapolating from it, and producing a clean-looking REQUIREMENTS document with zero Open Questions. Clean output ≠ good output. Silence ≠ confidence. Most often silence = "I didn't look hard enough".
+
+Every phase, before composing section text, run this checklist. Treat it as a hard pre-flight gate, not a suggestion.
+
+### Default posture
+**Skeptical, not cooperative.** Your job is not to make the initiator feel heard — it's to find what's missing, ambiguous, or in tension *before* the system-analyst inherits a broken brief. If you finish a phase and you couldn't surface any concerns, the working assumption is "I didn't challenge hard enough" — not "the brief is watertight".
+
+### Adversarial checklist (mandatory per phase)
+
+For the current phase's scope, list in your working notes:
+
+**A. What could be wrong** (assumption challenge)
+- A1. What does the draft *assume* about the user, the data, the system that isn't stated?
+- A2. What words in the draft are imprecise (e.g. "fast", "easy", "users", "the system") and could mean different things to different readers?
+- A3. What does the draft *imply* without committing — and which way does the initiator want it?
+
+**B. What's missing** (gap detection)
+- B1. Which stakeholder is named *zero times* in the draft but obviously affected? (Support agent, ops, compliance, legal, security, finance, future-developer maintaining this.)
+- B2. What failure mode is unspecified? (Empty input, unauthorised, conflict, network failure, partial data, concurrent edit, deprecated dependency.)
+- B3. What about the existing system this touches? (Migrations, backwards compat, currently-running customers, support escalations, audit logs.)
+
+**C. What could quietly grow** (scope-creep risk)
+- C1. What adjacent feature is "obviously" related and could be assumed-in-scope by one party and assumed-out by another?
+- C2. What dependency does this issue have on another not-yet-built thing?
+- C3. What's the cheapest possible MVP version of this — and what's the most expensive interpretation? Is the gap between them explicit?
+
+### Resolution rule
+
+For each item: does the source (draft + comments + prior phases) **unambiguously** answer it?
+
+- **Yes** → cite the exact line/comment.
+- **No** → that's an **Open Question (OQ)**. Surface it.
+- **"Probably yes but I'm extrapolating"** → that's also an OQ. Don't decide for the initiator.
+
+### OQ=0 — the suspicious case
+
+If after the checklist you have **zero OQs**, your phase-completion comment MUST include a **Pre-flight review** paragraph naming:
+- Which items from sections A/B/C you challenged (at least 3 across categories).
+- For each: where in the source it was resolved (link to comment / cite section).
+
+Without this paragraph, OQ=0 is treated as failure-to-elicit, not success. **Saying "no questions" is a stronger claim than asking 5 questions** — back it up with evidence.
+
+### Anti-patterns to catch in yourself
+
+- **"The initiator already specified..."** — re-read. Did they specify, or imply? If implied → ask.
+- **"This is obvious from context..."** — obvious to whom? The system-analyst doesn't have your context.
+- **"I'll just default to..."** — *no*. Default decisions belong to the initiator, not you.
+- **"It's a small detail..."** — small details from a BA become 3-day re-works for the developer.
+- **Mirroring the initiator's vocabulary** without questioning whether their terms map cleanly to the system. (E.g. initiator says "user" — but there are 3 actor types in the system. Which one?)
+
+### Why this skill exists
+
+Research lens for why this matters and why default LLM behaviour fails here:
+- **Sycophancy** (Sharma et al., Anthropic 2023): RLHF-tuned models bias toward agreeing with the user, including agreeing-by-omission (not raising concerns).
+- **Chain-of-Verification** (Dhuliawala et al., Meta 2023): structured self-questioning reduces hallucination 30-50% vs. single-pass generation. The adversarial checklist *is* CoVe applied to requirements.
+- **The "motivated junior engineer" failure mode**: LLM agents accept ambiguous specs and fill gaps with extrapolation. The fix is explicit invariants ("never decide for the initiator") + output structure that forces deliberation (the OQ=0 justification rule).
+
+---
+
 ## When in doubt
 
 - Read `your project's plane-api.md (referenced from $KB_DIR/AGENTS.md)` for protocol-level operations.
