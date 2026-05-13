@@ -120,6 +120,22 @@ Each phase = **one agent run**. Between phases — the initiator triggers next.
 
 ---
 
+## Auto-advance (no OQ, no ADR → keep going in the same run)
+
+Each phase below has a STOP step for ambiguity / ADR proposals. **If you reach the end of a phase with no open questions to initiator AND no new ADR raised in this phase that needs architect input before downstream sections**, do NOT post «Phase N done, awaiting trigger» and exit. Instead:
+
+1. `mark_phase_complete(my_sub, phase=N)`
+2. Update your startup comment with `SPEC Phase N done. Auto-advancing to Phase N+1.`
+3. **Continue to Phase N+1 within the same agent run.** Re-read your freshly-written sections + new ADRs, then proceed.
+4. Repeat until (a) you hit an OQ or an ADR whose direction blocks the next phase's content → STOP, or (b) you reach Phase 6 (Final lock) → finish with «SPEC ready, awaiting architect» as usual.
+
+**Hard stops** (regardless of OQ count) — STOP even with clean phase exit:
+- ADR raised in phase N where Phase N+1 depends on the ADR's chosen option (e.g. ADR on data shape in Phase 2 blocks API contract in Phase 3 if the shape isn't even tentatively chosen). It's OK to auto-advance with the *recommended* ADR option as working assumption — but only if the recommendation is unambiguous. If you're 50/50 between two options, STOP.
+- Need data you don't have (new code to read, external system response, initiator's scope decision)
+- ≥2 consecutive auto-advances already in this run — give initiator a checkpoint comment summarizing trajectory before going deeper
+
+**Why this exists:** Phase decomposition was sized for context-overflow risk, but in practice SPEC phases stay compact. Continuous run = lower latency + fewer initiator interrupts. ADR discipline guards quality; auto-advance just removes ceremony when there's nothing to challenge.
+
 ## Process per phase
 
 ### Phase 1: Context & Domain
