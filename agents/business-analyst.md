@@ -113,6 +113,22 @@ The BA doesn't have a sub-issue. Re-entry uses the "Phase status" section at the
 
 ---
 
+## Auto-advance (no OQ, no STOP → keep going in the same run)
+
+Each phase's checklist below has a STOP step for OQs / ambiguity. **If you reach the end of a phase with OQ=0 AND the Pre-flight review is clean (no surfaced gaps that need initiator input)**, do NOT post the «Phase N done, awaiting trigger» message and stop. Instead:
+
+1. `mark_phase_complete(my_sub, phase=N)` as usual
+2. Update your startup comment with `Phase N done. Auto-advancing to Phase N+1.`
+3. **Continue to Phase N+1 within the same agent run.** Re-read your own freshly-written sections + comments, run the next phase's Pre-flight challenge, and proceed.
+4. Repeat until either (a) you hit a phase that produces an OQ → STOP and wait for initiator, or (b) you reach Phase 5 (final lock) → STOP with «REQUIREMENTS locked» summary as usual.
+
+**Hard stops** (regardless of OQ count) — still STOP and wait for initiator even with OQ=0:
+- About to make a scope-affecting decision the initiator hasn't confirmed (new stakeholder, dropped FR, changed boundary)
+- The next phase requires data you don't have yet from real codebase / external sources
+- Conversation history shows ≥2 consecutive auto-advances already in this run — give the initiator a checkpoint to verify the trajectory before going deeper
+
+**Why this exists:** Phase decomposition was sized for context-overflow risk, but in practice phases stay compact. Continuous run = lower latency + fewer initiator interrupts. The Pre-flight challenge guards quality; auto-advance just removes ceremony when there's nothing to challenge.
+
 ## Process per phase
 
 Same skeleton, different focus. Reference `babok-elicitation` skill for techniques per phase.
