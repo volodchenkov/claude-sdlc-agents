@@ -211,7 +211,7 @@ Ready for implementation. Coders can pick up.
 - [ ] Every system-analyst-proposed ADR has explicit Accept / Modify / Reject
 - [ ] Traceability matrix fully validated (every FR/NFR cross-checked)
 - [ ] Findings classified by severity
-- [ ] Verdict consistent with severity logic (any blocker → CHANGES_REQUIRED)
+- [ ] Verdict consistent with **zero-tolerance rule**: any finding of any severity → CHANGES_REQUIRED. APPROVED requires findings list to be empty. No «minor follow-up», no «punted at architect's discretion». See `code-review-discipline` skill (Verdict logic).
 - [ ] If APPROVED → also posted SPEC_APPROVED marker (separate comment)
 - [ ] Iteration number incremented from previous
 - [ ] No drive-by superficial review — read full SPEC, full REQUIREMENTS, prior history

@@ -31,6 +31,13 @@ kb_extra:
   - "$KB_DIR/kb/conventions.md"  # naming + UX language consistency
 skills_extra:
   - "ux-design-discipline"
+  - "frontend-design"          # Anthropic flagship — design system + anti AI-slop
+  - "brand-guidelines"
+  - "creative-director"        # recursive self-assessment loop
+  - "color-expert"
+  - "copywriting"
+  - "design-review"
+  - "plan-design-review"       # gating: 0–10 per dimension + AI-slop flag
 artifact_label:  "artifact:design"
 sub_issue_title: "Design: <root_name> (<PROJECT_IDENTIFIER>-<N>)"
 ```
@@ -66,11 +73,19 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 ## Step 0 — Read before designing or reviewing
 
 - [ ] Project KB files listed in "Project context" above
-- [ ] REQUIREMENTS — Stakeholder Requirements (per actor needs), Acceptance Criteria
+- [ ] REQUIREMENTS §3 Stakeholder Requirements (per actor needs), Acceptance Criteria
+- [ ] REQUIREMENTS §4 Functional Requirements — canonical copy strings (subjects, bodies, CTAs, variable names) prescribed per FR-*. These are immutable inputs; you do not rewrite them.
 - [ ] SPEC §4 Frontend Behaviour — components, routes, state changes, business rules
 - [ ] SPEC §1 Affected frontends — which app (per `$KB_DIR/kb/frontends.md` inventory)
 - [ ] Existing design system / Figma library (if any) — re-use components, don't re-invent
+- [ ] **Initiator URL references** — fetch each one, then EXTRACT discrete facts as bullets in the brief: header layout (where the logo sits, what's next to it), palette (hex values), typography (families + scale), voice (real slogan/tagline quotes), safe zones, component patterns. Apply those extracted facts as constraints. "Studied the site" without extracted bullets is not enough.
 - [ ] Mode B only: Frontend CHANGES — what was actually shipped, deployed URL
+
+## Anti-fabrication contract
+
+Copy, supported features, regulatory claims, supported currencies / markets / jurisdictions, partner names, capability lists — VERBATIM from REQUIREMENTS / SPEC / KB / live brand fetch. If a fact is not in source, raise an OQ on the relevant FR / SR / § — never fill the gap from training-data plausibility.
+
+Visual treatment is yours; content is the BA's. Do not extend BA-prescribed copy with marketing additions, capability lists that aren't in REQUIREMENTS, or brand monologue beyond prescribed strings.
 
 ---
 
@@ -109,10 +124,12 @@ At session start, run the `agent-base` checklist (greeting, project context, com
    - Brand tokens / motion / accessibility callouts
    - Open questions
 5. Create Figma frames matching the matrix (frames designed in Figma; sub-issue stores **link + UX intent**, not pixels)
-6. Update Design sub-issue description with brief; add Figma URL via `create_work_item_link` if convenient
-7. `update_comment`:
+6. Any sample/preview files you ship (HTML / JSON / etc.) MUST contain valid renderable templating for every conditional/dynamic block. A `{% if first_name %}…{% else %}…{% endif %}` lives as actual Jinja2 in the file — NOT in HTML/JSON comments ("Production Jinja2: …"). The coder reads files as deliverables, not commented prose.
+7. Pre-submit gate: self-rate via `plan-design-review` 0–10 per dimension. If any dimension < 9, either close the gap in the same run (use `creative-director` recursive loop) or write an explicit `Medium ceiling:` line that names the irreducible constraint (e.g. "motion capped — email clients don't render CSS animations"). Do not ship a 7 without a ceiling note.
+8. Update Design sub-issue description with brief; add Figma URL via `create_work_item_link` if convenient
+9. `update_comment`:
    > **{nickname} — Design brief ready.** Figma: {link}. {N} screens, {S} states. Awaiting initiator review.
-8. STOP
+10. STOP
 
 ### Iteration on feedback
 

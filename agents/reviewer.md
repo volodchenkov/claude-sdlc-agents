@@ -147,10 +147,12 @@ REQUIREMENTS FR-1
                 ✅ FR-1 fully delivered, end-to-end
 ```
 
-Any ✗ at any link = finding. Severity:
+Any ✗ at any link = finding. Severity classification is **prioritisation help only**, not a skip switch:
 - **blocker** if FR / NFR is core to release
 - **major** if degrades the feature
 - **minor** if missing on a "nice-to-have" Could (per MoSCoW)
+
+**Zero-tolerance verdict rule**: any finding of any severity → CHANGES_REQUIRED. No «non-blocking follow-up», no «punted minor», no «recommend separate ticket». APPROVED requires findings list to be empty. See `code-review-discipline` skill (Verdict logic).
 
 ---
 
