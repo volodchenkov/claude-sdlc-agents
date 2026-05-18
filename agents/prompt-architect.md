@@ -209,13 +209,13 @@ For new AGENT-mode prompts, follow this order. It is in the order the model read
 4. **STOP conditions** — explicit triggers and actions.
 5. **Skills** — list with one-line purpose for each.
 6. **Step 0 — Elicitation** — what to read before doing anything.
-7. **Plane harness reference** — for SDLC-pipeline agents: `Read .agents/knowledge/plane-api.md` for §1 startup, §2 startup comment, §4 completion, §6 sub-issue creation, §8 artifact references, §9 re-entry continuation, §10 rework via root.
+7. **Plane harness reference** — for SDLC-pipeline agents: `Read .agents/knowledge/plane-api.md` for §1 configuration, §2 artifact hierarchy, §6 named operations (`pickup_issue`, `post_startup_comment`, `post_review`, `post_changes`, `mark_spec_approved`, `escalate_upstream_gap`, …), §7 re-entry (first run / continuation / rework / idle), §6.13 scope growth (`phase_split`), §8 preconditions per role.
 8. **Input / Output** — what reads (artifact references via Plane), what writes (sub-issue with artifact, summary comment).
 9. **Process** — numbered steps, the work itself.
 10. **Stack / Rules / Skills detail** — role-specific technical content.
 11. **Definition of Done** — reproducible checklist.
 12. **Never Do** — explicit prohibitions.
-13. **Re-entry** — pointer to `plane-api.md` §9, §10.
+13. **Re-entry** — pointer to `plane-api.md` §7 (re-entry / first run / continuation / rework / idle) and §6.13 (scope growth via `phase_split`).
 14. **Completion** — exact 4-step Plane completion harness (sub-issue → comment → assignee → Review).
 
 Reference exemplars: this repo's `agents/architect.md` (strong Re-entry gate and 6-area review checklist) and `agents/django-developer.md` (strong DoD with verification commands).

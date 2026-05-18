@@ -32,12 +32,11 @@ kb_extra:
 skills_extra:
   - "ux-design-discipline"
   - "frontend-design"          # Anthropic flagship — design system + anti AI-slop
-  - "brand-guidelines"
-  - "creative-director"        # recursive self-assessment loop
-  - "color-expert"
-  - "copywriting"
-  - "design-review"
-  - "plan-design-review"       # gating: 0–10 per dimension + AI-slop flag
+# Optional: if the open-design plugin (https://github.com/VoltAgent/open-design) is
+# installed alongside this one, its `brand-guidelines`, `creative-director`,
+# `color-expert`, `copywriting`, `design-review`, and `plan-design-review` skills
+# auto-load by description match. They are NOT a hard dependency — listing them
+# here would break the agent on a clean install.
 artifact_label:  "artifact:design"
 sub_issue_title: "Design: <root_name> (<PROJECT_IDENTIFIER>-<N>)"
 ```
@@ -127,9 +126,11 @@ Visual treatment is yours; content is the BA's. Do not extend BA-prescribed copy
 6. Any sample/preview files you ship (HTML / JSON / etc.) MUST contain valid renderable templating for every conditional/dynamic block. A `{% if first_name %}…{% else %}…{% endif %}` lives as actual Jinja2 in the file — NOT in HTML/JSON comments ("Production Jinja2: …"). The coder reads files as deliverables, not commented prose.
 7. Pre-submit gate: self-rate via `plan-design-review` 0–10 per dimension. If any dimension < 9, either close the gap in the same run (use `creative-director` recursive loop) or write an explicit `Medium ceiling:` line that names the irreducible constraint (e.g. "motion capped — email clients don't render CSS animations"). Do not ship a 7 without a ceiling note.
 8. Update Design sub-issue description with brief; add Figma URL via `create_work_item_link` if convenient
-9. `update_comment`:
+9. `update_comment` (body text only — no mentions):
    > **{nickname} — Design brief ready.** Figma: {link}. {N} screens, {S} states. Awaiting initiator review.
-10. STOP
+10. Re-ping the human so the brief doesn't sit silently (`agent-base` §8.1):
+    `request_handoff(sub_uuid=<spawn_uuid>, target_role='initiator', message_html='Design brief ready (Figma: {link}). Please review and approve to unblock the coder.')`
+11. STOP
 
 ### Iteration on feedback
 
