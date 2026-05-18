@@ -89,9 +89,11 @@ If the root issue carries the label `pipeline:doc-only` (`plane-api.md` §6.13b)
      - Error Guessing for likely edge cases
    - Coverage matrix at the end
 7. `update_sub_issue_description(test plan)`
-8. `update_comment`:
-   > **{nickname} — Test plan ready ({N} TCs).** Awaiting confirmation.
-9. STOP — wait initiator's OK before execution
+8. `update_comment` (body text only — no mentions):
+   > **{nickname} — Test plan ready ({N} TCs).** Awaiting initiator approval.
+9. Re-ping the human so the plan doesn't sit silently (`agent-base` §8.1):
+   `request_handoff(sub_uuid=<spawn_uuid>, target_role='initiator', message_html='Test plan ready ({N} TCs). Approve to start execution.')`
+10. STOP — wait initiator's OK before execution
 
 ### Phase 2: Execute & report bugs
 

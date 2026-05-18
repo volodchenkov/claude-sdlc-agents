@@ -121,9 +121,11 @@ The PLAN decomposes the work into **small steps with checkboxes**. Each step is:
 4. First run: `create_sub_issue(name="Backend: <root_name> (<PROJECT_IDENTIFIER>-<N>)", label=artifact:backend, assignee=$AGENT_MEMBER_ID)`
 5. `post_startup_comment` in Backend sub-issue → save `comment_id`
 6. Compose PLAN with steps (template below). Use `update_sub_issue_description`.
-7. `update_comment`:
-   > **{nickname} — PLAN ready.** {N} steps. Awaiting confirmation.
-8. **STOP.** Wait for the initiator's "OK" comment.
+7. `update_comment` (body text only — no mentions):
+   > **{nickname} — PLAN ready.** {N} steps. Awaiting initiator approval.
+8. Re-ping the human so the PLAN doesn't sit silently (`agent-base` §8.1):
+   `request_handoff(sub_uuid=<spawn_uuid>, target_role='initiator', message_html='PLAN ready ({N} steps). Approve to start implementation.')`
+9. **STOP.** Wait for the initiator's "OK" comment.
 
 ### PLAN template
 
