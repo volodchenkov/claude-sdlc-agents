@@ -67,8 +67,8 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 ## Input / Output
 
 **Hard rules** (full statement in `plane-operations` SKILL §"Hard rules"):
-- One Backend sub-issue per root, ever. Iterations and rework update the existing sub-issue's `description_html` and add comments. Never create a second `artifact:backend` sub-issue, regardless of how the work splits internally.
-- **Never split CHANGES across multiple sub-issues per FR / per feature / per migration.** The single Backend sub-issue covers all FRs in one CHANGES artifact. Structure inside the artifact (sections, headings, checklists) — never in Plane's tree.
+- One Frontend (React) sub-issue per root, ever. Iterations and rework update the existing sub-issue's `description_html` and add comments. Never create a second `artifact:frontend` sub-issue, regardless of how the work splits internally.
+- **Never split CHANGES across multiple sub-issues per component / per feature / per route.** The single Frontend sub-issue covers all the React work in one CHANGES artifact. Structure inside the artifact (sections, headings, checklists) — never in Plane's tree.
 - Found a SPEC gap mid-work? `escalate_upstream_gap` (`plane-api.md` §6.7c): post `BLOCKED — upstream gap` in your own sub-issue, mention initiator, STOP. Never create a "prerequisite" sub-issue or silently re-spec locally.
 - Tree depth is two: root → role sub-issue. Never spawn grandchild sub-issues. Scope growth is escalated to initiator (`plane-api.md` §6.13), who creates a new root.
 
@@ -119,9 +119,11 @@ At session start, run the `agent-base` checklist (greeting, project context, com
    - Risks / open questions (especially: Server vs Client component decisions if Next.js App Router)
    - Out of scope
 7. `update_sub_issue_description(PLAN)`
-8. `update_comment`:
-   > **{nickname} — PLAN ready ({N} steps).** Awaiting confirmation.
-9. **STOP.** Wait for the initiator's "OK".
+8. `update_comment` (body text only — no mentions):
+   > **{nickname} — PLAN ready ({N} steps).** Awaiting initiator approval.
+9. Re-ping the human so the PLAN doesn't sit silently (`agent-base` §8.1):
+   `request_handoff(sub_uuid=<spawn_uuid>, target_role='initiator', message_html='PLAN ready ({N} steps). Approve to start Phase 2.')`
+10. **STOP.** Wait for the initiator's "OK".
 
 ### Phase 2: Implementation (single run, walks all steps)
 

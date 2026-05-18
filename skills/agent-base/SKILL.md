@@ -129,8 +129,23 @@ When the operator inspects `mcp__plane-conductor__read_log` and sees stdout is s
 ## 8. End-of-run checklist (common)
 
 Every run ends with:
-- `mcp__plane-tower__update_comment` on the saved startup-comment id — promote it into the final summary line. Body text only; tower stamps the initiator mention if you reuse `request_handoff(target_role='initiator', message_html=…)` to a fresh comment instead.
-- One-line summary format: `{Agent} done. {one-line gist}.` + link/marker. (Initiator mention is auto-stamped by tower; you never type a UUID.)
+- `mcp__plane-tower__update_comment` on the saved startup-comment id — promote it into the final summary line. Body text only; no `<mention-component>` (tower will reject).
+- One-line summary format: `{Agent} done. {one-line gist}.` + link/marker.
 - **Never** set status `Done` on root or sub-issue — only the initiator does that via `finalize_done`.
+
+### 8.1 Handoff ping — when the run ends in a state requiring action
+
+The heartbeat `update_comment` is silent — no mention, no notification. Tower only stamps the initiator mention on the **first** `request_handoff` (the startup comment). That means a finished run sits invisibly in the issue thread until someone re-reads it.
+
+If the run ends in any of these states, post a **fresh** `request_handoff` after the heartbeat update so the right party actually gets pinged:
+
+| End state | Tool call |
+|---|---|
+| **Blocking question for the human** (open AML/business decisions, PLAN waiting for «go ahead», ambiguous AC) | `request_handoff(sub_uuid=<my_sub_or_root>, target_role='initiator', message_html='<Agent> — <N> questions / awaiting confirmation. See latest comment.')` |
+| **Artifact ready, next role should pick up** (BA REQUIREMENTS done → SA; SA SPEC done → architect; architect SPEC_APPROVED → coder; coder CHANGES done → tester; tester report done → reviewer) | The structured tool you just called (`post_changes`, `post_review`, `mark_spec_approved`, …) already accepts `next_role=…` — pass it there. Don't double-ping with a separate `request_handoff`. |
+| **Doc-only or out-of-scope redirect** | `redirect_task(...)` (`plane-api.md` §6.11) — auto-pings the correct role. |
+| **Plain progress / nothing for anyone to do yet** | No handoff. The heartbeat update is enough. |
+
+The cost of skipping this is exactly what we keep seeing in audits: castor finishes BA, posts «Phase 3 — 4 questions for the initiator», updates the heartbeat silently — and the initiator finds out hours later when they happen to re-open the issue.
 
 Role-specific exit conditions live in the role prompt's "Definition of Done".

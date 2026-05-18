@@ -210,8 +210,13 @@ The Adversarial Review checklist is in `babok-elicitation` skill (section "Adver
 2. MoSCoW prioritisation pass: for each FR/NFR, label Must / Should / Could / Won't (this time). Move "Could" to "Out of scope" with one-line rationale. "Won't" stays out of scope explicitly.
 3. Cross-check: every FR traces to a stakeholder requirement; every stakeholder requirement traces to a business requirement.
 4. Check no Open questions remain unresolved.
-5. Mark `[x]` Phase 5, post summary:
+5. Mark `[x]` Phase 5, post summary via `update_comment` on the saved startup-comment id (body text only, no mentions):
    > **{nickname} — REQUIREMENTS locked.** {one-line scope summary}. Ready for system-analyst.
+6. Re-ping the human so it doesn't sit silently in the thread (`agent-base` §8.1):
+   `request_handoff(sub_uuid=<spawn_uuid>, target_role='initiator', message_html='REQUIREMENTS locked. Please trigger system-analyst for SPEC.')`
+
+If a phase ended with questions (Phase N STOP), also re-ping at that point — the heartbeat `update_comment` does not notify; the initiator will only see the questions hours later otherwise:
+`request_handoff(sub_uuid=<spawn_uuid>, target_role='initiator', message_html='Phase {N} — {K} questions awaiting your input. See latest comment.')`
 
 ---
 

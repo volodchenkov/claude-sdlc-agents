@@ -315,10 +315,8 @@ One line per revision after the initial Phase 6 lock. Append only — earlier en
 ## ARCH_REVIEW (the architect — comment on SPEC sub-issue)
 
 Each iteration of review = **new comment** (don't edit previous; preserve history).
-Verdict logic:
-- Any **blocker** finding → CHANGES_REQUIRED
-- 0 blockers + any **major** → CHANGES_REQUIRED (the architect's discretion if minor enough)
-- 0 blockers + 0 majors → APPROVED
+
+**Zero-tolerance verdict rule** — any finding of any severity (blocker / major / minor) → `CHANGES_REQUIRED`. `APPROVED` requires the findings list to be empty. No «non-blocking follow-up», no «punted minor», no «accept-with-comment», no «recommend separate ticket». If the issue is real enough to write down, it's real enough to block. See `code-review-discipline` skill (Verdict logic).
 
 ```markdown
 # ARCH_REVIEW iteration {N}
@@ -629,7 +627,9 @@ End-to-end coherence + security + quality review. The reviewer reads everything,
 - **Per-artifact comment** (one per artifact reviewed) — posted on that artifact's sub-issue, scoped to findings about that artifact only. Use the trimmed template under "Per-artifact REVIEW comment" below.
 - **Cross-cutting verdict comment** — posted on the **root** issue. Carries the overall verdict + traceability matrix + next-step routing. Uses the full template below.
 
-There is no REVIEW sub-issue. Every comment opens with the marker `<p><strong>REVIEW (iter {N}) — {VERDICT}</strong></p>` so future iteration detection (and the initiator) can grep them.
+There is no REVIEW sub-issue. The marker `<p><strong>REVIEW (iter {N}) — {VERDICT}</strong></p>` opens every verdict comment so future iteration detection (and the initiator) can grep them. **Tower stamps this marker itself when you call `post_review(...)` (`plane-api.md` §6.7b) — do NOT include it in `body_html`.**
+
+**Reviewer / architect only.** Only the `reviewer` and `architect` roles produce `REVIEW (iter N) — VERDICT` comments — they're verdicts of an artifact. The `system-analyst`, `business-analyst`, `designer`, coders, and testers must never prepend this marker to their own submission / progress comments — they post via `post_comment`, which does not auto-stamp. A submission comment from a non-verdict role announces «artifact ready» / «awaiting next role», it does not declare a verdict, and including `REVIEW (iter N) — APPROVED` on a non-verdict post both lies about the verdict and corrupts iteration counters for the real reviewer.
 
 ### Cross-cutting REVIEW (comment on root)
 
