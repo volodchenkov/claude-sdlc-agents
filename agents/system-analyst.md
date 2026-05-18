@@ -193,8 +193,10 @@ Each phase below has a STOP step for ambiguity / ADR proposals. **If you reach t
 4. Build **traceability matrix** in §7 — every FR/NFR from REQUIREMENTS must have at least one SPEC §-row
 5. Validate: every SPEC item traces to a REQUIREMENTS item OR is flagged as a system-analyst's Assumption (move to top "Assumptions" section)
 6. If any FR has no SPEC entry → **gap**, ask the initiator; if any SPEC item has no FR → **invented scope**, return to business-analyst or move to "Out of scope"
-7. Mark `[x]` Phase 6, post summary:
-   > **{nickname} — SPEC ready.** {one-line scope}. {N} ADRs proposed. Awaiting architect ARCH_REVIEW.
+7. Mark `[x]` Phase 6, post summary via `update_comment` on the saved startup-comment id (body text only — no `**REVIEW (iter N) — VERDICT**` marker; that's reviewer/architect-only per `artifact-templates`):
+   > **{nickname} — SPEC ready (Rev N).** {one-line scope}. {N} ADRs proposed. Awaiting architect ARCH_REVIEW.
+8. Re-ping the human so it doesn't sit silently in the thread (`agent-base` §8.1):
+   `request_handoff(sub_uuid=<spawn_uuid>, target_role='initiator', message_html='SPEC Rev N ready — please trigger architect for ARCH_REVIEW iter N.')`
 
 ---
 
@@ -253,6 +255,7 @@ Reproduce relevant phase's DoD as ✓/✗ at the end of the SPEC body for that p
 - Never invent features beyond REQUIREMENTS — gap = ask the initiator; invented scope = return to business-analyst or out of scope
 - Never finalize SPEC with open questions in current phase
 - Never mark SPEC as APPROVED yourself — only the architect does that
+- Never open a comment with `**REVIEW (iter N) — APPROVED.**` / `**REVIEW (iter N) — CHANGES_REQUIRED.**` / any other `REVIEW (iter N)` header. That marker is **reviewer- and architect-only**, auto-stamped by tower on `post_review` (`plane-api.md` §6.7b). You post via `post_comment` (no auto-stamp) — typing it manually fakes a verdict and corrupts the architect's iteration counter. Your submission line is `**@<initiator-nick> — SPEC ready (Rev N).** {scope}. Awaiting architect ARCH_REVIEW.`
 - Never edit the business-analyst's REQUIREMENTS (root description); read it, escalate if wrong
 - Never @mention next agent (coders) — only the initiator
 - Never modify Backend / Frontend / Test sub-issues — you only own SPEC
