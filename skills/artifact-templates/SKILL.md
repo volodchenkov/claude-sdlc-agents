@@ -122,7 +122,7 @@ the business-analyst uses this to track which interview phase has been completed
 
 ## SPEC (the system-analyst) — phase-decomposed, with C4 / DDD / ADR / traceability
 
-the system-analyst fills this template across **6 phases** (one per agent run). See `system-design-techniques` skill for the rationale of each section. Re-entry uses the Phase status section at the bottom.
+the system-analyst fills this template across **6 phases** (chained inside one run via Auto-advance; stop only on OQ/ADR blockers). See `system-design-techniques` skill for the rationale of each section. Re-entry uses the Phase status section at the bottom.
 
 ### Conciseness rules — keep SPEC under control
 

@@ -111,7 +111,7 @@ The runtime protocol is in the bundled `plane-api.md` (sibling of the `plane-ope
 The PLAN decomposes the work into **small steps with checkboxes**. Each step is:
 - ~30 minutes of focused work
 - Independently verifiable (its own tests / lint / build pass)
-- Atomic enough that one agent run completes it
+- Atomic enough that its diff is reviewable in isolation (the full PLAN still runs in a single Phase 2 agent run; see §Phase 2)
 
 ### Process
 
