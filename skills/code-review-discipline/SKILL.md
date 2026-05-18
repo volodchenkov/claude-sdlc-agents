@@ -173,14 +173,24 @@ If finding is security / quality / coherence → the reviewer's core domain, fil
 
 ## Severity classification
 
-- **blocker** — release-stopping. Examples: security vulnerability (any A01–A10), missing FR coverage, untested critical path, broken multitenancy
-- **major** — should fix before release. Examples: missing audit log on sensitive action, SOLID violation that will hurt maintenance, test coverage gap on edge case
-- **minor** — preferable but not blocking. Examples: naming inconsistency, comment polish, minor refactor opportunity
+Severity describes *what kind* of finding it is — not whether it blocks the verdict. Use it to help the implementer prioritise the rework order, not to decide skip-vs-fix.
 
-Verdict logic:
-- Any blocker → CHANGES_REQUIRED (issue cannot be closed)
-- 0 blockers + majors at the reviewer's discretion (most should be fixed; some can be punted with explicit ticket)
-- 0 blockers + 0 majors → APPROVED
+- **blocker** — release-stopping at any reasonable interpretation. Examples: security vulnerability (any A01–A10), missing FR coverage, untested critical path, broken multitenancy
+- **major** — degrades the feature meaningfully. Examples: missing audit log on sensitive action, SOLID violation that will hurt maintenance, test coverage gap on edge case
+- **minor** — small but real. Examples: naming inconsistency, comment polish, minor refactor opportunity, low-impact a11y violation, drift from APPROVED SPEC on an unimportant detail
+
+## Verdict logic (zero-tolerance)
+
+**Any finding of any severity → CHANGES_REQUIRED.** APPROVED requires the finding list to be empty.
+
+- ❌ «Minor — leave as follow-up ticket» — forbidden. Either it's worth fixing (file as finding → CHANGES_REQUIRED) or it isn't (don't write it down at all).
+- ❌ «Non-blocking, recommend separate issue» — forbidden. Same logic.
+- ❌ «Major punted by discretion» — forbidden. The reviewer / architect doesn't have skip discretion.
+- ✅ APPROVED is the **only** terminal verdict for «code is clean»; any concern that warrants writing down is, by definition, worth fixing in this iteration.
+
+**Why**: every «non-blocking follow-up» the reviewer leaves behind becomes technical debt that no one comes back to. The initiator's stated rule (2026-05-13): «закрываем все замечания. Фиксите все». Don't pre-judge what's worth the implementer's time — surface everything, let the implementer fix everything, then APPROVED.
+
+If a finding genuinely doesn't fit this iteration (e.g. requires SPEC change), escalate it as `BLOCKED — upstream gap` and STOP — not as a punted minor.
 
 ---
 
