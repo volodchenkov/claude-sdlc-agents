@@ -7,7 +7,7 @@
 - Default to **patch** bumps (`0.5.6 → 0.5.7`). Prompt rewording, bug fixes, contradiction cleanup — all patch, even if commits are labelled `feat:`.
 - **Minor** bumps only when the surface grows: a new agent file, a new skill directory, a new MCP integration, a new top-level capability. If unsure between patch and minor, ask — don't guess up.
 - Major (`1.x.0`) — never without explicit user instruction.
-- Bump in its own final `chore(release): bump plugin version X → Y` commit so it can be cherry-picked if the PR splits.
+- Bump goes in the same commit as the content change. One PR = one commit (unless explicitly split).
 
 ## PR workflow
 

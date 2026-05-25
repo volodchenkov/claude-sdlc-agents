@@ -1,6 +1,6 @@
 ---
 name: architecture-review-framework
-description: Use this skill when working as the architect — reviewing a SPEC produced by the system-analyst, evaluating ADRs, checking cross-trace to REQUIREMENTS, producing ARCH_REVIEW with verdict (APPROVED / CHANGES_REQUIRED) and the SPEC_APPROVED marker. Encodes a 6-area review checklist, SOLID and DDD lenses, and ADR governance.
+description: Use this skill when working as the architect — reviewing a SPEC produced by the system-analyst, evaluating ADRs, checking cross-trace to REQUIREMENTS, producing ARCH_REVIEW with verdict (APPROVED / CHANGES_REQUIRED) and the SPEC_APPROVED marker. Encodes a 7-area review checklist (Area 0 implementation-readiness + 6 technical areas), SOLID and DDD lenses, and ADR governance.
 ---
 
 # Architecture Review Framework
@@ -17,20 +17,34 @@ This skill defines how the architect reviews SPECs and CHANGES. Goal: produce a 
 ## Two review modes
 
 ### Mode A: SPEC review (most common)
-Triggered after the system-analyst posts SPEC. The architect reads SPEC + REQUIREMENTS, evaluates against 6 review areas, evaluates each ADR, validates traceability matrix.
+Triggered after the system-analyst posts SPEC. The architect reads SPEC + REQUIREMENTS, evaluates against 7 review areas (Area 0 implementation-readiness + 6 technical areas), evaluates each ADR, validates traceability matrix.
 **Output:** ARCH_REVIEW comment in SPEC sub-issue + SPEC_APPROVED marker (when all green).
 
 ### Mode B: CHANGES review (less common — assist the reviewer)
 After coders post CHANGES. The architect cross-checks that implementation respects the architectural decisions in SPEC.
 **Output:** ARCH_REVIEW iteration comment in coder's sub-issue. Note: the reviewer is the canonical reviewer for CHANGES; the architect intervenes only when architectural drift is suspected.
 
-This skill focuses on **Mode A**; Mode B uses the same 6-area lens.
+This skill focuses on **Mode A**; Mode B uses the same 7-area lens.
 
 ---
 
-## The 6 Review Areas
+## The 7 Review Areas
 
-Every ARCH_REVIEW iteration covers all 6 — even if some are N/A for the given SPEC, **explicitly state why N/A**. Silent skipping is the most common architecture review failure mode.
+Every ARCH_REVIEW iteration covers all 7 — even if some are N/A for the given SPEC, **explicitly state why N/A**. Silent skipping is the most common architecture review failure mode.
+
+### Area 0: Implementation-readiness (ATAM-style concrete scenarios)
+
+A formally correct SPEC that leaves implementation to guesswork is **not APPROVED**. For every affected backend service and frontend, verify:
+
+- Every model field has explicit type, constraints, and `on_delete` semantics (coder doesn't extrapolate from "similar models").
+- Every endpoint has request shape, response shape, and ALL error codes (not just success).
+- Every user-facing screen has explicit loading / empty / error / partial / success states.
+- Every business rule (§4 BRs) is a testable invariant with explicit inputs and expected outputs — not an aspiration ("handle X gracefully", "good UX").
+
+If any item fails — severity **major**, verdict **CHANGES_REQUIRED**, escalate the specific gaps to system-analyst (and to initiator if the gap is intent-flavored — "what should this screen do when X is empty?"). Do NOT approve a SPEC that effectively says "implementation details TBD by coder".
+
+❌ SPEC §4 BR-3: "system must handle blockchain errors gracefully" → approve → coder writes `try/except: pass` → silent prod failures.
+✅ Verdict: CHANGES_REQUIRED. BR-3 must specify (a) error classes (network / RPC / signature / consensus); (b) per-class retry strategy (immediate / exponential / abandon); (c) user-visible outcome (block / partial / queue for ops review). Escalate intent gaps to initiator.
 
 ### Area 1: Service boundaries (DDD bounded contexts + import contracts)
 
@@ -159,7 +173,7 @@ ARCH_REVIEW concludes with one verdict:
 
 | Verdict | When |
 |---|---|
-| **APPROVED** | All 6 areas green, all ADRs accepted (or trivially modified), traceability complete, no blockers |
+| **APPROVED** | All 7 areas green (including Area 0 implementation-readiness), all ADRs accepted (or trivially modified), traceability complete, no blockers |
 | **CHANGES_REQUIRED** | Any blocker finding, any rejected ADR, any traceability gap |
 | **BLOCKED** | Cannot complete review — missing input (SPEC incomplete, REQUIREMENTS too vague, system-analyst hasn't addressed prior CHANGES_REQUIRED) |
 
