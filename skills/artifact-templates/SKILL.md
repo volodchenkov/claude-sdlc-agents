@@ -323,15 +323,16 @@ Each iteration of review = **new comment** (don't edit previous; preserve histor
 
 **Verdict: {APPROVED | CHANGES_REQUIRED | BLOCKED}**
 
-## 6-Area coverage
+## 7-Area coverage
 | Area | Status | Note |
 |---|---|---|
-| Service boundaries (DDD, importlinter) | ✓ / ⚠ / ✗ | ... |
-| Multitenancy (company filter, queryset scope) | ✓ / ⚠ / ✗ | ... |
-| Performance (N+1, indexes, caching, async) | ✓ / ⚠ / ✗ | ... |
-| Transactions & concurrency (atomic, idempotency, race) | ✓ / ⚠ / ✗ | ... |
-| Integration security (HMAC, secrets, rate limit) | ✓ / ⚠ / ✗ | ... |
-| Migrations & Transition (backward compat, multi-step, flags) | ✓ / ⚠ / ✗ | ... |
+| 0. Implementation-readiness (ATAM concrete scenarios — every model field has explicit type/constraints/`on_delete`; every endpoint has request/response/error codes; every screen has explicit loading/empty/error/partial/success states; every BR is a testable invariant) | ✓ / ⚠ / ✗ | ... |
+| 1. Service boundaries (DDD, importlinter) | ✓ / ⚠ / ✗ | ... |
+| 2. Multitenancy (company filter, queryset scope) | ✓ / ⚠ / ✗ | ... |
+| 3. Performance (N+1, indexes, caching, async) | ✓ / ⚠ / ✗ | ... |
+| 4. Transactions & concurrency (atomic, idempotency, race) | ✓ / ⚠ / ✗ | ... |
+| 5. Integration security (HMAC, secrets, rate limit) | ✓ / ⚠ / ✗ | ... |
+| 6. Migrations & Transition (backward compat, multi-step, flags) | ✓ / ⚠ / ✗ | ... |
 
 ## ADR validation
 | ADR | the system-analyst's status | My action | Note |
