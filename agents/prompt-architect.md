@@ -218,4 +218,4 @@ For new AGENT-mode prompts, follow this order. It is in the order the model read
 13. **Re-entry** — pointer to `plane-api.md` §7 (re-entry / first run / continuation / rework / idle) and §6.13 (scope growth via `phase_split`).
 14. **Completion** — exact 4-step Plane completion harness (sub-issue → comment → assignee → Review).
 
-Reference exemplars: this repo's `agents/architect.md` (strong Re-entry gate and 6-area review checklist) and `agents/django-developer.md` (strong DoD with verification commands).
+Reference exemplars: this repo's `agents/architect.md` (strong Re-entry gate and 7-area review checklist with Area 0 implementation-readiness) and `agents/django-developer.md` (strong DoD with verification commands).
