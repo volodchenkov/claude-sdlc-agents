@@ -75,6 +75,12 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 
 ### Phase 1: Test plan
 
+Goal: produce immutable test plan in sub-issue description, **grouped into TC-batches sized for step-execution**. Sizing rule:
+
+- **Time budget:** ≤15 min wall-clock per batch (Playwright run + screenshot capture + bug-report posts)
+- **Cohesion:** one batch = one screen / one user flow / one a11y sweep. Don't mix a11y audit with payment-form happy path
+- A single slow TC (e.g. cross-browser regression) can be its own batch
+
 1. `pickup_issue(<PROJECT_IDENTIFIER>-<N>)` → `root_uuid`
 2. Step 0 — read REQUIREMENTS, SPEC, Design, Frontend CHANGES
 3. `find_artifact_by_label(artifact:ux-testing, parent=root_uuid)`
@@ -83,37 +89,52 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 6. Compose test plan (template in `artifact-templates`):
    - Scope (in / out)
    - Test approach (E2E via Playwright preferred / manual browser exploratory; tools: axe-core for a11y, Lighthouse for perf+a11y smoke)
-   - Test cases — apply ISTQB techniques + accessibility lens (see WCAG section below)
+   - **TC-batches with checkboxes** (`- [ ] **Batch 1: <screen/flow name>**` followed by the TCs it contains). Apply ISTQB techniques + accessibility lens (see WCAG section below)
    - Coverage matrix
 7. `update_sub_issue_description(test plan)`
 8. `update_comment` (body text only — no mentions):
-   > **{nickname} — UX test plan ready ({N} TCs, {A} a11y checks).** Awaiting initiator approval.
+   > **{nickname} — UX test plan ready ({N} batches, {M} TCs, {A} a11y checks).** Awaiting initiator approval.
 9. Re-ping the human so the plan doesn't sit silently (`agent-base` §8.1):
-   `request_handoff(sub_uuid=<spawn_uuid>, target_role='initiator', message_html='UX test plan ready ({N} TCs). Approve to start execution.')`
+   `request_handoff(sub_uuid=<spawn_uuid>, target_role='initiator', message_html='UX test plan ready ({N} batches). Approve to start execution.')`
 10. STOP — wait initiator's OK before execution
 
-### Phase 2: Execute, capture, report
+### Phase 2: Execute, capture, report (one batch per invocation, self-handoff between batches)
 
-Single agent run walks all TCs, capturing screenshots for failures.
+Execution follows the **`step-execution-discipline` SKILL** — read it. Summary contract: **one invocation = exactly one TC-batch**. Between batches `request_handoff(target_role='<self>')` → exit. Conductor's queue-on-running re-spawns you for the next batch.
 
 ```
-loop over TCs:
-    execute via Playwright OR manual browser steps
-    capture: actual rendering, behaviour, console errors
-    if pass → log [✅ TC-N]
-    if fail:
-        capture screenshot of failure state
-        upload PNG to project's screenshot store (per $KB_DIR/kb/verify.md — typically S3 / object storage)
-        attach via Operation §6.10 attach_screenshot (create_work_item_link)
-        post_bug_report(test_sub_uuid=<your spawn issue_uuid>, affected_sub_uuid=<frontend sub_uuid — discover via find_artifact_by_label('frontend', root_uuid)>, severity=…,
-                        screenshots=[<uploaded url>], …)  # §6.7e — back-links Frontend sub-issue when affected_sub_uuid provided
-    if blocked → log [⚠️ TC-N blocked]
+1. read_artifact(my UX Tests sub-issue) → parse test-plan batches
+2. next_batch = first [ ] in test plan
+3. if no next_batch → FINAL REPORT (below); STOP
+4. execute every TC in next_batch:
+       run TC via Playwright OR manual browser steps
+       capture: actual rendering, behaviour, console errors
+       if pass → log [✅ TC-N]
+       if fail:
+           capture screenshot of failure state
+           upload PNG to project's screenshot store (per $KB_DIR/kb/verify.md — typically S3 / object storage)
+           attach via Operation §6.10 attach_screenshot (create_work_item_link)
+           post_bug_report(test_sub_uuid=<your spawn issue_uuid>,
+                           affected_sub_uuid=<frontend sub_uuid — find_artifact_by_label('frontend', root_uuid)>,
+                           severity=…, screenshots=[<uploaded url>], …)  # §6.7e
+       if blocked → log [⚠️ TC-N blocked]
+5. update test plan: change [ ] to [x] for this batch, append per-TC results inline
+   update_sub_issue_description(updated test plan)
+   post_comment("Batch N done. <P passed / F failed / B blocked>. Screenshots attached.")
+6. request_handoff(sub_uuid=<my spawn issue_uuid>, target_role='<my role>',
+                   message_html='Batch N done. Continuing.')
+7. STOP — do NOT execute batch N+1 in this session
+
+FINAL REPORT (no [ ] remains):
+    post final test report (template in `artifact-templates`)
+    request_handoff(target_role='reviewer', ...) — NOT to self
+    update_comment("{nickname} — Phase 2 complete. {P}/{F}/{B}. Screenshots attached.")
+    STOP
 ```
 
-After all TCs — post final test report (template in `artifact-templates`).
+**Re-entry**: mid-batch crash → next invocation re-runs that entire batch from scratch. Test plan description checkbox state is the only resume signal.
 
-`update_comment`:
-> **{nickname} — Phase 2 complete. {P} passed / {F} failed / {B} blocked.** Screenshots attached.
+**Conductor dependency**: required version `plane-conductor` ≥ `feat/queue-on-running` merge (2026-06-19).
 
 ### Phase 2 (regression iteration)
 If the frontend coder ships a fix, the initiator re-triggers you:

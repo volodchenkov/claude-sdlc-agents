@@ -456,30 +456,46 @@ When the designer re-runs in UX review mode, findings go in **separate comments*
 
 ---
 
-## PLAN (the django-developer — backend description, before code)
+## PLAN (the django-developer / the vue-developer / the react-developer — role sub-issue description)
 
-See `python-developer.md` (the django-developer prompt) for full template. Short version:
+The PLAN lives in `description_html` of your role sub-issue (backend / frontend). It is the **only source of truth between invocations** under step-execution discipline — checkbox state in the PLAN is what tells your next invocation which step to run.
+
+Every step in §Steps MUST pass the **5-budget AND-filter** from `step-execution-discipline` SKILL (time ≤15–20 min · files ≤10 · diff ≤300–500 LoC · ONE binary acceptance · existing tests still green). Every step is a **vertical slice by default** — horizontal layers only with an explicit `Slice: horizontal-justified — <reason>` line.
 
 ```markdown
-# Backend PLAN: {Title}
+# {Backend|Frontend} PLAN: {Title}
 
-## Files to change
-- `{path}` — {what changes}
+## Context
+- SPEC sub-issue: {link / identifier}
+- Risks / open questions: numbered, if any
+- Out of scope (per SPEC): items deferred to other roles or future work
 
-## Migrations
+## Steps
+
+- [ ] **Step 1: {one-line action — acceptance phrased as «after this, X is true»}**
+  - Files: `{path1}`, `{path2}` (≤10)
+  - Acceptance: {ONE binary statement — endpoint X returns 201 with {id} / page Y renders empty state on missing data / etc.}
+  - Slice: vertical | horizontal-justified — {reason}
+  - Verify: `{scoped command — pytest path::name -x / npm test -- --testPathPattern / mypy path / curl ... }`
+
+- [ ] **Step 2: ...**
+  - Files: ...
+  - Acceptance: ...
+  - Slice: ...
+  - Verify: ...
+
+- [ ] **Step N (final): full DoD pass**
+  - Run all verification commands from `$KB_DIR/kb/verify.md`
+  - Compose CHANGES (template below)
+  - Hand off to reviewer (not to self)
+
+## Migrations (backend only)
 - `{app}`: {description}, backward-compatible / breaking + multi-step plan
-
-## Tests to add
-- `{test_path}::{test_name}` — {what it covers}
-
-## Risks / open questions
-- Numbered.
-
-## Out of scope (per SPEC)
-- Items deferred to other roles or future work.
 ```
 
-Frontend version (the vue-developer / the react-developer) is the same shape with frontend-relevant categories: components, routes, state modules.
+**Frontend version** (the vue-developer / the react-developer) is the same shape with frontend-relevant Files (components, routes, state modules); no Migrations section.
+
+**Sizing rules** are enforced by `step-execution-discipline` SKILL — read it before drafting Steps. A PLAN whose steps don't pass the 5-budget AND-filter is rejected on review; redraft instead of executing.
 
 ---
 

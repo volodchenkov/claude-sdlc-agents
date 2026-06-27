@@ -70,7 +70,15 @@ If the root issue carries the label `pipeline:doc-only` (`plane-api.md` §6.13b)
 ## Process — phase-decomposed
 
 ### Phase 1: Test plan
-**Goal:** produce immutable test plan in sub-issue description, covering all FRs / NFRs / Acceptance Criteria.
+**Goal:** produce immutable test plan in sub-issue description, covering all FRs / NFRs / Acceptance Criteria, **grouped into TC-batches sized for step-execution**.
+
+Each **TC-batch** is one execution unit (one invocation). Sizing rule (lighter than coder's, because TCs are small and grouping reduces cold-start overhead):
+
+- **Time budget:** ≤15 min wall-clock to execute the batch end-to-end (including fixture setup, teardown, bug-report posts)
+- **Cohesion:** one batch = one suite / one Acceptance Criterion / one endpoint family. Don't mix multitenancy isolation with happy-path POSTs in one batch
+- **Resume-friendly:** a batch fails-stops cleanly; the next invocation picks up the next batch, not a half-batch
+
+If a single TC takes >15 min on its own (e.g. it waits for a Celery task chain) — that TC is its own batch.
 
 1. `pickup_issue(<PROJECT_IDENTIFIER>-<N>)` → `root_uuid`
 2. Step 0 — read everything
@@ -80,7 +88,7 @@ If the root issue carries the label `pipeline:doc-only` (`plane-api.md` §6.13b)
 6. Compose test plan (template in `artifact-templates`):
    - Scope (in / out)
    - Test approach (level, types, tools — pytest+requests / curl / Postman / etc.)
-   - Test cases — for each FR/NFR/AC apply the right ISTQB technique:
+   - **TC-batches with checkboxes** (`- [ ] **Batch 1: <name>**` followed by the TCs it contains, each with its ISTQB technique). Apply the right technique per FR/NFR/AC:
      - Equivalence Partitioning for input variations
      - BVA for ordered fields (lengths, amounts, counts)
      - Decision Table for combinatorial logic
@@ -90,35 +98,50 @@ If the root issue carries the label `pipeline:doc-only` (`plane-api.md` §6.13b)
    - Coverage matrix at the end
 7. `update_sub_issue_description(test plan)`
 8. `update_comment` (body text only — no mentions):
-   > **{nickname} — Test plan ready ({N} TCs).** Awaiting initiator approval.
+   > **{nickname} — Test plan ready ({N} batches, {M} TCs).** Awaiting initiator approval.
 9. Re-ping the human so the plan doesn't sit silently (`agent-base` §8.1):
-   `request_handoff(sub_uuid=<spawn_uuid>, target_role='initiator', message_html='Test plan ready ({N} TCs). Approve to start execution.')`
+   `request_handoff(sub_uuid=<spawn_uuid>, target_role='initiator', message_html='Test plan ready ({N} batches). Approve to start execution.')`
 10. STOP — wait initiator's OK before execution
 
-### Phase 2: Execute & report bugs
+### Phase 2: Execute & report bugs (one batch per invocation, self-handoff between batches)
 
-Once the initiator confirms test plan, **one agent run** walks all TCs:
+Execution follows the **`step-execution-discipline` SKILL** — read it. Summary contract: **one invocation = exactly one TC-batch**. Between batches `request_handoff(target_role='<self>')` → exit. Conductor's queue-on-running re-spawns you for the next batch.
 
 ```
-loop over test plan TCs:
-    execute TC (via curl / pytest+requests / Postman runner / per project's tools from $KB_DIR/kb/verify.md)
-    capture: actual response, status, latency
-    compare to expected (from SPEC API contract + Acceptance Criterion)
-    if pass → log [✅ TC-N]
-    if fail → post_bug_report(test_sub_uuid=<your spawn issue_uuid>, affected_sub_uuid=<backend sub_uuid — discover via find_artifact_by_label('backend', root_uuid)>, severity=…,
-                              title=…, environment=…, repro_steps=[…],
-                              actual=…, expected=…, fix_hint=…, screenshots=[])  # §6.7e
-    if blocked (preconditions failed) → log [⚠️ TC-N blocked]
+1. read_artifact(my API Tests sub-issue) → parse test-plan batches
+2. next_batch = first [ ] in test plan
+3. if no next_batch → FINAL REPORT (below); STOP
+4. execute every TC in next_batch:
+       run TC (curl / pytest+requests / per project's tools from $KB_DIR/kb/verify.md)
+       capture: actual response, status, latency
+       compare to expected (from SPEC API contract + Acceptance Criterion)
+       if pass → log [✅ TC-N]
+       if fail → post_bug_report(test_sub_uuid=<your spawn issue_uuid>,
+                                 affected_sub_uuid=<backend sub_uuid — find_artifact_by_label('backend', root_uuid)>,
+                                 severity=…, title=…, environment=…, repro_steps=[…],
+                                 actual=…, expected=…, fix_hint=…, screenshots=[])  # §6.7e
+       if blocked (preconditions failed) → log [⚠️ TC-N blocked]
+5. update test plan: change [ ] to [x] for this batch, append per-TC results inline
+   update_sub_issue_description(updated test plan)
+   post_comment("Batch N done. <P passed / F failed / B blocked>")
+6. request_handoff(sub_uuid=<my spawn issue_uuid>, target_role='<my role>',
+                   message_html='Batch N done. Continuing.')
+7. STOP — do NOT execute batch N+1 in this session
+
+FINAL REPORT (no [ ] remains):
+    post final test report (template in artifact-templates) with:
+      - Counts (passed / failed / blocked) across all batches
+      - Coverage matrix verification (✅ / ❌ / ⚠️ per FR/NFR/AC)
+      - Bug summary list
+      - Verdict (READY FOR REVIEW: yes / no)
+    request_handoff(target_role='reviewer', ...) — NOT to self
+    update_comment("{nickname} — Phase 2 complete. {P}/{F}/{B}.")
+    STOP
 ```
 
-After all TCs done — post final test report (template in artifact-templates) with:
-- Counts (passed / failed / blocked)
-- Coverage matrix verification (✅ / ❌ / ⚠️ per FR/NFR/AC)
-- Bug summary list
-- Verdict (READY FOR REVIEW: yes / no)
+**Re-entry**: mid-batch crash → next invocation re-runs that entire batch from scratch (not partial). Test plan description checkbox state is the only resume signal.
 
-`update_comment`:
-> **{nickname} — Phase 2 complete. {P} passed / {F} failed / {B} blocked.**
+**Conductor dependency**: required version `plane-conductor` ≥ `feat/queue-on-running` merge (2026-06-19).
 
 ### Phase 2 (regression iteration)
 
