@@ -105,48 +105,56 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 
 ### Phase 1: PLAN
 
+Sizing is governed by the **`step-execution-discipline` SKILL** — read it before drafting. Each step must pass the **5-budget AND-filter** (time ≤15–20 min · files ≤10 · diff ≤300–500 LoC · ONE binary acceptance · existing tests still green) AND default to **vertical slices** (route + page + minimal component + smoke, not «all components then all routes then all stores»). A step violating any budget → split further.
+
 1. `pickup_issue(<PROJECT_IDENTIFIER>-<N>)` → `root_uuid`
 2. Step 0 (above)
 3. Re-entry detection (see `plane-api.md` §7)
 4. First run: `create_sub_issue(name="Frontend: <root_name> (<PROJECT_IDENTIFIER>-<N>)", label=artifact:frontend, assignee=$AGENT_MEMBER_ID)`
 5. `post_startup_comment` → save `comment_id`
-6. Compose PLAN (template in `artifact-templates`):
-   - Steps with checkboxes — small (~30 min) units, each independently verifiable
-   - For each step: 1-line action + verification command (lint / typecheck / build)
-   - Risks / open questions
-   - Out of scope
-7. `update_sub_issue_description(PLAN)`
-8. `update_comment` (body text only — no mentions):
+6. Compose PLAN per the template in `artifact-templates` SKILL (Files/Acceptance/Slice/Verify per step). Use `update_sub_issue_description`.
+7. `update_comment` (body text only — no mentions):
    > **{nickname} — PLAN ready ({N} steps).** Awaiting initiator approval.
-9. Re-ping the human so the PLAN doesn't sit silently (`agent-base` §8.1):
+8. Re-ping the human so the PLAN doesn't sit silently (`agent-base` §8.1):
    `request_handoff(sub_uuid=<spawn_uuid>, target_role='initiator', message_html='PLAN ready ({N} steps). Approve to start Phase 2.')`
-10. **STOP.** Wait for the initiator's "OK".
+9. **STOP.** Wait for the initiator's "OK".
 
-### Phase 2: Implementation (single run, walks all steps)
+Self-check before posting PLAN: every step has explicit Files (≤10) · ONE binary Acceptance · Slice (vertical or `horizontal-justified — <reason>`) · scoped Verify command · wall-clock ≤15–20 min. A PLAN with violations is rejected on review; redraft instead of executing.
 
-After the initiator approves PLAN, **one agent run** walks all steps:
+### Phase 2: Implementation (one step per invocation, self-handoff between steps)
+
+Execution follows the **`step-execution-discipline` SKILL** — read it. Summary contract: **one invocation = exactly one step**. Between steps `request_handoff(target_role='<self>')` → exit. Conductor's queue-on-running (in `plane-conductor` ≥ `feat/queue-on-running`) catches the webhook and re-spawns you for the next step. PLAN description checkbox state is the only resume signal.
 
 ```
-loop over PLAN steps:
-    if step is [x] → skip (idempotent re-runs)
-    implement step (code only)
-    run scoped verification (per step's "Verify:" line — commands from $KB_DIR/kb/verify.md)
-    if green:
-        update PLAN: [x] this step
-        update_sub_issue_description(updated PLAN)
-        post_comment("Step N done. {summary}. ✅ {verification}")
-        continue
-    if red:
-        post_comment("Step N blocked: {details}.")
-        update_comment("blocked at Step N.")
-        STOP
+1. read_artifact(my Frontend sub-issue) → parse PLAN steps
+2. next_step = first [ ] in PLAN
+3. if no next_step → FINAL PASS (below); STOP
+4. implement next_step (code only — DO NOT peek at step N+1)
+5. run scoped verification (per step's "Verify:" line)
+   if red:
+       post_comment("Step N blocked: <details>")
+       update_comment("blocked at Step N")
+       STOP — wait for initiator (no self-handoff)
+   if green:
+       update PLAN: change [ ] to [x] for this step
+       update_sub_issue_description(updated PLAN)
+       post_comment("Step N done. <1-line summary>. ✅")
+6. request_handoff(sub_uuid=<my spawn issue_uuid>, target_role='<my role>',
+                   message_html='Step N done. Continuing.')
+7. STOP — exit cleanly. Do NOT execute step N+1 in this session.
 
-after final step:
-    run full DoD verification (commands from $KB_DIR/kb/verify.md)
-    compose CHANGES (template in `artifact-templates`)
+FINAL PASS (no [ ] remains):
+    run full DoD verification (all commands from $KB_DIR/kb/verify.md)
+    compose CHANGES (template in `artifact-templates` SKILL)
     post_changes(target='frontend', files=…, ready_for_review=True)  # §6.7d
+    request_handoff(target_role='reviewer', ...)  # NOT to self
     update_comment("{nickname} — all steps done.")
+    STOP
 ```
+
+**Re-entry**: mid-step crash / initiator-uncheck / initiator-added step → next invocation reads PLAN, sees first `[ ]`, re-runs from scratch. PLAN is the only source of truth between invocations.
+
+**Conductor dependency**: required version `plane-conductor` ≥ `feat/queue-on-running` merge (2026-06-19). Without it, self-handoff drops on the floor on race with the exiting subprocess.
 
 ---
 
