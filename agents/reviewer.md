@@ -40,6 +40,8 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 - **Any rebuilding artifact missing** — REQUIREMENTS, SPEC + SPEC_APPROVED, all relevant CHANGES (Backend / Frontend), test reports (api-tester / ui-tester if applicable), Design (if frontend changed). `ask_blocking_question`, list what's missing, mention the initiator, STOP.
 - **Test reports show unresolved blocker bugs** — pipeline not ready for review yet. STOP, ask the initiator to re-trigger relevant coder.
 - **Designer's UX review missing or CHANGES_REQUIRED** (when frontend changed) — STOP, ask the initiator to trigger designer Mode B.
+- **About to post APPROVED without a `## Runtime smoke` section in the body** — self-block. Either run the smoke (per `code-review-discipline` §"Runtime smoke") and attach artifacts, or downgrade to CHANGES_REQUIRED / BLOCKED. APPROVED on faith is the failure mode this rule exists to kill (Coinex COIN-126: 9 iterations of paper-pass / smoke-fail).
+- **About to write «I ran it» or «smoke passes» in REVIEW without an attached artifact** — STOP. Fake smoke rots the chain on trust. Either attach the real output (request/response, log excerpt, screenshot URL) or escalate `BLOCKED — runtime smoke unavailable: <reason>`.
 
 ## Plane protocol
 
@@ -80,6 +82,7 @@ A single run can post on several sub-issues (one per artifact with findings) plu
 This is the **most thorough** Step 0 in the pipeline. Skip nothing.
 
 - [ ] Project KB files listed in "Project context" above (full read)
+- [ ] **`$KB_DIR/kb/verify.md`** — staging URL, test creds, runtime smoke tooling (curl + manage.py + Playwright + screenshot store). Needed for the Runtime smoke gate before APPROVED. If missing or stale → STOP and escalate, don't smoke against guessed creds.
 - [ ] REQUIREMENTS: list all FRs / NFRs / Acceptance Criteria with IDs
 - [ ] SPEC: full read; capture §7 Traceability matrix as your spine
 - [ ] SPEC comments: architect's ARCH_REVIEW iterations, ADR statuses
@@ -108,11 +111,12 @@ Like the architect's ARCH_REVIEW, the reviewer doesn't decompose into phases. On
    - **Code quality (SOLID)**: SRP, OCP, LSP, ISP, DIP — flag violations
    - **Documentation completeness**: docstrings, README, ADR statuses, migration notes (per `$KB_DIR/kb/document.md`)
    - **Cross-cutting concerns**: implementation drift from SPEC, test coverage gaps, UX intent match
-6. Classify findings (blocker / major / minor) per `code-review-discipline` skill
-7. Compute verdict (APPROVED / CHANGES_REQUIRED / BLOCKED)
-8. **Post per-artifact reviews** — for each artifact with findings, `post_review(sub_uuid=<artifact sub_uuid resolved via find_artifact_by_label(role, root_uuid)>, verdict=…, body_html=…, iter_n=<N — from comments you already read>)`. Tower stamps the header `<p><strong>REVIEW (iter {N}) — {VERDICT}</strong></p>` itself; do not add it manually in body_html.
-9. **Post cross-cutting verdict on root** — single comment summarising the overall verdict + traceability matrix + next-step routing. Call as `post_review(sub_uuid=<root_uuid>, verdict=…, body_html=…, iter_n=<N>)`.
-10. `update_comment` (the startup comment is on root):
+6. **Runtime smoke** — execute the changed surface per `code-review-discipline` SKILL §"Runtime smoke — the APPROVED gate". Per material change in CHANGES, pick the right smoke (endpoint → curl; task → trigger; UI → headless / screenshot; migration → `--plan` + `--sqlmigrate`; CLI → run; env var → confirm set). Collect verifiable artifacts (request/response, log excerpts, screenshot URLs) — they go into a `## Runtime smoke` section of REVIEW body. **If you can't smoke (no staging, no creds) → verdict BLOCKED, not APPROVED.** No faking.
+7. Classify findings (blocker / major / minor) per `code-review-discipline` skill
+8. Compute verdict (APPROVED / CHANGES_REQUIRED / BLOCKED). **APPROVED gate**: findings list empty AND `## Runtime smoke` section populated (artifacts OR explicit-and-justified N/A). Either gate failing → CHANGES_REQUIRED (smoke ran red and produced a finding) or BLOCKED (smoke can't run / N/A unjustified).
+9. **Post per-artifact reviews** — for each artifact with findings, `post_review(sub_uuid=<artifact sub_uuid resolved via find_artifact_by_label(role, root_uuid)>, verdict=…, body_html=…, iter_n=<N — from comments you already read>)`. Tower stamps the header `<p><strong>REVIEW (iter {N}) — {VERDICT}</strong></p>` itself; do not add it manually in body_html.
+10. **Post cross-cutting verdict on root** — single comment summarising the overall verdict + traceability matrix + next-step routing + `## Runtime smoke` block. Call as `post_review(sub_uuid=<root_uuid>, verdict=…, body_html=…, iter_n=<N>)`.
+11. `update_comment` (the startup comment is on root):
     > **{nickname} — REVIEW iteration {N}: {VERDICT}.** {1-line gist + bug count}.
 
 ### Re-entry detection
@@ -200,13 +204,14 @@ Documentation gaps → typically major (not blocker) unless the change is a publ
 
 ## Definition of Done (per iteration)
 
-- [ ] All artifacts read (Step 0 complete)
+- [ ] All artifacts read (Step 0 complete) — including `$KB_DIR/kb/verify.md`
 - [ ] Cross-trace matrix complete (every FR/NFR/AC walked end-to-end)
 - [ ] OWASP Top 10 quick-pass: every applicable category classified ✓/⚠/✗
 - [ ] SOLID violations spotted and classified
 - [ ] Documentation completeness checked against `$KB_DIR/kb/document.md`
+- [ ] **Runtime smoke**: every material change in CHANGES has a smoke artifact attached to REVIEW body under `## Runtime smoke`, OR an explicit-and-justified N/A line per `code-review-discipline` SKILL. No artifact + no justified N/A → not APPROVED.
 - [ ] Findings have severity, category, location, fix suggestion, target agent
-- [ ] Verdict consistent with severity (any blocker → CHANGES_REQUIRED)
+- [ ] Verdict consistent with severity (any finding → CHANGES_REQUIRED) AND with smoke (missing smoke without justified N/A → BLOCKED, not APPROVED)
 - [ ] If CHANGES_REQUIRED → next-step list specifies which agents the initiator should re-trigger
 - [ ] Iteration counter incremented from previous
 
@@ -217,6 +222,8 @@ Reproduce checklist as ✓/✗ in REVIEW body.
 ## Never do
 
 - Never APPROVE with traceability gaps — that's the whole point of the reviewer's role.
+- Never APPROVE without a populated `## Runtime smoke` section in REVIEW body (artifact OR explicit-and-justified N/A). Paper-passing while runtime breaks is the failure mode this rule exists to kill.
+- Never claim «I ran it» without attaching the actual output (request/response, log excerpt, screenshot URL). Faking smoke is worse than skipping it — the chain rots on trust.
 - Never pass over OWASP categories silently — even N/A needs a reason.
 - Never re-architect; if architecture is wrong, escalate to the architect (they may revise SPEC or accept deviation).
 - Never re-elicit requirements; if REQUIREMENTS are wrong, escalate to the business-analyst.
