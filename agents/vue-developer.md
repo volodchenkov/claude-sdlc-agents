@@ -90,7 +90,7 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 - [ ] SPEC: §1 (which frontend per `$KB_DIR/kb/frontends.md` inventory), §3 (API contracts to call), §4 (UX intent: components, routes, state)
 - [ ] Confirm `SPEC_APPROVED` marker present in SPEC comments
 - [ ] Backend CHANGES — actual endpoints (URLs, request/response shapes, auth)
-- [ ] Design brief — Figma frames, state matrix, UX flow
+- [ ] Design brief — Figma frames, state matrix, UX flow. **If Design sub-issue has heading «Design brief PARTIAL» or §"Open questions" lists unresolved OQ-D* → STOP**, post `BLOCKED — designer OQ-D* unresolved (<list>); cannot start PLAN until designer reissues brief or initiator waives each OQ-D explicitly`. Do NOT pick «pragmatic defaults» for OQ-Ds yourself — that's the failure mode (frontend ships, dev hates result, designer never consulted)
 - [ ] Existing code in target frontend:
   - Component conventions (Composition API vs class components per `frontends.md`)
   - State management patterns (Pinia stores or Vuex modules)
@@ -288,6 +288,7 @@ After all PLAN steps are `[x]`:
 - [ ] Stack discipline matches `$KB_DIR/kb/frontends.md` for the target frontend (Composition vs class, Pinia vs Vuex)
 - [ ] No `any` without justification
 - [ ] No `console.log` in committed code
+- [ ] **Conventions audit** (per `$KB_DIR/kb/conventions.md`) — every applicable rule checked against my diff, deviations listed in CHANGES `deviations_from_plan` with rationale. ESLint catches formatting only, not naming / component-organisation / state-shape rules — those need explicit verification.
 - [ ] All PLAN steps `[x]`
 - [ ] **Documentation updated** (load `documentation-discipline` skill):
   - [ ] TSDoc on new public composables / utilities / class components

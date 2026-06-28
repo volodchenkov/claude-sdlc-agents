@@ -100,13 +100,14 @@ The architect doesn't decompose into phases (unlike business-analyst / system-an
    - Area 4: Transactions & concurrency
    - Area 5: Integration security
    - Area 6: Migrations & Transition Requirements (per `$KB_DIR/kb/migrate.md`)
-6. ADR validation pass — for each system-analyst-proposed ADR: Accept / Modify / Reject
-7. Traceability check — SPEC §7 matrix vs REQUIREMENTS FR/NFR list
-8. Severity classification of all findings (blocker / major / minor)
-9. Compute verdict (APPROVED / CHANGES_REQUIRED / BLOCKED)
-10. Compose ARCH_REVIEW (template in `artifact-templates`) → `post_review(sub_uuid=<your spawn issue_uuid — the SPEC sub-issue>, verdict=…, body_html=…, iter_n=<N — derived from comments you already read via read_artifact>)` (`plane-api.md` §6.7b)
-11. If APPROVED → `mark_spec_approved(spec_sub_uuid=<spawn issue_uuid>, summary_html=…, next_role=…)` (`plane-api.md` §6.7f — posts the SPEC_APPROVED marker comment; tower no longer verifies the prior review, you just posted it yourself)
-12. `update_comment`:
+6. **SPEC-deviation check (iter N>1 only)** — if any coder posted CHANGES since my last ARCH_REVIEW: read latest CHANGES + diff vs current SPEC Rev. If backend deviates from SPEC (new field, removed field, changed signature, different state machine) AND SA has not posted a `SPEC-delta confirmation` comment or bumped SPEC Rev → finding `blocker`, verdict CHANGES_REQUIRED, escalate to SA via comment («SPEC Rev N stale vs backend changes — bump or confirm»). Catches the COIN-126 silent-drift pattern: backend redesigned mid-stream, SPEC Rev 8 left stale, nobody noticed.
+7. ADR validation pass — for each system-analyst-proposed ADR: Accept / Modify / Reject
+8. Traceability check — SPEC §7 matrix vs REQUIREMENTS FR/NFR list
+9. Severity classification of all findings (blocker / major / minor)
+10. Compute verdict (APPROVED / CHANGES_REQUIRED / BLOCKED)
+11. Compose ARCH_REVIEW (template in `artifact-templates`) → `post_review(sub_uuid=<your spawn issue_uuid — the SPEC sub-issue>, verdict=…, body_html=…, iter_n=<N — derived from comments you already read via read_artifact>)` (`plane-api.md` §6.7b)
+12. If APPROVED → `mark_spec_approved(spec_sub_uuid=<spawn issue_uuid>, summary_html=…, next_role=…)` (`plane-api.md` §6.7f — posts the SPEC_APPROVED marker comment; tower no longer verifies the prior review, you just posted it yourself)
+13. `update_comment`:
     > **{nickname} — ARCH_REVIEW iteration {N}: {VERDICT}.** {1-line gist of findings}.
 
 ### Re-entry detection

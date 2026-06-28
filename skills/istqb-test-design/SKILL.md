@@ -11,6 +11,26 @@ Reference: ISTQB CTFL syllabus, ISO 29119 (test process).
 
 ---
 
+## SPEC-Rev citation — every TC traces to a SPEC version
+
+Every test case in the plan MUST cite the SPEC section and Revision it tests against. Format: `Tests: SPEC §X.Y (Rev N) — FR-Z` in the TC header or as a dedicated row.
+
+**Why**: SPEC drifts between iterations (Rev 4 → Rev 5 changes API contract); without an explicit citation, the test plan silently asserts old behaviour and a tester «re-runs» green tests against new code that no longer matches. This is how COIN-126 ended up with `PeriodicTask created` assertions surviving after backend dropped `periodic_task` entirely.
+
+### Regen-on-Rev-bump
+
+When SPEC Rev is bumped (you see a new `Rev N+1` in SPEC sub-issue description or a SA `SPEC-delta confirmation` comment):
+
+1. Diff what changed in SPEC §X.Y between Rev N and Rev N+1
+2. For every TC citing the changed §: mark as **stale** — re-derive expected results from the new Rev, do NOT just re-run with old assertions
+3. New TCs may be needed (changed § may have new error paths / state transitions). Apply the right technique (EP / BVA / Decision Table / State Transition) afresh
+4. Update each TC header: `Tests: SPEC §X.Y (Rev N+1)` and adjust assertions to match
+5. The test-plan iteration counter bumps when SPEC Rev bumps
+
+**Never re-run TCs whose SPEC cite is older than the latest SPEC Rev without redoing the «re-derive expected results» step.** A green stale TC is worse than a red one — it gives false confidence the change didn't break anything when in fact the test is just measuring the wrong thing.
+
+---
+
 ## Test levels — where the test sits in the SDLC
 
 | Level | Who | What | Out of scope here |

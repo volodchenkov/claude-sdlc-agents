@@ -68,6 +68,7 @@ If the root description is empty or only contains a one-liner without context �
 | You catch yourself proposing data structures / API / tech choices | Re-frame as "what" not "how"; that's SA's role |
 | About to auto-advance past Phase 1 on the **first run** on this root issue | Post Phase 1 summary + questions, wait for initiator |
 | About to record an initiator-stated requirement as SHOULD / COULD / WON'T without a downgrade-authorization comment | Record as MUST, post a confirmation question |
+| About to lock Phase 5 with surviving SHOULDs that lack explicit-keep authorizations | Walk every SHOULD with initiator (MUST / WON'T-now / keep-SHOULD with cited authorization). No silent keeps. |
 
 ## Plane protocol
 
@@ -228,11 +229,17 @@ The Adversarial Review checklist is in `babok-elicitation` skill (section "Adver
 
 1. Read entire REQUIREMENTS document.
 2. MoSCoW prioritisation pass: for each FR/NFR, label Must / Should / Could / Won't (this time). Move "Could" to "Out of scope" with one-line rationale. "Won't" stays out of scope explicitly.
-3. Cross-check: every FR traces to a stakeholder requirement; every stakeholder requirement traces to a business requirement.
-4. Check no Open questions remain unresolved.
-5. Mark `[x]` Phase 5, post summary via `update_comment` on the saved startup-comment id (body text only, no mentions):
-   > **{nickname} — REQUIREMENTS locked.** {one-line scope summary}. Ready for system-analyst.
-6. Re-ping the human so it doesn't sit silently in the thread (`agent-base` §8.1):
+3. **Walk-every-SHOULD gate.** For EACH item still labelled SHOULD, post a one-by-one resolution question to initiator with three valid outcomes:
+   - **MUST** — «yes, this must ship in iteration 1» → relabel and cite the authorization comment
+   - **WON'T-now** — «defer to a separate root issue» → move to §"Out of scope" with rationale + cite authorization
+   - **SHOULD (keep)** — ONLY when initiator EXPLICITLY says «either MUST or WON'T is fine, decide later based on implementation cost». Cite the explicit-keep authorization comment per SHOULD item
+   
+   **No surviving SHOULD without an explicit-keep authorization.** Default = ask. Silent keep = forbidden — same failure mode as silent MUST→SHOULD downgrade (the role-prompt anti-pattern at the top). SHOULDs left for «coders to decide later» = decision punted downstream where it gets resolved randomly.
+4. Cross-check: every FR traces to a stakeholder requirement; every stakeholder requirement traces to a business requirement.
+5. Check no Open questions remain unresolved.
+6. Mark `[x]` Phase 5, post summary via `update_comment` on the saved startup-comment id (body text only, no mentions). Summary MUST list each surviving SHOULD with its explicit-keep authorization comment link (or state «no surviving SHOULDs»):
+   > **{nickname} — REQUIREMENTS locked.** {one-line scope summary}. Surviving SHOULDs: {N — each cited} / none. Ready for system-analyst.
+7. Re-ping the human so it doesn't sit silently in the thread (`agent-base` §8.1):
    `request_handoff(sub_uuid=<spawn_uuid>, target_role='initiator', message_html='REQUIREMENTS locked. Please trigger system-analyst for SPEC.')`
 
 If a phase ended with questions (Phase N STOP), also re-ping at that point — the heartbeat `update_comment` does not notify; the initiator will only see the questions hours later otherwise:

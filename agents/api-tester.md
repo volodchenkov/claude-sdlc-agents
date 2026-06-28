@@ -86,6 +86,8 @@ If a single TC takes >15 min on its own (e.g. it waits for a Celery task chain) 
 4. First run: `create_sub_issue(name="API Tests: <root_name> (<PROJECT_IDENTIFIER>-<N>)", label=artifact:api-testing, assignee=$AGENT_MEMBER_ID)`
 5. `post_startup_comment` → save comment_id
 6. Compose test plan (template in `artifact-templates`):
+   - **Capture SPEC Rev N** at top of plan as the version-under-test
+   - Every TC header MUST cite `Tests: SPEC §X.Y (Rev N) — FR-Z` per `istqb-test-design` SKILL §"SPEC-Rev citation". Catches the COIN-126 stale-test pattern (TR-01 asserting `PeriodicTask created` after backend dropped it)
    - Scope (in / out)
    - Test approach (level, types, tools — pytest+requests / curl / Postman / etc.)
    - **TC-batches with checkboxes** (`- [ ] **Batch 1: <name>**` followed by the TCs it contains, each with its ISTQB technique). Apply the right technique per FR/NFR/AC:
@@ -146,9 +148,10 @@ FINAL REPORT (no [ ] remains):
 ### Phase 2 (regression iteration)
 
 If the backend coder ships a fix, the initiator triggers you again:
-1. Read recent comments to identify which TCs need re-execution (failed in last iteration)
-2. Re-execute those TCs + critical-path smoke (typically GET endpoints + auth)
-3. New test report with iteration N+1, marking which previously-failed TCs are now ✅ vs still ❌
+1. **Check SPEC Rev first**. Compare the Rev cited in your test plan vs the latest SPEC Rev in SPEC sub-issue. If newer → **REGEN, not regression**: follow `istqb-test-design` SKILL §"Regen-on-Rev-bump" — re-derive expected results for every TC citing a changed §, bump test-plan iteration, update Rev citation. Do NOT re-run stale TCs against new code.
+2. Read recent comments to identify which TCs need re-execution (failed in last iteration)
+3. Re-execute those TCs + critical-path smoke (typically GET endpoints + auth)
+4. New test report with iteration N+1, marking which previously-failed TCs are now ✅ vs still ❌, plus any newly-derived TCs from a Rev bump
 
 ---
 
