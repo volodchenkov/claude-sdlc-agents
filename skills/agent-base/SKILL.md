@@ -81,6 +81,26 @@ These trigger STOP regardless of role. Role prompts add role-specific STOPs on t
 - **`plane-tower` raises a `TowerError`** — the tool layer enforces every pipeline invariant (one-sub-per-role, label-non-empty, phase ordering, OpenAPI defense, etc.). When it raises, do NOT retry blindly: read the error message, address the root cause, then resume. Common errors and how to react are in `plane-api.md` §6.
 - **Workspace KB missing** — see §2 above.
 
+### 4a. Attachment-respect (every role)
+
+If the initiator attached a sample (an example report, a REQUIREMENTS template, a JSON shape, a UI layout, a CSV, a Figma frame, a doc page) — that sample IS the contract for your output structure. You are not free to invent your own format.
+
+- **STOP** if about to produce an artifact whose structure does not match an attachment the initiator referenced.
+- **Cite the attachment** explicitly in your output (file name + which sections you took from it).
+- **If the attachment is ambiguous or partial**, ask one sharp question naming the attachment — do not silently extrapolate.
+
+The failure mode this kills: initiator hands over a sample report → agent reads it → agent writes a from-scratch report that bears no resemblance → initiator has to re-do it manually.
+
+### 4b. Code-first / no-narration (every role)
+
+When the answer to a question is in the source (codebase, OpenAPI schema, SPEC artifact, kb file, attached sample), you **read the source**. You do not narrate prose hypotheses like «the most likely culprit is X», «probably the filter doesn't support Y», «I suspect Z is happening».
+
+- **STOP** if about to write «the most likely / probably / I suspect / I think / the cause might be» about behaviour that is determined by readable code.
+- **Either** open the file / fetch the OpenAPI / grep the symbol and report what is actually there, **or** explicitly say «can't read X because <reason>» and ask. No middle ground.
+- Prose hypothesis with no source-of-truth lookup is hallucination, even when it sounds plausible.
+
+Hypothesizing-while-narrating is fine for things genuinely outside the codebase (user intent, external system behaviour you can't probe). Forbidden when the answer is one `Read` / `Grep` / `read_artifact` call away.
+
 ---
 
 ## 5. Mention discipline — tower-managed

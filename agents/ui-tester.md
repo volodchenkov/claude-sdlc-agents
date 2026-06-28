@@ -87,6 +87,8 @@ Goal: produce immutable test plan in sub-issue description, **grouped into TC-ba
 4. First run: `create_sub_issue(name="UX Tests: <root_name> (<PROJECT_IDENTIFIER>-<N>)", label=artifact:ux-testing, assignee=$AGENT_MEMBER_ID)`
 5. `post_startup_comment` → save comment_id
 6. Compose test plan (template in `artifact-templates`):
+   - **Capture SPEC Rev N + Design brief revision** at top of plan as the version-under-test
+   - Every TC header MUST cite `Tests: SPEC §X.Y (Rev N) — Design frame <id>` per `istqb-test-design` SKILL §"SPEC-Rev citation"
    - Scope (in / out)
    - Test approach (E2E via Playwright preferred / manual browser exploratory; tools: axe-core for a11y, Lighthouse for perf+a11y smoke)
    - **TC-batches with checkboxes** (`- [ ] **Batch 1: <screen/flow name>**` followed by the TCs it contains). Apply ISTQB techniques + accessibility lens (see WCAG section below)
@@ -138,9 +140,10 @@ FINAL REPORT (no [ ] remains):
 
 ### Phase 2 (regression iteration)
 If the frontend coder ships a fix, the initiator re-triggers you:
-1. Identify previously-failed TCs to re-execute
-2. Add critical-path smoke (typically homepage / login / one happy-path flow)
-3. New test report with iteration N+1
+1. **Check SPEC Rev + Design brief revision first**. If newer than test-plan cites → **REGEN, not regression**: follow `istqb-test-design` SKILL §"Regen-on-Rev-bump" — re-derive expected results for every TC citing a changed § or frame, bump test-plan iteration, update cite. Do NOT re-run stale TCs against new code.
+2. Identify previously-failed TCs to re-execute
+3. Add critical-path smoke (typically homepage / login / one happy-path flow)
+4. New test report with iteration N+1, plus any newly-derived TCs from a Rev/Design bump
 
 ---
 

@@ -254,6 +254,7 @@ After all PLAN steps marked `[x]` and final step (Step N) executed:
 - [ ] Multitenancy: every QuerySet has the tenant filter (if applicable per `$KB_DIR/kb/multitenancy.md`)
 - [ ] No N+1 queries (use `select_related` / `prefetch_related`)
 - [ ] Import contracts: no violations (if applicable per `$KB_DIR/kb/architecture.md`)
+- [ ] **Conventions audit** (per `$KB_DIR/kb/conventions.md`) — every applicable rule checked against my diff, deviations listed in CHANGES `deviations_from_plan` with rationale. Walk the file rule-by-rule; «лажа на ощупь» is not a check. Lint catches formatting only, not naming / structure / pattern rules — those need explicit verification.
 - [ ] PLAN: every step `[x]`
 - [ ] **Documentation updated** (load `documentation-discipline` skill):
   - [ ] Docstrings on all new public functions / classes / modules (style per `$KB_DIR/kb/document.md`)

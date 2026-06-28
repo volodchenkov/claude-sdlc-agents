@@ -125,12 +125,19 @@ Visual treatment is yours; content is the BA's. Do not extend BA-prescribed copy
 5. Create Figma frames matching the matrix (frames designed in Figma; sub-issue stores **link + UX intent**, not pixels)
 6. Any sample/preview files you ship (HTML / JSON / etc.) MUST contain valid renderable templating for every conditional/dynamic block. A `{% if first_name %}…{% else %}…{% endif %}` lives as actual Jinja2 in the file — NOT in HTML/JSON comments ("Production Jinja2: …"). The coder reads files as deliverables, not commented prose.
 7. Pre-submit gate: self-rate via `plan-design-review` 0–10 per dimension. If any dimension < 9, either close the gap in the same run (use `creative-director` recursive loop) or write an explicit `Medium ceiling:` line that names the irreducible constraint (e.g. "motion capped — email clients don't render CSS animations"). Do not ship a 7 without a ceiling note.
-8. Update Design sub-issue description with brief; add Figma URL via `create_work_item_link` if convenient
-9. `update_comment` (body text only — no mentions):
-   > **{nickname} — Design brief ready.** Figma: {link}. {N} screens, {S} states. Awaiting initiator review.
-10. Re-ping the human so the brief doesn't sit silently (`agent-base` §8.1):
-    `request_handoff(sub_uuid=<spawn_uuid>, target_role='initiator', message_html='Design brief ready (Figma: {link}). Please review and approve to unblock the coder.')`
-11. STOP
+8. **Compute OQ-D status first** — count unresolved OQ-D* in §"Open questions". Choose the brief heading accordingly (this heading goes into the sub-issue **description**, which is what frontend's `read_artifact` returns — startup-comment status alone is invisible to coder's Step 0):
+   - **OQ-D count > 0** → description first line: `# Design brief PARTIAL — {K} OQ-D open` followed by an explicit `> ⚠ Frontend BLOCKED: cannot start PLAN until OQ-D* count is zero or each OQ-D is explicitly waived by initiator.` callout
+   - **OQ-D count == 0 (or all explicitly waived)** → description first line: `# Design brief — {Title}`
+9. Update Design sub-issue description with brief (heading per step 8); add Figma URL via `create_work_item_link` if convenient
+10. Match the startup-comment status to the description heading via `update_comment` (body text only — no mentions):
+    - PARTIAL case:
+      > **{nickname} — Design brief PARTIAL.** Figma: {link}. {N} screens, {S} states. **{K} open OQ-D* — frontend BLOCKED until resolved.**
+    - Ready case:
+      > **{nickname} — Design brief ready.** Figma: {link}. {N} screens, {S} states. Awaiting initiator review.
+11. Re-ping the initiator with intent matching the status (`agent-base` §8.1):
+    - PARTIAL case: `request_handoff(sub_uuid=<spawn_uuid>, target_role='initiator', message_html='Design brief partial — {K} OQ-D awaiting input. Frontend cannot start until resolved.')`
+    - Ready case: `request_handoff(sub_uuid=<spawn_uuid>, target_role='initiator', message_html='Design brief ready (Figma: {link}). Please review and approve to unblock the coder.')`
+12. STOP. Do NOT escalate PARTIAL to «ready» in this run — wait for initiator to answer the OQ-Ds; the next agent run re-renders the heading after resolution.
 
 ### Iteration on feedback
 

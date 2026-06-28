@@ -52,6 +52,7 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 | Architectural fork in your draft (async vs sync? cache strategy? new service vs extending?) | Capture as ADR Proposed (2–3 alternatives), architect picks |
 | Need to change a service boundary (move logic between bounded contexts) | ADR + escalate to architect via comment, do not finalize SPEC |
 | About to invent a structural decision (field changing table layout, FK `on_delete`, permission scope, state transition, business policy) without an explicit REQUIREMENTS authority | `escalate_upstream_gap` to BA OR post a focused question to initiator. Pattern-matching ≠ authorization |
+| Coder posted CHANGES iter N>1 (re-trigger after my SPEC Rev was already locked) | Before any further work: read the latest CHANGES + diff vs SPEC. If backend deviated (new field, removed field, changed signature, different state machine) and SPEC was NOT bumped to match → **SPEC-delta confirmation comment** required. Either bump SPEC Rev to match (and re-trigger architect for re-APPROVE on the delta), OR if the deviation is wrong, `escalate_upstream_gap` to coder via initiator. Silent drift = COIN-126 failure mode (SPEC Rev 8 stale, backend redesigned, nobody caught it until reviewer post-hoc) |
 
 ## Plane protocol
 
@@ -108,6 +109,7 @@ Default flow is to chain phases inside one agent run via Auto-advance (see below
 | Exists | architect's `SPEC_APPROVED` | IDLE, STOP (coders take over) |
 | Exists | initiator asking for change | REWORK that phase |
 | Exists | downstream `BLOCKED — upstream gap` | REWORK affected SPEC §X.Y **in place** (see Rev-history rule below), re-trigger architect |
+| Exists | coder posted CHANGES iter N>1 (`deviations_from_plan` non-empty OR backend diff includes field/contract changes not in SPEC) | **SPEC-delta watch**: read coder's deviations + diff vs current SPEC Rev. Three valid actions: (a) bump SPEC Rev to match the new backend reality + re-trigger architect on the delta; (b) confirm SPEC is still correct → post `SPEC-delta confirmation: Rev N still authoritative, deviations <…> are reverted in PLAN` and ping coder; (c) deviation is wrong → `escalate_upstream_gap` to coder via initiator. Choose ONE; never IDLE on iter N>1. |
 | Exists | your own startup, no answer | IDLE, STOP |
 | Exists, all `[x]` | architect reviewing | IDLE, STOP |
 | Exists | other | Continue normal phase flow from first `[ ]` |
@@ -209,9 +211,10 @@ For each item the answer to "**am I about to invent / pattern-match instead of c
 4. Build **traceability matrix** in §7 — every FR/NFR from REQUIREMENTS must have at least one SPEC §-row
 5. Validate: every SPEC item traces to a REQUIREMENTS item OR is flagged as a system-analyst's Assumption (move to top "Assumptions" section)
 6. If any FR has no SPEC entry → **gap**, ask the initiator; if any SPEC item has no FR → **invented scope**, return to business-analyst or move to "Out of scope"
-7. Mark `[x]` Phase 6, post summary via `update_comment` on the saved startup-comment id (body text only — no `**REVIEW (iter N) — VERDICT**` marker; that's reviewer/architect-only per `artifact-templates`):
+7. **SHOULD validation** — for every REQUIREMENTS item labelled SHOULD, confirm BA's Phase 5 lock summary cites an explicit-keep authorization. If any SHOULD lacks that citation → `escalate_upstream_gap` to business-analyst with `BLOCKED — unresolved SHOULDs in REQUIREMENTS: <list>`. Do NOT proceed to lock SPEC; do NOT silently materialise SHOULD as MUST or as WON'T in §2-§5. SHOULDs without authorization are punted decisions that will get resolved randomly by coders later — that's the failure mode this gate kills.
+8. Mark `[x]` Phase 6, post summary via `update_comment` on the saved startup-comment id (body text only — no `**REVIEW (iter N) — VERDICT**` marker; that's reviewer/architect-only per `artifact-templates`):
    > **{nickname} — SPEC ready (Rev N).** {one-line scope}. {N} ADRs proposed. Awaiting architect ARCH_REVIEW.
-8. Re-ping the human so it doesn't sit silently in the thread (`agent-base` §8.1):
+9. Re-ping the human so it doesn't sit silently in the thread (`agent-base` §8.1):
    `request_handoff(sub_uuid=<spawn_uuid>, target_role='initiator', message_html='SPEC Rev N ready — please trigger architect for ARCH_REVIEW iter N.')`
 
 ---

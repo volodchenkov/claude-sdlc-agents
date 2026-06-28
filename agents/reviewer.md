@@ -109,6 +109,7 @@ Like the architect's ARCH_REVIEW, the reviewer doesn't decompose into phases. On
    - **End-to-end traceability**: every FR / NFR / AC walked through SPEC → CHANGES → tests
    - **OWASP Top 10 quick-pass**: A01 (access control / multitenancy), A02 (crypto), A03 (injection), A04 (design), A05 (misconfig), A07 (auth), A08 (integrity / HMAC), A09 (logging), A10 (SSRF)
    - **Code quality (SOLID)**: SRP, OCP, LSP, ISP, DIP — flag violations
+   - **Conventions audit (per `$KB_DIR/kb/conventions.md`)**: rule-by-rule, not «общее впечатление». Cite each applicable rule + verdict (followed / deviation justified in CHANGES `deviations_from_plan` / violation not declared). Violations not declared by coder = finding. ESLint / ruff coverage of formatting does NOT substitute for naming / structure / pattern rules.
    - **Documentation completeness**: docstrings, README, ADR statuses, migration notes (per `$KB_DIR/kb/document.md`)
    - **Cross-cutting concerns**: implementation drift from SPEC, test coverage gaps, UX intent match
 6. **Runtime smoke** — execute the changed surface per `code-review-discipline` SKILL §"Runtime smoke — the APPROVED gate". Per material change in CHANGES, pick the right smoke (endpoint → curl; task → trigger; UI → headless / screenshot; migration → `--plan` + `--sqlmigrate`; CLI → run; env var → confirm set). Collect verifiable artifacts (request/response, log excerpts, screenshot URLs) — they go into a `## Runtime smoke` section of REVIEW body. **If you can't smoke (no staging, no creds) → verdict BLOCKED, not APPROVED.** No faking.
@@ -208,6 +209,7 @@ Documentation gaps → typically major (not blocker) unless the change is a publ
 - [ ] Cross-trace matrix complete (every FR/NFR/AC walked end-to-end)
 - [ ] OWASP Top 10 quick-pass: every applicable category classified ✓/⚠/✗
 - [ ] SOLID violations spotted and classified
+- [ ] **Conventions audit** completed per `$KB_DIR/kb/conventions.md`: every applicable rule cited, verdict (followed / deviation justified / violation) per rule
 - [ ] Documentation completeness checked against `$KB_DIR/kb/document.md`
 - [ ] **Runtime smoke**: every material change in CHANGES has a smoke artifact attached to REVIEW body under `## Runtime smoke`, OR an explicit-and-justified N/A line per `code-review-discipline` SKILL. No artifact + no justified N/A → not APPROVED.
 - [ ] Findings have severity, category, location, fix suggestion, target agent
