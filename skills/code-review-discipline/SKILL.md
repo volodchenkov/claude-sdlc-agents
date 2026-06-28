@@ -181,7 +181,7 @@ Severity describes *what kind* of finding it is — not whether it blocks the ve
 
 ## Verdict logic (zero-tolerance)
 
-**Any finding of any severity → CHANGES_REQUIRED.** APPROVED requires the finding list to be empty.
+**Any finding of any severity → CHANGES_REQUIRED.** APPROVED requires the finding list to be empty AND a populated `Runtime smoke` section per the next §.
 
 - ❌ «Minor — leave as follow-up ticket» — forbidden. Either it's worth fixing (file as finding → CHANGES_REQUIRED) or it isn't (don't write it down at all).
 - ❌ «Non-blocking, recommend separate issue» — forbidden. Same logic.
@@ -191,6 +191,49 @@ Severity describes *what kind* of finding it is — not whether it blocks the ve
 **Why**: every «non-blocking follow-up» the reviewer leaves behind becomes technical debt that no one comes back to. The initiator's stated rule (2026-05-13): «закрываем все замечания. Фиксите все». Don't pre-judge what's worth the implementer's time — surface everything, let the implementer fix everything, then APPROVED.
 
 If a finding genuinely doesn't fit this iteration (e.g. requires SPEC change), escalate it as `BLOCKED — upstream gap` and STOP — not as a punted minor.
+
+---
+
+## Runtime smoke — the APPROVED gate
+
+A REVIEW that passes traceability + OWASP + SOLID is **not enough**. Before APPROVED you MUST actually run the changed surface against a working environment and attach the verifiable output to the REVIEW body under a `## Runtime smoke` heading.
+
+This is what catches the «paper-review-passes / first-smoke-breaks» loop. Real example (Coinex telegram-integration COIN-126): iter 4 APPROVED → `default_storage` crash → iter 5 APPROVED → 3 wrong field accesses silently swallowed by `try/except` → iter 6 APPROVED → `telegram → tg` rename miss. Each REVIEW cleanly passed OWASP/SOLID/cross-trace while the code was broken on first call. Nine iterations to ship.
+
+### What counts as runtime smoke per changed surface
+
+Pick the smoke that fits the change. **Multi-surface PRs require multi-smoke** — one per material change. Don't bundle.
+
+| Changed surface | Smoke | Attach to REVIEW body |
+|---|---|---|
+| REST endpoint | `curl` from staging (creds in `$KB_DIR/kb/verify.md`) hitting the actual endpoint — happy path AND one error path | request line + response status + response body excerpt (PII redacted) |
+| Celery / background task | trigger the task on staging (`manage.py` / queue inspector / Flower) | task name + scheduled-at + terminal state + 2-line worker log excerpt |
+| UI page / flow | headless browser (Playwright per `kb/verify.md`) OR open in browser + screenshot to project's screenshot store | uploaded screenshot URL + console error list (empty or contents) |
+| Management command / CLI | run on staging | invocation line + stdout/stderr tail |
+| Migration | `manage.py migrate --plan` (and `--sqlmigrate <app> <num>` for SQL) | plan output + SQL excerpt (proof it's THIS migration, not a stale one) |
+| New env var / config | grep deployed config OR `printenv` on staging shell | confirmation line that the value is set |
+| Library / internal helper without public surface | running test suite that covers the callers | test-runner invocation + pass count + the specific call-site test IDs |
+
+### When smoke is genuinely N/A (rare)
+
+- **Pure-documentation PRs** (no code, no config, no template change) — justify in REVIEW body: «Runtime smoke N/A: docs-only change; verified by reading the rendered Markdown.»
+- **Internal-only refactor with full unit-test coverage AND no public API impact** — justify: «Runtime smoke N/A: helper X is internal-only; callers covered by test suite Y, full pass attached above.»
+
+A `Runtime smoke N/A` without a one-sentence justification = invalid verdict; same as no smoke at all.
+
+### Never fake
+
+Reviewer never lies about smoke. Faking («I ran it» without an artifact) is worse than failing to run it — the chain rots on trust.
+
+If you genuinely cannot run a smoke (no staging credentials, no test environment, endpoint requires data you don't have), STOP with `BLOCKED — runtime smoke unavailable: <reason>` and escalate to initiator. Do not APPROVE on faith.
+
+### Hard gate
+
+`verdict == APPROVED` requires the REVIEW body to contain:
+1. A `## Runtime smoke` section.
+2. That section has either ≥1 attached artifact OR an explicit-and-justified N/A line per the rules above.
+
+If drafting APPROVED without both → self-block: change verdict to BLOCKED (smoke unavailable) or CHANGES_REQUIRED (smoke ran red and produced a finding). Never paper over.
 
 ---
 

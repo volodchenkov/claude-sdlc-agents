@@ -700,6 +700,29 @@ Walk every FR / NFR / Acceptance Criterion from REQUIREMENTS through the chain:
 - Migration files have intent docstring: ✓ / ⚠
 - ADR statuses updated (Implemented / Superseded): ✓ / ⚠
 
+## Runtime smoke
+
+One subsection per material change in CHANGES. APPROVED requires at least one populated subsection OR an explicit-and-justified N/A. See `code-review-discipline` SKILL §"Runtime smoke — the APPROVED gate" for what counts per surface.
+
+### {endpoint / task / page / migration / CLI — short label}
+- Surface: {e.g. `POST /api/v1/transactions/` / `tasks.import_blockchain_batch` / `/transactions` list page / migration `wallets.0042_add_status` / `manage.py rebuild_balances`}
+- Environment: {staging / dev / specific env per `kb/verify.md`}
+- Invocation:
+  ```bash
+  {curl ... | manage.py ... | playwright run ... | screenshot URL}
+  ```
+- Output:
+  ```text
+  {response status + body excerpt (PII redacted) | task return state + worker log line | console error list | sqlmigrate excerpt}
+  ```
+- Verdict: ✅ matches expected | ⚠ partial — see finding {id} | ❌ broken — see finding {id}
+
+### {next surface}
+- ...
+
+### N/A justification (only if NO smoke was run)
+- Reason: {«docs-only — verified by reading rendered Markdown» | «internal helper X with full unit-test coverage Y, full pass attached above» | other one-sentence reason per `code-review-discipline` SKILL}
+
 ## Findings
 ### {finding-id}: {title}
 - Severity: blocker / major / minor
