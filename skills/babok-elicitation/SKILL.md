@@ -121,6 +121,22 @@ Classify each requirement: **M**ust / **S**hould / **C**ould / **W**on't.
 
 **Use when:** scope creep risk. Early in interview, ask the initiator to MoSCoW the draft features.
 
+#### SHOULD discipline — the silent-punt failure mode
+
+In practice SHOULD is the most dangerous label in MoSCoW. «Important, can defer if absolutely necessary» reads to a coder as «cut if there's any reason to». Half of stated-SHOULD requirements are actually MUST (initiator hedged the word, not the intent); the other half are WON'T-now (initiator was being polite). Leaving them as SHOULD punts the decision to a downstream agent that has no context and resolves it by code cost — which is the wrong axis.
+
+**Rule for Phase 5 Final lock**: walk every SHOULD with initiator one-by-one. Three valid outcomes:
+
+| Outcome | Authorization required |
+|---|---|
+| **MUST** | «yes, must ship in iteration 1» — relabel, cite the authorization comment |
+| **WON'T-now** | «defer to a separate root issue» — move to §"Out of scope" with rationale + cited authorization |
+| **SHOULD (keep)** | ONLY when initiator EXPLICITLY says «either MUST or WON'T is fine, decide later based on implementation cost» — cite the explicit-keep authorization comment per surviving SHOULD |
+
+**No surviving SHOULD without an explicit-keep authorization.** Phase 5 lock summary lists each surviving SHOULD with its citation, or states «no surviving SHOULDs». System-analyst Phase 6 rejects any SHOULD lacking citation back to BA via `escalate_upstream_gap`.
+
+Counter-argument anticipation: «but I asked once, that's enough». No — silent-keep means YOU concluded SHOULD; the discipline is that INITIATOR concluded SHOULD with the explicit-keep wording. Same anti-Goodhart logic as the broader BABOK questioning — quality of authorization, not quantity of questions.
+
 ### 7. Stakeholder Analysis (BABOK §10.43 — Stakeholder List, Map, or Personas)
 List all actors. For each: their role, what they want, level of influence.
 

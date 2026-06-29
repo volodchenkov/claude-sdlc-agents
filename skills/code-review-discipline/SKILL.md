@@ -147,6 +147,32 @@ In Django context, SOLID often means: thin views, fat models, services layer for
 
 ---
 
+## Conventions audit (rule-by-rule against `kb/conventions.md`)
+
+Architecture (the architect's 7-area lens) covers macro-level decisions; SOLID covers code structure. **Coding conventions** — naming, file/module organisation, framework-idiomatic patterns, error-handling shape, test layout — live in `$KB_DIR/kb/conventions.md` and are nobody's lens by default. That gap is how «делают абы как» creeps in: lint passes, tests pass, but the code feels foreign and grows debt.
+
+### The audit
+
+Walk `kb/conventions.md` rule-by-rule against the diff in CHANGES:
+
+| Per rule | Reviewer verdict |
+|---|---|
+| Followed in all changed code | ✓ |
+| Deviation that coder explicitly declared in CHANGES `deviations_from_plan` with rationale | ⚠ (acceptable if rationale holds) |
+| Deviation NOT declared | ✗ — finding, severity per rule importance |
+
+Cite each applicable rule in REVIEW body (e.g. «kb/conventions.md §3.2 view naming — followed»). «Looks fine overall» is forbidden — that's exactly what lets violations slip through.
+
+### Why this is a separate audit
+
+- **Linters cover formatting**, not naming / structure / patterns. ESLint won't catch «component named `OrderTransactionListV2`» when the convention is `OrderTransactionsList`.
+- **Architect's area scope** is service boundaries / multitenancy / migrations — not «is this method name idiomatic».
+- **SOLID** is principle-level — naming and file organisation aren't SOLID violations even when they're convention violations.
+
+If `kb/conventions.md` is missing or stale, raise it as a `BLOCKED — upstream gap` to the project initiator (the conventions file is project-level truth; without it the audit is vibes).
+
+---
+
 ## Code review patterns (from Google Engineering Practices)
 
 ### What to look for
