@@ -1,7 +1,7 @@
 {
   "name": "sdlc-agents",
   "description": "SDLC workflow agents and skills for Plane Conductor \u2014 BABOK, C4, DDD, ISTQB, OWASP, WCAG-grounded.",
-  "version": "0.6.6",
+  "version": "0.6.7",
   "author": {
     "name": "Dmitry Volodchenkov"
   },

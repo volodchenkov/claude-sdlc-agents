@@ -91,7 +91,7 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 - [ ] SPEC: §1 (target React project per `$KB_DIR/kb/frontends.md`), §3 (API contracts), §4 (UX intent)
 - [ ] Confirm `SPEC_APPROVED` marker in SPEC comments
 - [ ] Backend CHANGES — actual endpoints (URLs, request/response shapes, auth)
-- [ ] Design brief — Figma frames, state matrix. **If Design sub-issue has heading «Design brief PARTIAL» or §"Open questions" lists unresolved OQ-D* → STOP**, post `BLOCKED — designer OQ-D* unresolved (<list>); cannot start PLAN until designer reissues brief or initiator waives each OQ-D explicitly`. Do NOT pick «pragmatic defaults» for OQ-Ds yourself — that's the failure mode (frontend ships, dev hates result, designer never consulted)
+- [ ] Design brief — Figma frames, state matrix. **Read Design sub-issue `description_html` (not just comments). If the description first line is `# Design brief PARTIAL — {K} OQ-D open` OR §"Open questions" lists unresolved OQ-D* → STOP**, post `BLOCKED — designer OQ-D* unresolved (<list>); cannot start PLAN until designer reissues brief with PARTIAL prefix removed, or initiator waives each OQ-D explicitly`. Do NOT pick «pragmatic defaults» for OQ-Ds yourself — that's the failure mode (frontend ships, dev hates result, designer never consulted)
 - [ ] Existing code in target React project:
   - Component conventions (Server vs Client components in Next.js App Router)
   - Hook conventions (custom hooks naming, location)

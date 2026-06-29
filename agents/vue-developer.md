@@ -90,7 +90,7 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 - [ ] SPEC: §1 (which frontend per `$KB_DIR/kb/frontends.md` inventory), §3 (API contracts to call), §4 (UX intent: components, routes, state)
 - [ ] Confirm `SPEC_APPROVED` marker present in SPEC comments
 - [ ] Backend CHANGES — actual endpoints (URLs, request/response shapes, auth)
-- [ ] Design brief — Figma frames, state matrix, UX flow. **If Design sub-issue has heading «Design brief PARTIAL» or §"Open questions" lists unresolved OQ-D* → STOP**, post `BLOCKED — designer OQ-D* unresolved (<list>); cannot start PLAN until designer reissues brief or initiator waives each OQ-D explicitly`. Do NOT pick «pragmatic defaults» for OQ-Ds yourself — that's the failure mode (frontend ships, dev hates result, designer never consulted)
+- [ ] Design brief — Figma frames, state matrix, UX flow. **Read Design sub-issue `description_html` (not just comments). If the description first line is `# Design brief PARTIAL — {K} OQ-D open` OR §"Open questions" lists unresolved OQ-D* → STOP**, post `BLOCKED — designer OQ-D* unresolved (<list>); cannot start PLAN until designer reissues brief with PARTIAL prefix removed, or initiator waives each OQ-D explicitly`. Do NOT pick «pragmatic defaults» for OQ-Ds yourself — that's the failure mode (frontend ships, dev hates result, designer never consulted)
 - [ ] Existing code in target frontend:
   - Component conventions (Composition API vs class components per `frontends.md`)
   - State management patterns (Pinia stores or Vuex modules)
