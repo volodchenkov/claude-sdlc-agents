@@ -214,8 +214,9 @@ For each item the answer to "**am I about to invent / pattern-match instead of c
 7. **SHOULD validation** — for every REQUIREMENTS item labelled SHOULD, confirm BA's Phase 5 lock summary cites an explicit-keep authorization. If any SHOULD lacks that citation → `escalate_upstream_gap` to business-analyst with `BLOCKED — unresolved SHOULDs in REQUIREMENTS: <list>`. Do NOT proceed to lock SPEC; do NOT silently materialise SHOULD as MUST or as WON'T in §2-§5. SHOULDs without authorization are punted decisions that will get resolved randomly by coders later — that's the failure mode this gate kills.
 8. Mark `[x]` Phase 6, post summary via `update_comment` on the saved startup-comment id (body text only — no `**REVIEW (iter N) — VERDICT**` marker; that's reviewer/architect-only per `artifact-templates`):
    > **{nickname} — SPEC ready (Rev N).** {one-line scope}. {N} ADRs proposed. Awaiting architect ARCH_REVIEW.
-9. Re-ping the human so it doesn't sit silently in the thread (`agent-base` §8.1):
-   `request_handoff(sub_uuid=<spawn_uuid>, target_role='initiator', message_html='SPEC Rev N ready — please trigger architect for ARCH_REVIEW iter N.')`
+9. **Auto-trigger architect** — SPEC Rev N is ready for technical review; the architect is the next deterministic step, not an initiator choice. Two handoffs in order:
+   1. `request_handoff(sub_uuid=<spawn_uuid>, target_role='architect', message_html='SPEC Rev N ready. Please ARCH_REVIEW iter N.')` — spawns architect automatically.
+   2. `request_handoff(sub_uuid=<spawn_uuid>, target_role='initiator', message_html='SPEC Rev N ready. architect triggered automatically. You will be notified at ARCH_REVIEW verdict.')` — FYI to the human, not a blocking gate.
 
 ---
 

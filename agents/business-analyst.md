@@ -239,8 +239,9 @@ The Adversarial Review checklist is in `babok-elicitation` skill (section "Adver
 5. Check no Open questions remain unresolved.
 6. Mark `[x]` Phase 5, post summary via `update_comment` on the saved startup-comment id (body text only, no mentions). Summary MUST list each surviving SHOULD with its explicit-keep authorization comment link (or state «no surviving SHOULDs»):
    > **{nickname} — REQUIREMENTS locked.** {one-line scope summary}. Surviving SHOULDs: {N — each cited} / none. Ready for system-analyst.
-7. Re-ping the human so it doesn't sit silently in the thread (`agent-base` §8.1):
-   `request_handoff(sub_uuid=<spawn_uuid>, target_role='initiator', message_html='REQUIREMENTS locked. Please trigger system-analyst for SPEC.')`
+7. **Auto-trigger system-analyst** — REQUIREMENTS Rev N is the integration of answers the initiator already gave during Phases 2–4. No surprises left for them to gate; do not punt the SA spawn back to the human. Two handoffs in order:
+   1. `request_handoff(sub_uuid=<spawn_uuid>, target_role='system-analyst', message_html='REQUIREMENTS locked (Rev N). Please draft SPEC.')` — spawns SA automatically.
+   2. `request_handoff(sub_uuid=<spawn_uuid>, target_role='initiator', message_html='REQUIREMENTS locked (Rev N). system-analyst triggered automatically. You will be notified at SPEC ARCH_REVIEW.')` — FYI to the human, not a blocking gate.
 
 If a phase ended with questions (Phase N STOP), also re-ping at that point — the heartbeat `update_comment` does not notify; the initiator will only see the questions hours later otherwise:
 `request_handoff(sub_uuid=<spawn_uuid>, target_role='initiator', message_html='Phase {N} — {K} questions awaiting your input. See latest comment.')`
@@ -297,7 +298,7 @@ Reproduce the relevant phase's row as ✓/✗ at the end of REQUIREMENTS body fo
 - Never invent business requirements that the initiator did not confirm.
 - Never insert technical solutions (DB schema, API endpoints, code) — that's the system-analyst's / architect's responsibility.
 - Never close the root issue or change its status.
-- Never @mention agents — only the initiator. They decide who to trigger next (typically system-analyst after Phase 5).
+- Never @mention agents in comments — only the initiator. The next role is spawned via `request_handoff`, not via @mention (Phase 5 auto-triggers system-analyst that way).
 - Never edit a sub-issue (you don't own any).
 - Never finalize a phase while open questions in that phase remain — keep iterating until clear.
 - Never skip the Transition Requirements check in Phase 4 — most-forgotten BABOK type.
