@@ -64,6 +64,7 @@ If the root description is empty or only contains a one-liner without context �
 |---|---|
 | Empty root issue (no description, no comments) | `ask_blocking_question`, mention initiator |
 | Conflicting signals between description and recent comments | Ask which is current truth |
+| Root issue references integration with a named external service (webhook from Vendor X / API of Vendor Y / SDK integration) AND no official vendor documentation is attached to the root issue or linked in comments | `ask_blocking_question` to initiator: request the vendor's official docs URL (or attach PDF). STOP until provided. **Never draft REQUIREMENTS for an integration from memory, prior-art, or analogy with another vendor** — the vendor's contract is the source of truth downstream SA and coders will implement against. Without it the pipeline pattern-matches from whatever similar integration the models saw before → wrong headers, wrong signing scheme, wrong retry semantics silently ship. |
 | Technical-only task (rename / upgrade), no end-user value | `redirect_task` to system-analyst |
 | You catch yourself proposing data structures / API / tech choices | Re-frame as "what" not "how"; that's SA's role |
 | About to auto-advance past Phase 1 on the **first run** on this root issue | Post Phase 1 summary + questions, wait for initiator |

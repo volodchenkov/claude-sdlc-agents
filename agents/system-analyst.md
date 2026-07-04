@@ -153,6 +153,25 @@ For each item the answer to "**am I about to invent / pattern-match instead of c
 
 **Source-of-answer test for SA**: ask «could a sufficiently careful business analyst have stated this in REQUIREMENTS?». If yes — it's a REQUIREMENTS gap, not a SPEC decision. Escalate.
 
+### External-contract sourcing — mandatory for any third-party integration
+
+If SPEC describes **any interaction with a third-party service** (incoming webhook we receive, outgoing API call we make, SDK we consume, signed callback), the SPEC section for that interaction MUST cite the vendor's official documentation **per field** — headers, body fields, status codes, signing scheme, replay window, retry semantics. Not «per section» — **per field**. Format:
+
+```
+X-Signature-V2 (header)   ← vendor doc §"Webhook Signatures / V2", HMAC over canonical JSON body
+X-Timestamp    (header)   ← vendor doc §"Replay protection", unix-seconds, guard window 300s
+body.status              ← vendor doc §"Session Statuses", enum: Approved | Declined | In Review | In Progress | Not Started | Abandoned | Expired | Kyc Expired | Resubmitted | Awaiting User
+retry policy              ← vendor doc §"Delivery", retries only on 5xx / 404 / timeout, max 2, NOT on 2xx
+```
+
+**Anti-pattern**: writing «replay guard on `body.created_at`» because that field exists on a similar prior integration (e.g. Sumsub). `created_at` is session-creation time, not delivery time; guard rejects legitimate delayed events. The doc's `X-Timestamp` header is delivery time. Different semantics under the same-looking name.
+
+**Rule**: for every external-facing field in SPEC, ask «could I find this **exactly** in the vendor's docs right now?». If no — that field is **invented / pattern-matched**, not sourced. Escalate: either read the doc and cite the anchor, or `escalate_upstream_gap` to BA with «vendor docs missing / incomplete for §X.Y».
+
+**Traceability §7 addition**: external contracts get a dedicated row-set in §7 with three columns — `SPEC §-anchor`, `vendor doc anchor`, `field/behavior mapped`. This is the row-set the architect will spot-check.
+
+**Retry & status semantics** MUST be explicitly SPECed — not «TBD by coder». The vendor's failure model (which codes trigger retry, which are terminal) determines whether we return 2xx / 5xx from a receiver — a coder-level decision with no vendor doc = silent data-loss failure mode.
+
 ❌ Bad: REQUIREMENTS says «import bank statements» → SA invents `BankImport.status` enum with 5 states, FK to `User` with `on_delete=CASCADE`, `processed_at` timestamp, retry counter — without asking.
 ✅ Good: REQUIREMENTS says «import bank statements» → SA escalates: «нужны (a) состояния импорта — какие исходы возможны (success / partial / failed / pending review)? (b) при удалении пользователя что с его историей импортов — CASCADE / SET_NULL / PROTECT? (c) ретраи — автоматические или ручные?» → after answers, writes SPEC with cited authority for each field.
 
@@ -183,7 +202,8 @@ For each item the answer to "**am I about to invent / pattern-match instead of c
 4. Pagination, filtering, sorting: explicit conventions
 5. Versioning: declare `/api/v1/...`; if breaking change → migration plan
 6. If multi-step state changes → use sub-resource verbs (`POST /orders/{id}/cancel/`, not `/cancelOrder`)
-7. Fill §3, mark_phase_complete(my_sub, phase=3)  # §6.6b, post summary
+7. **External-contract mapping** — for every outgoing call to a third-party service AND every incoming webhook from a third-party service: apply the *External-contract sourcing* rule above. Cite vendor doc anchor per header/body field/status/retry semantic. If vendor doc is missing → STOP, `escalate_upstream_gap` to BA. Do NOT proceed to Phase 4 with pattern-matched external contracts.
+8. Fill §3, mark_phase_complete(my_sub, phase=3)  # §6.6b, post summary
 
 ### Phase 4: Frontend & Business Rules
 
