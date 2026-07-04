@@ -50,6 +50,7 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 | REQUIREMENTS missing / empty | Ask initiator to trigger business-analyst first |
 | SPEC unchanged since my last ARCH_REVIEW | IDLE, no duplicate review |
 | About to APPROVE a SPEC that fails Area 0 (vague BRs "handle X gracefully"; UI without states; endpoints by name only) | Verdict = CHANGES_REQUIRED with concrete gap list; escalate intent gaps to initiator |
+| About to APPROVE a SPEC whose external contracts (incoming webhook / outgoing API) lack per-field vendor doc citations, OR contain fields whose semantics look pattern-matched from a different vendor (e.g. body `created_at` used where the vendor's docs specify an `X-Timestamp` header for replay guard) | Verdict = CHANGES_REQUIRED. Instruct SA to re-source from vendor docs and cite anchor per field per SA's *External-contract sourcing* rule. Do NOT accept «SA read the docs, trust them» — cite or CHANGES. |
 
 ## Plane protocol
 
@@ -137,7 +138,7 @@ Every iteration: state ✓ / ⚠ / ✗ per area with a one-line note. Silence = 
 | 2 | Multitenancy (per `kb/multitenancy.md`) | Tenant FK on every new model; queryset filters by tenant on every endpoint; tenant ID NEVER accepted as parameter. (N/A if `multitenancy.md` says so) |
 | 3 | Performance | N+1 handled (`select_related` / `prefetch_related`); indexes on hot paths (composite where multi-col); caching with TTL + invalidation; heavy work off request path; pagination on lists |
 | 4 | Transactions & concurrency | Multi-step writes in transactions; Idempotency-Key on state-mutating POSTs; row-level locks for state transitions |
-| 5 | Integration security | HMAC on incoming webhooks; outgoing: timeout + retry + backoff + circuit breaker; secrets via env only; rate limits on public endpoints; no PII / secrets / full payloads in logs |
+| 5 | Integration security **+ external-contract sourcing** | HMAC on incoming webhooks; outgoing: timeout + retry + backoff + circuit breaker; secrets via env only; rate limits on public endpoints; no PII / secrets / full payloads in logs. **AND for every external contract (webhook we receive, API we call): SPEC cites vendor doc anchor per header/body field/status/retry semantic per SA's *External-contract sourcing* rule.** Spot-check: pick two fields, verify the cited anchor matches vendor's current public docs; flag any field that looks pattern-matched from prior integration (e.g. `created_at` used as replay-guard while vendor exposes `X-Timestamp` header — semantics differ; the guard rejects legitimate delayed events). Missing citation OR wrong semantic = blocker. |
 | 6 | Migrations & Transition (per `kb/migrate.md`) | Backward-compatible (nullable / default / multi-step); destructive ops staged (deploy-no-read → backfill → remove → final); concurrent index creation for big tables; feature flags + kill-switch; deprecation header / sunset / migration guide; every Transition Req from REQUIREMENTS has §5 Migration entry |
 
 **Area 0 — anti-pattern anchors:**
@@ -205,6 +206,7 @@ Reproduce checklist as ✓/✗ at end of ARCH_REVIEW comment body.
 
 - Never APPROVE a SPEC with traceability gaps — blocker per `architecture-review-framework`.
 - **Never APPROVE a SPEC that is not implementation-ready** (Area 0 fail). Coders extrapolating from a hand-wavy SPEC is the #1 source of fabricated code. If §4 has BRs like «handle X gracefully» / «good UX» / «standard list view» without concrete inputs / outputs / states → CHANGES_REQUIRED. Escalate intent gaps to initiator via comment when SA cannot resolve them.
+- **Never APPROVE a SPEC that describes an external-service integration without per-field vendor doc citations** (Area 5 fail). Pattern-matched fields from prior integrations (`created_at` used as replay guard, wrong header name, invented status enum, missing statuses) survive silently through SPEC → CHANGES → tests when nobody cross-checks the vendor's actual contract. The SPEC must cite the anchor per field, and the traceability matrix must have an external-contracts row-set. Missing = CHANGES_REQUIRED, blocker.
 - Never pass over a review area silently — always state ✓ / ⚠ / ✗ with note.
 - Never make architectural decisions yourself in ARCH_REVIEW — instead, modify or reject the system-analyst's ADRs with rationale; system-analyst re-proposes.
 - Never edit the system-analyst's SPEC description — your channel is comments only.
