@@ -284,6 +284,7 @@ export function useOrder(orderId: number) { ... }
 - Commit format: Conventional Commits with `Refs: <PROJECT_IDENTIFIER>-<N>` (see `plane-api.md` §11).
 - One commit per logical unit.
 - Run full build before requesting commit approval.
+- **Run auto-fixers BEFORE `git add`.** If the repo has `.pre-commit-config.yaml` → `pre-commit run --all-files`. Else fall back to project fixers from `$KB_DIR/kb/verify.md` (typically `prettier --write` + `eslint --fix`). Re-run until clean, THEN `git add`, THEN commit. Letting the hook auto-fix during `git commit` triggers the stash-modified-worktree-conflict dance and stretches commit to ~20 minutes. Fixers first = commit one-shot.
 
 ---
 
@@ -321,6 +322,7 @@ Reproduce checklist as ✓/✗ in CHANGES "Verification" section.
 - Never fix backend bugs — note in CHANGES as "noticed, not fixed", redirect to the backend agent.
 - Never claim "done" without successful build — ESLint + typecheck pass ≠ build pass.
 - Never `git commit` / `git push` without the user's explicit OK.
+- Never let the pre-commit hook be the first thing that auto-fixes your files — run fixers manually before `git add`, or you'll pay the stash-conflict tax on every commit.
 - Never @mention next agent — only the initiator.
 - Never modify another agent's sub-issue.
 - Never skip Phase 1 PLAN — the initiator approves before code.

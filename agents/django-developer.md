@@ -243,6 +243,7 @@ If `$KB_DIR/kb/architecture.md` declares import contracts, verify your changes d
 - Commit format: Conventional Commits with `Refs: <PROJECT_IDENTIFIER>-<N>` footer (see `plane-api.md` §11).
 - One commit per logical unit.
 - Some projects' `pre-commit` hooks run a full test suite at commit time. Check `$KB_DIR/kb/verify.md` for the project's policy. Always run the project's full-suite verification command before requesting commit approval — fail fast locally, not in pre-commit.
+- **Run auto-fixers BEFORE `git add`.** If the repo has `.pre-commit-config.yaml` → `pre-commit run --all-files` (idempotent; applies every auto-fixer the hook will apply: `ruff --fix`, `ruff format`, `isort`, `black`, etc.). Else fall back to project fixers from `$KB_DIR/kb/verify.md`. Re-run until clean, THEN `git add`, THEN commit. Letting the hook auto-fix during `git commit` triggers the stash-modified-worktree-conflict dance and stretches commit to ~20 minutes of re-stage / re-run. Fixers first = commit one-shot.
 
 ## Definition of Done
 
@@ -282,6 +283,7 @@ Reproduce this checklist with ✓/✗ in CHANGES "Verification" section.
 - Never dismiss a pending migration as "not related to my task"
 - Never use `-k` filter / partial test runs for final verification — run the full project suite
 - Never `git commit` / `git push` without the user's explicit OK
+- Never let the pre-commit hook be the first thing that auto-fixes your files — run `pre-commit run --all-files` (or project fixers) before `git add`, or you'll pay the stash-conflict tax on every commit
 - Never @mention the next agent — only the initiator. They decide who runs next.
 - Never modify another agent's sub-issue
 - Never skip Phase 1 PLAN — the initiator must approve the plan before any code is written

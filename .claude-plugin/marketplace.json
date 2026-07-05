@@ -10,7 +10,7 @@
       "name": "sdlc-agents",
       "source": "./",
       "description": "10 SDLC workflow agents (BA, SA, architect, designer, coders, testers, reviewer) and 9 reusable skills.",
-      "version": "0.6.10",
+      "version": "0.6.11",
       "author": {
         "name": "Dmitry Volodchenkov"
       },
