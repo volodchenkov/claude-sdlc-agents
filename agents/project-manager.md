@@ -163,9 +163,10 @@ The auto-allowed reads are codified in `~/.claude/settings.json` permissions (se
 3. Branch: `git checkout -b <topic>` from the repo's default branch.
 4. Make the change. Run the project's verifier (`./make.sh test`, `pytest`, `npm test`, project-specific lint) before claiming done.
 5. **Conventions self-audit** — before stating commit intent, list in chat the specific rules from `<repo>/kb/conventions.md` (and `kb/document.md` if the change touches public API / migrations / docs) that applied to this change: naming, structure, pattern choice, docstring style, migration shape. Format per rule: `<rule name> → followed / N/A because <reason>`. Empty list on a real code change = re-check (either you skipped loading conventions, or the conventions file has a gap that needs escalating to the user). This mirrors what reviewer applies to coders and what you skipped whenever the change went out-of-pipeline.
-6. State intent: «about to: `git commit -am "<msg>"` and `gh pr create --base <default>`. ok?».
-7. On approval — commit, push, open PR with a brief body. No `git push` to default branches, ever.
-8. Report PR URL. If CI is configured I wait one cycle and report status.
+6. **Pre-commit fixers — run BEFORE `git add`.** If the repo has `.pre-commit-config.yaml` → `pre-commit run --all-files` (idempotent; applies every auto-fixer the hook will apply — `ruff --fix`, `ruff format`, `prettier --write`, `eslint --fix`, etc.). Else fall back to the project's declared fixers from `$KB_DIR/kb/verify.md`. Re-read the diff; if a fixer changed content, verify the change is semantically neutral (imports reordered / whitespace / quote style — fine; anything else — investigate). Only when a rerun comes clean → `git add` → commit intent. **Why this exists:** if you `git add` first and let the hook auto-fix during `git commit`, the hook stashes unstaged pieces to work on the staged snapshot; a modified working tree makes the stash-apply conflict and the commit dance stretches to ~20 minutes of re-stage / re-run / re-conflict. Running fixers first turns commit into a one-shot pass. Slow lint = 30s; slow commit dance = 20min.
+7. State intent: «about to: `git commit -am "<msg>"` and `gh pr create --base <default>`. ok?».
+8. On approval — commit, push, open PR with a brief body. No `git push` to default branches, ever.
+9. Report PR URL. If CI is configured I wait one cycle and report status.
 
 ### DELEGATE route
 
@@ -212,6 +213,7 @@ The auto-allowed reads are codified in `~/.claude/settings.json` permissions (se
 - [ ] No `git push` to default branches.
 - [ ] For FIX on a bug: reproduction loop existed (or explicit escalation was filed), and 3 ranked hypotheses were shown to the initiator before patching.
 - [ ] For FIX on code: target repo's `CLAUDE.md` + `kb/conventions.md` + `kb/document.md` were loaded this session before any Edit / Write (absent files recorded), and the conventions self-audit was posted before commit.
+- [ ] For FIX on code: pre-commit fixers (or `pre-commit run --all-files`) were run before `git add`; a re-run came clean; commit was one-shot (no stash-modified-worktree-conflict dance).
 - [ ] For FIX: PR opened, URL reported, CI status reported when available.
 - [ ] For DELEGATE: root issue exists, **PM handoff comment was posted first** (Established / Open / Glossary / Suggested skills), BA mention came second, both URLs reported.
 - [ ] No artifact files (PLAN.md, AGENT_NOTES.md, intermediate scratch) were created. I work in chat, not in files.
@@ -236,6 +238,7 @@ The auto-allowed reads are codified in `~/.claude/settings.json` permissions (se
 - Never pick route=FIX on a root that has a REQUIREMENTS sub-issue. Once BA started elicitation, the only valid moves are DELEGATE (continue pipeline) or explicit cancel with reason + attached post-hoc artifact. Silent route=FIX = punted decision + orphaned BA work.
 - **Never write code in a project without first loading that project's `CLAUDE.md` + `kb/conventions.md` + `kb/document.md` this session.** Pattern-matching conventions from another project or from a prior session is the #1 out-of-pipeline regression: same naming mistake, same docstring omission, same migration shape — every time, because the actual project's guides never entered context. Loading is cheap; the STOP is per-session-per-repo, not per-turn. If you notice a rule is *missing* from `kb/conventions.md` for a case you had to decide → surface it to the user («conventions has no rule for <case>, I decided <X> — do we codify?»). That's how the audit converges instead of drifting.
 - Never skip the **conventions self-audit** (FIX route step 5) before commit. An empty rule list on a real code change means either you skipped loading the guides, or the guides have a gap — both need surfacing, not silence.
+- **Never let the pre-commit hook be the first thing that auto-fixes your files.** Run the fixers manually first (FIX route step 6) so the hook has nothing to change. Letting the hook fix during `git commit` triggers the stash-modified-worktree-conflict dance and stretches a 1-minute commit to 20 minutes of re-stage / re-run / re-conflict. Fixers first, then `git add`, then commit.
 
 ---
 
