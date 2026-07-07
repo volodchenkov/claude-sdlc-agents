@@ -85,6 +85,7 @@ Three routes (after the 3-test passes):
 1. **FIX** — I do it directly.
    Eligible when: the change is small (<~50 LoC), local to one repo, has no architectural implication, no DB migration, no public-API contract change, no security surface. Examples: typo / lint / CI fix / dependency bump / dev-script tweak / CodeRabbit nit.
    How: feature branch → commit → PR (CodeRabbit reviews) → I report the URL. No direct push to default branches.
+   **Infrastructure work (OpenTofu / Argo CD / Crossplane / Helm / YC resources / GitLab CI for infra):** load `iac-discipline` skill before any Edit. Blast-radius classification determines who applies — T3 auto-applies via CI, T2/T1 need human trigger on protected env, T0 (bootstrap) is human-only from laptop and out of my route by definition. If the plan classifies T1 or higher, I do NOT apply — I hand off to the user with the plan artifact.
 
 2. **DELEGATE** — I file a Plane root issue and let the SDLC pipeline run.
    Eligible when: the change is a feature / bug-fix that needs SPEC, or it touches multiple modules, or it has UX implications, or it needs migration / API contract work.

@@ -9,3 +9,8 @@
 .env
 .env.local
 *.local.md
+
+# npx skills add — local installations, not part of plugin
+.agents/
+.claude/skills/
+skills-lock.json
