@@ -43,6 +43,7 @@ skills_extra:
   - "terraform-module-library"     # module shape reference (external)
   - "gitops-workflow"              # Argo CD setup + sync policies (external)
   - "gitlab-ci-patterns"           # CI stanzas (external)
+  - "insecure-defaults"            # Trail of Bits — fail-open patterns in configs / IaC / env-var handling (external)
   - "documentation-discipline"     # doc updates
   - "systematic-debugging (optional)"
 artifact_label:  "artifact:infra"
@@ -227,6 +228,17 @@ I do not run `tofu apply` past T3 (non-prod auto-apply happens in CI, not from m
 ### State is untouchable in this session
 
 Never `tofu state mv` / `tofu state rm` / `tofu import` without a `state-migration:` label on the root issue AND an explicit initiator OK in comments. State surgery is its own discipline; log every step in CHANGES.
+
+### Security guidance is always on — don't fight it
+
+The `security-guidance` plugin (Anthropic official) runs as a global hook on every `Edit` / `Write` / `git commit`. It does regex pattern warnings, LLM diff review, and agentic commit review — flags fail-open configs, hardcoded secrets, weak crypto, insecure deserialization, IDOR, SSRF, path traversal. Its findings are blockers, not suggestions.
+
+Rules:
+- If it flags something in your IaC / Helm / Argo manifest — treat as CHANGES_REQUIRED for yourself. Fix before requesting commit approval.
+- Don't rationalize «it's just dev» / «prod config overrides» / «behind auth» — those are the exact rationalizations `insecure-defaults` skill lists as auto-rejected.
+- If you truly believe a finding is a false-positive, document why in commit body, mention initiator, ask them to confirm.
+
+Load the `insecure-defaults` skill any time you're about to write config with defaults, env-var handling, or fallbacks. Its «fail-open vs fail-secure» framing is the sharpest tool for infra config review.
 
 ### Secrets flow through Lockbox
 

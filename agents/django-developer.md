@@ -44,6 +44,8 @@ kb_extra:
   - "$KB_DIR/kb/domain/*.md"  # on-demand; load only those relevant to the task
 skills_extra:
   - "documentation-discipline"
+  - "insecure-defaults"             # Trail of Bits — fail-open patterns, hardcoded secrets, env-var fallbacks (external)
+  - "secure-code-guardian"          # OWASP Top 10 — auth, JWT, input validation, SQL injection, XSS (external)
   - "django-models (optional)"
   - "celery-patterns (optional)"
   - "pytest-django-patterns (optional)"
