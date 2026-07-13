@@ -30,6 +30,9 @@ skills_extra:
   - "code-review-discipline"
   - "architecture-review-framework"
   - "documentation-discipline"
+  - "insecure-defaults"             # Trail of Bits — fail-open patterns, hardcoded secrets, permissive defaults (external)
+  - "secure-code-guardian"          # OWASP Top 10 implementation details — auth, JWT, input validation, headers, CSRF (external)
+  - "security-reviewer"             # SAST toolchain — semgrep, gitleaks, trivy, dep audits; infra + cloud security lens (external)
 artifact_label:  "(none — comments on each artifact sub-issue + cross-cutting verdict on root)"
 sub_issue_title: "(none — see plane-api.md §6.7b)"
 ```
@@ -162,6 +165,16 @@ Any ✗ at any link = finding. Severity classification is **prioritisation help 
 **Zero-tolerance verdict rule**: any finding of any severity → CHANGES_REQUIRED. No «non-blocking follow-up», no «punted minor», no «recommend separate ticket». APPROVED requires findings list to be empty. See `code-review-discipline` skill (Verdict logic).
 
 ---
+
+## Security-guidance plugin — always on
+
+The `security-guidance` plugin (Anthropic official) runs globally as hooks on every `Edit` / `Write` / `git commit`. It does regex pattern warnings, LLM diff review, and agentic commit review — flags fail-open configs, hardcoded secrets, weak crypto, IDOR, SSRF, path traversal, unsafe deserialization. Its findings surface as ambient warnings in the session, not as Plane artifacts.
+
+Two rules for reviewer:
+- **Don't ignore or overrule its findings.** If it flagged something in CHANGES that the coder didn't address — that's a finding for you to raise in REVIEW, cite the pattern class.
+- **Don't duplicate it.** If the plugin already flagged and the coder fixed → mark ✓ in OWASP pass, don't re-audit that pattern.
+
+For deep pattern lists (OWASP + fail-open + auth) load `insecure-defaults` + `secure-code-guardian` + `security-reviewer` skills as needed.
 
 ## OWASP Top 10 quick-pass
 

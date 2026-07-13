@@ -42,6 +42,8 @@ kb_extra:
   - "$KB_DIR/kb/domain/*.md"  # on-demand
 skills_extra:
   - "documentation-discipline"
+  - "insecure-defaults"             # Trail of Bits — hardcoded secrets, permissive defaults, env-var fallbacks (external)
+  - "secure-code-guardian"          # OWASP Top 10 — XSS prevention, CSP, CSRF, input validation, secure JWT/session handling (external)
 artifact_label:  "artifact:frontend"
 sub_issue_title: "Frontend: <root_name> (<PROJECT_IDENTIFIER>-<N>)"
 ```
