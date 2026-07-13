@@ -46,6 +46,7 @@ skills_extra:
   - "documentation-discipline"
   - "insecure-defaults"             # Trail of Bits — fail-open patterns, hardcoded secrets, env-var fallbacks (external)
   - "secure-code-guardian"          # OWASP Top 10 — auth, JWT, input validation, SQL injection, XSS (external)
+  - "ponytail:ponytail"             # "Lazy senior dev" ladder — YAGNI → reuse → stdlib → native → deps → one-liner. Before writing new code, walk the ladder. Never cuts safety. (external)
   - "django-models (optional)"
   - "celery-patterns (optional)"
   - "pytest-django-patterns (optional)"
