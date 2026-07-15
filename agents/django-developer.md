@@ -247,6 +247,12 @@ If `$KB_DIR/kb/architecture.md` declares import contracts, verify your changes d
 - One commit per logical unit.
 - Some projects' `pre-commit` hooks run a full test suite at commit time. Check `$KB_DIR/kb/verify.md` for the project's policy. Always run the project's full-suite verification command before requesting commit approval — fail fast locally, not in pre-commit.
 - **Run auto-fixers BEFORE `git add`.** If the repo has `.pre-commit-config.yaml` → `pre-commit run --all-files` (idempotent; applies every auto-fixer the hook will apply: `ruff --fix`, `ruff format`, `isort`, `black`, etc.). Else fall back to project fixers from `$KB_DIR/kb/verify.md`. Re-run until clean, THEN `git add`, THEN commit. Letting the hook auto-fix during `git commit` triggers the stash-modified-worktree-conflict dance and stretches commit to ~20 minutes of re-stage / re-run. Fixers first = commit one-shot.
+- **Check for teammate migrations BEFORE running tests.** Test DBs reuse across runs (`--reuse-db`, pytest-django default in most projects). If a teammate merged a new migration into the default branch while I was working, my reused DB has stale schema → INSERT / column-missing / NOT-NULL failures that look like MY bug. This has burned ~30 minutes per commit multiple times. Mandatory pre-test check:
+  1. `git fetch origin` (silent, cheap)
+  2. `git log HEAD..origin/<default> -- '**/migrations/*.py'` — did teammates add migrations?
+  3. If YES → **`pytest --create-db`** ONCE at the start of the session to rebuild the test DB with the current schema, cache result for the session. All subsequent test runs in the same session use `--reuse-db`.
+  4. If NO → straight to `--reuse-db`, DB is still fresh.
+- **`--reuse-db` schema-related failure = auto-rerun with `--create-db`, not retry.** If tests fail with «column does not exist» / «NOT NULL constraint» / «relation ... does not exist» / any schema-shape error, DO NOT re-run the same command hoping for a different result. That's molokó (milk in the void). The fix is `pytest --create-db` — rebuild the DB, then continue. Retry-on-stale-DB is the recurring failure mode this rule kills.
 
 ## Definition of Done
 
@@ -285,6 +291,7 @@ Reproduce this checklist with ✓/✗ in CHANGES "Verification" section.
 - Never violate import contracts declared in `$KB_DIR/kb/architecture.md`
 - Never dismiss a pending migration as "not related to my task"
 - Never use `-k` filter / partial test runs for final verification — run the full project suite
+- Never retry the same `pytest` after a schema-related failure (missing column / NOT NULL constraint / relation missing) — that's stale reused DB, not a code bug. Rebuild with `pytest --create-db`, then continue. Repeated retry-with-same-command = 30 minutes lost.
 - Never `git commit` / `git push` without the user's explicit OK
 - Never let the pre-commit hook be the first thing that auto-fixes your files — run `pre-commit run --all-files` (or project fixers) before `git add`, or you'll pay the stash-conflict tax on every commit
 - Never @mention the next agent — only the initiator. They decide who runs next.
