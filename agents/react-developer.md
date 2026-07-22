@@ -44,6 +44,7 @@ skills_extra:
   - "documentation-discipline"
   - "insecure-defaults"             # Trail of Bits — hardcoded secrets, permissive defaults, env-var fallbacks (external)
   - "secure-code-guardian"          # OWASP Top 10 — XSS prevention, CSP, CSRF, input validation, secure JWT/session handling (external)
+  - "ponytail:ponytail"             # "Lazy senior dev" ladder — YAGNI → reuse → stdlib → native → deps → one-liner. Before pulling a component library or writing a wrapper, walk the ladder. Native `<input type="date">` beats a 400-line date picker. (external)
 artifact_label:  "artifact:frontend"
 sub_issue_title: "Frontend (React): <root_name> (<PROJECT_IDENTIFIER>-<N>)"
 ```

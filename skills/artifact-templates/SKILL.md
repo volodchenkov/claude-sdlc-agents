@@ -30,6 +30,32 @@ All artifacts written as **Markdown**, then converted to HTML for `description_h
 
 ---
 
+## Mandatory footer — Completion Report (every artifact)
+
+Every template below ends with a **Completion Report** section. Do not omit it — it is what kills the «сделал X, Y, но Z оставил на потом» tail (see `agent-base` §0b for the full doneness rule).
+
+```markdown
+## Completion Report
+
+| # | Task | Status | Reason |
+|---|---|---|---|
+| 1 | {Concrete task, one line} | done | — |
+| 2 | {Concrete task} | blocked | {what blocks + what unblocks} |
+| 3 | {Concrete task} | skipped | вне scope PLAN, отдельным тикетом {TICKET-ID} |
+```
+
+- `Status` — exactly one of `done` / `blocked` / `skipped`. No «partially», no «WIP», no «postponed».
+- `Reason` for `done` — always `—`.
+- `Reason` for `blocked` — the specific blocker + what unblocks it.
+- `Reason` for `skipped` — one of: `вне scope, отдельным тикетом <ID>` / `делает {role} — тег поставил` / `требует ADR — вопрос initiator сформулирован`.
+- **Banned reasons** (auto-reject; see `agent-base` §0b): «следующим заходом», «в следующей итерации», «MVP-упрощение», «отдельным PR-ом» без ID, «почти готово», «остался нюанс», «UI/тесты/миграция позже» без тикета.
+
+Free-form prose paragraphs like «а вот эти три вещи ещё бы стоило когда-нибудь сделать» after the Completion Report are **noise** — either it's a real follow-up (row in the table with a ticket ID) or it's an aside (drop it).
+
+For artifacts that are single-review comments (ARCH_REVIEW, per-artifact REVIEW), the Completion Report table covers the review items themselves — what was checked, what verdict, what blocks approval.
+
+---
+
 ## REQUIREMENTS (the business-analyst) — BABOK v3 4-type structure
 
 the business-analyst fills this template across **4 interview phases**. See `babok-elicitation` skill for the technique behind each phase. Re-entry detection uses the "Phase status" section (last) — first unchecked phase = current phase.
