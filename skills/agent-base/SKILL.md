@@ -71,7 +71,10 @@ Every artifact (REQUIREMENTS, SPEC, PLAN, CHANGES, test plan, test report, ARCH_
 
 - `done` — implemented, tested, committed. `Reason` = `—`.
 - `blocked` — cannot proceed; `Reason` names the blocker + what unblocks it (missing input, initiator decision, external system unavailable, failing test that requires design change). Not «сложно», not «нужно подумать».
-- `skipped` — deliberately not done; `Reason` names one of: «вне scope PLAN, отдельным тикетом <TICKET-ID>» / «делает {role} — тег поставил» / «требует ADR — вопрос initiator сформулирован в комменте».
+- `skipped` — deliberately not done; `Reason` names one of exactly these three forms (used verbatim in `artifact-templates` too):
+  - `вне scope, отдельным тикетом <TICKET-ID>`
+  - `делает {role} — тег поставил`
+  - `требует ADR — вопрос initiator сформулирован`
 
 ### Banned reasons — auto-reject
 
@@ -232,7 +235,7 @@ State-changing actions require the operator's **explicit approval each time**. A
 - The local user has PreToolUse hooks that block these commands and route them to a harness dialog. If a call comes back with `permissionDecision: ask` / a BLOCKED message, that is the enforcement layer — do not attempt to route around it, do not retry the same command hoping for a different result, do not suggest disabling the hook.
 - If the harness offers «Always allow» for one of these commands, treat that as an operator mistake, not a green light. Still describe each next action before acting.
 
-Non-state-changing reads (`git status/log/diff/show`, `kubectl get/describe/logs`, `helm list/status/diff`, `tofu plan/fmt`, `yc <svc> list/get/show`, `docker ps/logs/inspect`) do not need per-action approval — proceed freely.
+Non-state-changing reads (`git status/log/diff/show`, `kubectl get/describe/logs`, `helm list/status/diff`, `tofu plan`, `yc <svc> list/get/show`, `docker ps/logs/inspect`) do not need per-action approval — proceed freely. **`tofu|terraform fmt` is NOT read-only** — it rewrites files, so it goes through the same per-action approval as other state changes.
 
 ---
 
@@ -286,13 +289,16 @@ Two append-only files per workspace, both under `$KB_DIR/kb/`:
 
 **Write** a new entry whenever you learn (or the initiator tells you) something **non-derivable from the code, `kb/*.md`, SPEC, ADR, or git log**:
 
-- Credentials, URLs, port numbers, pod names, bucket names, secret paths.
+- URLs, port numbers, pod names, bucket names, endpoint slugs, environment IDs.
+- **Pointers to credentials** (secret manager path, 1Password item name, vault key, env-var name) — NEVER the credential value itself.
 - «Why Y is configured this way» — decisions made in chat, not documented.
 - Root cause of an incident, or the fix.
 - Undocumented external API quirks («Alfa sandbox отвечает 200 но body пустое пока сессия не прогреется»).
 - Anything the initiator said once verbally and won't say again.
 
-**Do NOT append** what is already in code / `kb/*.md` / SPEC / ADR / git commit message — that's noise.
+**Do NOT append:**
+- What is already in code / `kb/*.md` / SPEC / ADR / git commit message — that's noise.
+- **Plaintext credentials, tokens, passwords, private keys, API keys, or any raw secret value.** The journal lives under `$KB_DIR` — usually a git-tracked directory. Once committed, a secret is compromised even if the entry is later «deleted» (git history retains it). Log the *reference* (`1Password: item "alfa-sandbox"`, `Yandex Lockbox: coinex/alfa-sandbox/#password`, `env: ALFA_SANDBOX_PASSWORD`), not the value. If the initiator pastes a secret at you, do not echo it back to the journal — acknowledge in-conversation and ask them to file it in the secret store, then log only the pointer.
 
 **Format** — one entry:
 
@@ -303,7 +309,7 @@ Two append-only files per workspace, both under `$KB_DIR/kb/`:
 Cite source: «from initiator (Plane COIN-77 comment)» / «found while debugging tests».
 ```
 
-**Tags** — freeform kebab, Instagram-style. Examples: `#alfa #creds #sandbox #tochka #kubectl #gotcha #incident #legal-entity #reconciliation`. Reuse existing tags where possible (`grep -h '^##' kb/journal/*.md | grep -oE '#[a-z0-9-]+' | sort -u`).
+**Tags** — freeform kebab, Instagram-style. Examples: `#alfa #creds #sandbox #tochka #kubectl #gotcha #incident #legal-entity #reconciliation`. Reuse existing tags where possible (`grep -h '^##' "$KB_DIR"/kb/journal/*.md 2>/dev/null | grep -oE '#[a-z0-9-]+' | sort -u`).
 
 **File name** — `kb/journal/YYYY-MM-DD.md` (get date via `date +%Y-%m-%d`). First append of the day creates the file with an `# YYYY-MM-DD` H1 header. Never rewrite past entries; corrections = new entry with `#correction` tag citing what it replaces.
 
