@@ -402,6 +402,8 @@ Posted via `mark_spec_approved(spec_sub_uuid=<spawn issue_uuid>, summary_html=�
 
 The brief lives in the Design sub-issue's `description_html`. Iterations via comments. the designer re-uses this template in Mode B (UX review) post-implementation as a checklist.
 
+**Anchor discipline (per agent-base §4b.3):** every URL / Figma frame ID / vendor-doc anchor in this template must have been opened via `WebFetch` / Figma MCP / `get_design_context` **in this turn**. If not opened → prefix with `unverified:` inline (e.g. `{unverified: https://…}`) and add a Completion Report row `blocked — anchor not fetched, need <access>`. Bare unopened URLs = fabricated citation = REVIEW finding. Same rule applies to vendor-doc anchors in SPEC §5.
+
 ```markdown
 # Design: {Title}
 

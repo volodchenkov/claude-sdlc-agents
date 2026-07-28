@@ -94,9 +94,9 @@ For full reference: https://www.w3.org/WAI/WCAG21/quickref/
 
 ## Platform conventions — pick one per surface
 
-Projects often ship multiple frontends with different conventions. The project's `$KB_DIR/kb/frontends.md` declares the inventory. Common patterns:
+Projects often ship multiple frontends with different conventions. The project's `$KB_DIR/kb/frontends.md` declares the inventory — read it to learn what THIS project ships. Do not pattern-match from the examples below; they are illustrative surface types, not defaults.
 
-### Customer-facing storefront (typically Vue 3 / Nuxt 3 or React / Next.js)
+### Customer-facing storefront
 - Convention: **Material 3** simplified — Material's spacing / shape / motion principles, but visual style is project-branded.
 - Mobile-first responsive. Breakpoints: 360 / 768 / 1024 / 1440.
 - Touch targets 48 dp.

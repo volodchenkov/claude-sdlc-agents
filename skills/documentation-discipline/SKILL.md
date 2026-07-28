@@ -252,7 +252,7 @@ A reader of the test suite should understand the API behaviour from test names a
 
 ---
 
-## Where docs live (common patterns)
+## Where docs live (project's `kb/document.md` is authoritative — table below is illustrative)
 
 | Documentation type | Location |
 |---|---|

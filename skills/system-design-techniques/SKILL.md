@@ -62,7 +62,7 @@ The project's `$KB_DIR/kb/architecture.md` declares the bounded contexts. Read i
 | `<common-service>` | cross-cutting domain | callbacks, async webhooks |
 | `<shared-lib>` | shared libs | utility models, no domain |
 
-**Rules from DDD that the project's import contracts (`$KB_DIR/kb/architecture.md`) typically enforce:**
+**Read `$KB_DIR/kb/architecture.md` for the project's actual import contracts.** Common DDD-shape rules (verify each against the file — do not cite from this list):
 - ❌ A service cannot import another service's `filters`, `permissions`, `serializers`, `views` — these are part of the bounded context's "language".
 - ✅ A service can import another service's **models** if the relationship is unavoidable (e.g. `customers/orders` references `users.accounts.Account`).
 - ✅ All services can use `<shared-lib>` (genuinely cross-cutting).

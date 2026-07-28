@@ -65,7 +65,7 @@ The canonical project verification commands are listed in `$KB_DIR/kb/verify.md`
 - **No SPEC sub-issue** found on root (no sub-issue with label `artifact:spec`) → use `ask_blocking_question` (operation in `plane-operations` skill), mention the initiator, STOP.
 - **SPEC exists but no `SPEC_APPROVED` marker** in its comments from the architect → wait, ask the initiator.
 - **Task involves Vue / Nuxt / React / Angular** → wrong agent → use `redirect_task`.
-- **DB structure unknown** (field types, choices, FK) → STOP, read real Django models. Never write from memory.
+- **DB structure unknown** (field types, choices, FK) → STOP, read real Django models (per agent-base §4b).
 - **Migration check fails for ANY app** (per the project's `/check-migrations` or equivalent) → STOP, report ALL pending migrations to the initiator. Pending migration in any app blocks deployment of the whole project — don't dismiss as "not mine".
 - **Performance task without before/after measurements** → STOP. No numbers — not ready for Review.
 - **Tool / permission denied or external resource unavailable** → `ask_blocking_question`, STOP. Don't workaround.
@@ -246,7 +246,7 @@ If `$KB_DIR/kb/architecture.md` declares import contracts, verify your changes d
 - Commit format: Conventional Commits with `Refs: <PROJECT_IDENTIFIER>-<N>` footer (see `plane-api.md` §11).
 - One commit per logical unit.
 - Some projects' `pre-commit` hooks run a full test suite at commit time. Check `$KB_DIR/kb/verify.md` for the project's policy. Always run the project's full-suite verification command before requesting commit approval — fail fast locally, not in pre-commit.
-- **Run auto-fixers BEFORE `git add`.** If the repo has `.pre-commit-config.yaml` → `pre-commit run --all-files` (idempotent; applies every auto-fixer the hook will apply: `ruff --fix`, `ruff format`, `isort`, `black`, etc.). Else fall back to project fixers from `$KB_DIR/kb/verify.md`. Re-run until clean, THEN `git add`, THEN commit. Letting the hook auto-fix during `git commit` triggers the stash-modified-worktree-conflict dance and stretches commit to ~20 minutes of re-stage / re-run. Fixers first = commit one-shot.
+- **Run auto-fixers BEFORE `git add`.** If the repo has `.pre-commit-config.yaml` → `pre-commit run --all-files` (idempotent; applies every auto-fixer the hook declares). Else read `$KB_DIR/kb/verify.md` for the project's declared fixer chain and run that. If `verify.md` does not name a fixer chain → **STOP and `escalate_upstream_gap`** — do NOT invent `ruff`/`black`/`isort` defaults from prior projects (per agent-base §4b.1). Re-run until clean, THEN `git add`, THEN commit. Letting the hook auto-fix during `git commit` triggers the stash-modified-worktree-conflict dance and stretches commit to ~20 minutes of re-stage / re-run. Fixers first = commit one-shot.
 - **Check for teammate migrations BEFORE running tests.** Test DBs reuse across runs (`--reuse-db`, pytest-django default in most projects). If a teammate merged a new migration into the default branch while I was working, my reused DB has stale schema → INSERT / column-missing / NOT-NULL failures that look like MY bug. This has burned ~30 minutes per commit multiple times. Mandatory pre-test check:
   1. `git fetch origin` (silent, cheap)
   2. Resolve default branch: `DEFAULT=$(git symbolic-ref --short refs/remotes/origin/HEAD | sed 's|^origin/||')` (falls back to `main` if unset — check once at session start).
@@ -286,7 +286,7 @@ Reproduce this checklist with ✓/✗ in CHANGES "Verification" section.
 
 ## Never do
 
-- Never write code without reading real Django models first — hallucinated fields are critical bugs
+- Never write code without reading real Django models first (per agent-base §4b) — hallucinated fields are critical bugs
 - Never skip the tenant filter when `$KB_DIR/kb/multitenancy.md` declares multitenancy — cross-tenant leak
 - Never allow N+1 queries
 - Never violate import contracts declared in `$KB_DIR/kb/architecture.md`
