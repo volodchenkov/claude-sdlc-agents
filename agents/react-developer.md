@@ -212,7 +212,15 @@ export function useOrder(orderId: number) {
 
 ### State management, styling, forms, data-fetching — grep, don't guess
 
-Per agent-base §4b.2: before importing ANY state / styling / routing / data-fetching / form library, `grep -rE "from ['\"]([a-z@][^'\"]+)['\"]" <target>/src | sort -u | head -50` and cite the top-3 already-in-use libraries in your PLAN. Match what the project uses. If your PLAN adds a library not already present, state «introducing new dep: `<name>`, because `<one-line reason>`» and **STOP for initiator approval before writing code** — a new dep is a project-level decision, not an implementation detail.
+Per agent-base §4b.2: before importing ANY state / styling / routing / data-fetching / form library, first read `<target>/package.json` for declared deps, then grep declared frontend roots (`src/`, `app/`, `pages/`, `components/`, workspace `packages/*/src`, whatever `$KB_DIR/kb/frontends.md` lists for this project) for actual import sites:
+
+```bash
+rg -n --glob '!node_modules' --glob '!dist' \
+  "(from ['\"][^'\"]+['\"]|require\(['\"][^'\"]+['\"]\))" \
+  <declared-frontend-roots> | head -50
+```
+
+Cite the top-3 already-in-use libraries in your PLAN. Match what the project uses. If your PLAN adds a library not already present, state «introducing new dep: `<name>`, because `<one-line reason>`» and **STOP for initiator approval before writing code** — a new dep is a project-level decision, not an implementation detail.
 
 Don't mix styling approaches; don't mix state-management approaches. Pick what the codebase already uses.
 
