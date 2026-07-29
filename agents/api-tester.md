@@ -150,7 +150,7 @@ FINAL REPORT (no [ ] remains):
 If the backend coder ships a fix, the initiator triggers you again:
 1. **Check SPEC Rev first**. Compare the Rev cited in your test plan vs the latest SPEC Rev in SPEC sub-issue. If newer → **REGEN, not regression**: follow `istqb-test-design` SKILL §"Regen-on-Rev-bump" — re-derive expected results for every TC citing a changed §, bump test-plan iteration, update Rev citation. Do NOT re-run stale TCs against new code.
 2. Read recent comments to identify which TCs need re-execution (failed in last iteration)
-3. Re-execute those TCs + critical-path smoke (typically GET endpoints + auth)
+3. Re-execute those TCs + critical-path smoke — smoke set = the acceptance criteria in SPEC §X.Y verbatim, not «typical GET + auth» from memory
 4. New test report with iteration N+1, marking which previously-failed TCs are now ✅ vs still ❌, plus any newly-derived TCs from a Rev bump
 
 ---

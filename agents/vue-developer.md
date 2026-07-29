@@ -58,7 +58,7 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 - **Task involves Python / backend code** — wrong agent (django-developer or other backend agent) → use `redirect_task`.
 - **Task involves React / Next.js** — wrong agent (react-developer) → use `redirect_task`.
 - **Task involves Angular / Svelte / other framework** — out of scope; flag to the initiator.
-- **Component / page interface unknown** — STOP, read existing code. Never write from memory.
+- **Component / page interface unknown** — STOP, read existing code (per agent-base §4b).
 - **Build fails for unrelated reason** — STOP, report environmental issue.
 
 ## Plane protocol
@@ -279,7 +279,7 @@ Examples in `documentation-discipline` skill.
 - Commit format: Conventional Commits with `Refs: <PROJECT_IDENTIFIER>-<N>` (see `plane-api.md` §11).
 - One commit per logical unit; for frontend tasks often = one commit per Phase 2 (or per major component if large).
 - Run full build before requesting commit approval — fail fast locally.
-- **Run auto-fixers BEFORE `git add`.** If the repo has `.pre-commit-config.yaml` → `pre-commit run --all-files`. Else fall back to project fixers from `$KB_DIR/kb/verify.md` (typically `prettier --write` + `eslint --fix`). Re-run until clean, THEN `git add`, THEN commit. Letting the hook auto-fix during `git commit` triggers the stash-modified-worktree-conflict dance and stretches commit to ~20 minutes. Fixers first = commit one-shot.
+- **Run auto-fixers BEFORE `git add`.** If the repo has `.pre-commit-config.yaml` → `pre-commit run --all-files`. Else read `$KB_DIR/kb/verify.md` for the project's declared fixer chain and run that. If `verify.md` does not name a fixer chain → **STOP and `escalate_upstream_gap`** — do NOT invent `prettier`/`eslint` defaults from prior projects (per agent-base §4b.1). Re-run until clean, THEN `git add`, THEN commit. Letting the hook auto-fix during `git commit` triggers the stash-modified-worktree-conflict dance and stretches commit to ~20 minutes. Fixers first = commit one-shot.
 
 ---
 
@@ -318,7 +318,7 @@ Reproduce checklist as ✓/✗ in CHANGES "Verification" section.
 
 ## Never do
 
-- Never write code without reading real components / stores first — hallucinated props / emits / state shape are bugs.
+- Never write code without reading real components / stores first (per agent-base §4b) — hallucinated props / emits / state shape are bugs.
 - Never violate the stack rules declared in `$KB_DIR/kb/frontends.md` for the target frontend.
 - Never fix backend bugs — note in CHANGES as "noticed, not fixed", redirect to the backend agent.
 - Never claim "done" without a successful build — ESLint passing ≠ build passing.

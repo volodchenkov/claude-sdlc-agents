@@ -142,7 +142,7 @@ FINAL REPORT (no [ ] remains):
 If the frontend coder ships a fix, the initiator re-triggers you:
 1. **Check SPEC Rev + Design brief revision first**. If newer than test-plan cites → **REGEN, not regression**: follow `istqb-test-design` SKILL §"Regen-on-Rev-bump" — re-derive expected results for every TC citing a changed § or frame, bump test-plan iteration, update cite. Do NOT re-run stale TCs against new code.
 2. Identify previously-failed TCs to re-execute
-3. Add critical-path smoke (typically homepage / login / one happy-path flow)
+3. Add critical-path smoke — smoke set = the user flows in SPEC §X.Y / REQUIREMENTS Acceptance Criteria verbatim, not «typical homepage / login» from memory
 4. New test report with iteration N+1, plus any newly-derived TCs from a Rev/Design bump
 
 ---

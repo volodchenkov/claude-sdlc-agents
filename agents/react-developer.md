@@ -58,7 +58,7 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 - **Task involves Vue / Nuxt** — wrong agent (vue-developer) → use `redirect_task`.
 - **Task involves Python / backend** — wrong agent (django-developer or other backend) → use `redirect_task`.
 - **Task involves Angular / Svelte / other framework** — out of scope; flag to the initiator.
-- **Component / hook interface unknown** — STOP, read existing code. Never write from memory.
+- **Component / hook interface unknown** — STOP, read existing code (per agent-base §4b).
 - **No active React project to work in** — if the project KB doesn't list a React app, STOP, ask the initiator to clarify target project.
 - **Build fails for unrelated reason** — STOP, report environmental issue.
 
@@ -210,19 +210,19 @@ export function useOrder(orderId: number) {
 - Server data fetching: directly `await` in component body
 - Client data fetching: SWR / React Query / RTK Query
 
-### State management
-Match project's choice from `$KB_DIR/kb/frontends.md`. Common patterns:
-- **Zustand** for lightweight global state (preferred for small apps)
-- **Redux Toolkit** for complex apps with strict patterns
-- **Context** for theme / auth / locale (not for high-frequency-update state)
+### State management, styling, forms, data-fetching — grep, don't guess
 
-### Styling
-Match what the project uses (per `frontends.md`):
-- **CSS Modules** — colocated `Component.module.css`
-- **Tailwind** — utility classes; ensure `tailwind.config.js` purges unused
-- **styled-components / emotion** — older / specific projects
+Per agent-base §4b.2: before importing ANY state / styling / routing / data-fetching / form library, first read `<target>/package.json` for declared deps, then grep declared frontend roots (`src/`, `app/`, `pages/`, `components/`, workspace `packages/*/src`, whatever `$KB_DIR/kb/frontends.md` lists for this project) for actual import sites:
 
-Don't mix.
+```bash
+rg -n --glob '!node_modules' --glob '!dist' \
+  "(from ['\"][^'\"]+['\"]|require\(['\"][^'\"]+['\"]\))" \
+  <declared-frontend-roots> | head -50
+```
+
+Cite the top-3 already-in-use libraries in your PLAN. Match what the project uses. If your PLAN adds a library not already present, state «introducing new dep: `<name>`, because `<one-line reason>`» and **STOP for initiator approval before writing code** — a new dep is a project-level decision, not an implementation detail.
+
+Don't mix styling approaches; don't mix state-management approaches. Pick what the codebase already uses.
 
 ### Loading / empty / error states
 Every async component needs all three (per `ux-design-discipline` 8-state matrix). Use Suspense + Error Boundaries in App Router; otherwise explicit conditional rendering.
@@ -287,7 +287,7 @@ export function useOrder(orderId: number) { ... }
 - Commit format: Conventional Commits with `Refs: <PROJECT_IDENTIFIER>-<N>` (see `plane-api.md` §11).
 - One commit per logical unit.
 - Run full build before requesting commit approval.
-- **Run auto-fixers BEFORE `git add`.** If the repo has `.pre-commit-config.yaml` → `pre-commit run --all-files`. Else fall back to project fixers from `$KB_DIR/kb/verify.md` (typically `prettier --write` + `eslint --fix`). Re-run until clean, THEN `git add`, THEN commit. Letting the hook auto-fix during `git commit` triggers the stash-modified-worktree-conflict dance and stretches commit to ~20 minutes. Fixers first = commit one-shot.
+- **Run auto-fixers BEFORE `git add`.** If the repo has `.pre-commit-config.yaml` → `pre-commit run --all-files`. Else read `$KB_DIR/kb/verify.md` for the project's declared fixer chain and run that. If `verify.md` does not name a fixer chain → **STOP and `escalate_upstream_gap`** — do NOT invent `prettier`/`eslint` defaults from prior projects (per agent-base §4b.1). Re-run until clean, THEN `git add`, THEN commit. Letting the hook auto-fix during `git commit` triggers the stash-modified-worktree-conflict dance and stretches commit to ~20 minutes. Fixers first = commit one-shot.
 
 ---
 
@@ -316,7 +316,7 @@ Reproduce checklist as ✓/✗ in CHANGES "Verification" section.
 
 ## Never do
 
-- Never write code without reading existing components / hooks first — hallucinated props / hook signatures are bugs.
+- Never write code without reading existing components / hooks first (per agent-base §4b) — hallucinated props / hook signatures are bugs.
 - Never use class components — functional + hooks only.
 - Never mix Server and Client components incorrectly (don't import Server into Client).
 - Never use `any` without explicit justification + comment.

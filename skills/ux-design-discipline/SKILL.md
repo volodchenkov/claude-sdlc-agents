@@ -92,24 +92,17 @@ For full reference: https://www.w3.org/WAI/WCAG21/quickref/
 
 ---
 
-## Platform conventions — pick one per surface
+## Platform conventions — derived from the project, not from this skill
 
-Projects often ship multiple frontends with different conventions. The project's `$KB_DIR/kb/frontends.md` declares the inventory. Common patterns:
+Projects ship multiple frontends with different conventions. **`$KB_DIR/kb/frontends.md` is authoritative** — it declares, per frontend surface: chosen design system, UI library, responsive strategy (mobile-first / desktop-first), breakpoints, touch-target size, navigation shape. Read it before making any convention decision.
 
-### Customer-facing storefront (typically Vue 3 / Nuxt 3 or React / Next.js)
-- Convention: **Material 3** simplified — Material's spacing / shape / motion principles, but visual style is project-branded.
-- Mobile-first responsive. Breakpoints: 360 / 768 / 1024 / 1440.
-- Touch targets 48 dp.
-- Standard web nav (top bar, hamburger on mobile).
+Surface types you'll encounter (design-thinking framing only — NOT defaults; the project's `frontends.md` overrides everything below):
 
-### Admin / POS / internal panels
-- Convention: **desktop-first** — power users, dense info, keyboard shortcuts.
-- Tables, forms, action buttons; less marketing flair.
-- UI library per panel (Buefy / Bulma / Material UI / Ant Design / custom) per `$KB_DIR/kb/frontends.md`.
-- Mobile responsive only for "view-only" cases; primary use is desktop.
+- **Customer-facing storefront** — usually mobile-first, standard web nav, accessible touch targets. Design system / breakpoints / brand tokens: from `frontends.md`.
+- **Admin / POS / internal panel** — usually desktop-first (power users, dense info, keyboard shortcuts), tables & forms over marketing flair. UI library: from `frontends.md`.
+- **iOS / Android native** — platform HIG (Apple / Material) is the source of truth, not this skill.
 
-### iOS / Android native (future, if any)
-- Use platform HIG / Material 3 directly. Don't impose web conventions.
+If `frontends.md` does not answer a convention question, ask the initiator or escalate — do not fall back to defaults from prior projects (per agent-base §4b.1).
 
 ---
 

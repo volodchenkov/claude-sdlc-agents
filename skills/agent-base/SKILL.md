@@ -147,6 +147,14 @@ Load order:
 
 If `$KB_DIR/AGENTS.md` is missing or `KB_DIR` env var is unset → fall back to `<cwd>/AGENTS.md`. If that's also missing → `ask_blocking_question` on root, mention initiator, STOP.
 
+### Re-invocation: re-read on every fresh spawn
+
+`session start` = **every fresh agent invocation**, not «once per calendar day». Conductor re-spawns, self-handoffs after long runs, and re-entry after iteration-N rework all count as new sessions — the prior invocation's context is gone.
+
+- **STOP** if about to post CHANGES / test plan / bug report / REVIEW / ARCH_REVIEW / Design brief in this invocation without having `Read` `$KB_DIR/AGENTS.md` + relevant `kb/*.md` (per role's `kb_extra`) + `$KB_DIR/kb/verify.md` **in this invocation**.
+- Reading is cheap and cached at the file-system layer. The tax is one `Read` per file per invocation; the cost of skipping is drift toward «what I remember from last iteration» which is exactly the failure this rule kills.
+- On iteration N>1 of the same artifact (SPEC rework, REVIEW after CHANGES revision) — also **re-Read the artifact you're revising**. The upstream role rewrote it; the text you saw in iter N-1 is stale.
+
 ---
 
 ## 3. Skills loaded automatically
@@ -181,15 +189,43 @@ If the initiator attached a sample (an example report, a REQUIREMENTS template, 
 
 The failure mode this kills: initiator hands over a sample report → agent reads it → agent writes a from-scratch report that bears no resemblance → initiator has to re-do it manually.
 
-### 4b. Code-first / no-narration (every role)
+### 4b. Read before you write; cite what you read (every role)
 
-When the answer to a question is in the source (codebase, OpenAPI schema, SPEC artifact, kb file, attached sample), you **read the source**. You do not narrate prose hypotheses like «the most likely culprit is X», «probably the filter doesn't support Y», «I suspect Z is happening».
+The single load-bearing rule against hallucination. All per-role prompts inherit it — do not re-derive it locally.
 
-- **STOP** if about to write «the most likely / probably / I suspect / I think / the cause might be» about behaviour that is determined by readable code.
-- **Either** open the file / fetch the OpenAPI / grep the symbol and report what is actually there, **or** explicitly say «can't read X because <reason>» and ask. No middle ground.
-- Prose hypothesis with no source-of-truth lookup is hallucination, even when it sounds plausible.
+**Three sub-rules:**
 
-Hypothesizing-while-narrating is fine for things genuinely outside the codebase (user intent, external system behaviour you can't probe). Forbidden when the answer is one `Read` / `Grep` / `read_artifact` call away.
+**4b.1 — No claim from memory when a tool can verify.**
+When the answer is in a source (codebase, OpenAPI, SPEC artifact, kb file, attached sample, external doc referenced by the initiator), you **open the source in this turn**. You do not narrate prose hypotheses like «the most likely culprit is X», «probably the filter doesn't support Y», «I suspect Z is happening», «typically Django does Y», «the docs usually say Z».
+
+- **STOP** if about to write «the most likely / probably / I suspect / I think / the cause might be / typically / usually / commonly / по памяти» about behaviour determined by readable code or a fetchable doc.
+- **Either** open the file / fetch the doc / grep the symbol and report what is actually there, **or** explicitly say «can't read X because <reason>, unverified» and stop. No middle ground, no hedge.
+- Prose hypothesis without a source-of-truth lookup is hallucination even when it sounds plausible. Sounding right ≠ being right.
+
+Hypothesizing-while-narrating is fine only for things genuinely outside your reach (user intent, external system behaviour you can't probe). Forbidden when the answer is one `Read` / `Grep` / `WebFetch` / `read_artifact` call away.
+
+**4b.2 — Grep before you introduce a new pattern.**
+Before writing code that adds a library, component, helper, endpoint shape, model pattern, styling approach, or naming convention — **grep the target codebase** for what already exists.
+
+- If the pattern is already used ≥1 time → reuse it, cite the `file:line` of the closest analogue in your PLAN / CHANGES.
+- If nothing similar exists → state «no analogue found under `<path>` for `<pattern>`, introducing new» in one line. Silent introduction of a new pattern is a finding at reviewer.
+- Deviation from an existing pattern is allowed but must be one line in the Completion Report / CHANGES: «отступил от `<file:line pattern>` потому что `<reason>`». Silent deviation = finding.
+
+The failure mode this kills: agent adds Zustand where the project uses Redux Toolkit because the pattern list in the prompt / prior training named Zustand first. Grep would have shown three existing `configureStore` calls; grep didn't happen.
+
+**4b.3 — Cite external refs inline, or label `unverified:`.**
+Every URL, RFC number, ADR ID, ticket ID, blog post, spec section, or vendor-doc anchor you name in output — either you opened it in this turn with a tool, or you prefix it inline with `unverified:`.
+
+- ✅ `per RFC 7231 §6.5.1` (opened via WebFetch this turn) — no label needed.
+- ✅ `per RFC 7231 §6.5.1 [unverified: not fetched this turn]` — honest hedge, initiator knows to verify.
+- ❌ `per RFC 7231 §6.5.1` when you didn't fetch — this is the fabricated citation that destroys trust.
+- The `unverified:` label goes **inline next to the ref**, not in a footnote / references section. Footnoted hedge = hedge-with-workaround = still hallucination.
+
+Same rule for Figma frame IDs, vendor-doc anchors, package version numbers, third-party API endpoints — all facts about the outside world where the model has a strong prior toward plausible-looking-but-wrong values.
+
+---
+
+**Why this is one rule, not three:** all three are the same mechanic — cheapest path to answer is a tool call, structure forces the tool call, hedge is banned so the model can't opt out via prose. Per-role prompts must not restate these — reference §4b instead.
 
 ---
 
