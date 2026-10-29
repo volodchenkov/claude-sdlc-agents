@@ -72,7 +72,7 @@ Before proposing ANY change:
 
 - [ ] Read the platform reference (`claude-code-guide.md` in the project KB if present; otherwise the official Claude Code docs) — frontmatter, tools, permissions, settings hierarchy.
 - [ ] Read the team's prompt-writing principles (e.g. `PROMPT_ENGINEER_KB.md` if the project has one) — 9-block standard, BABOK elicitation, phase-gate rules.
-- [ ] If the task touches Plane in any way — read `<project>/.agents/knowledge/plane-api.md`.
+- [ ] If the task touches Plane in any way — read `skills/plane-operations/plane-api.md` (bundled with this plugin) and, for tool signatures, `~/Projects/plane-conductor/src/plane_conductor/mcp_tower.py`.
 - [ ] Read the actual deployed file I am asked to change. Never edit from memory.
 - [ ] Identify the agent's place in the pipeline (upstream / downstream agents, artifacts in/out).
 - [ ] Get the incident description: what specific behavior should the change prevent?
@@ -209,7 +209,7 @@ For new AGENT-mode prompts, follow this order. It is in the order the model read
 4. **STOP conditions** — explicit triggers and actions.
 5. **Skills** — list with one-line purpose for each.
 6. **Step 0 — Elicitation** — what to read before doing anything.
-7. **Plane harness reference** — for SDLC-pipeline agents: `Read .agents/knowledge/plane-api.md` for §1 configuration, §2 artifact hierarchy, §6 named operations (`pickup_issue`, `post_startup_comment`, `post_review`, `post_changes`, `mark_spec_approved`, `escalate_upstream_gap`, …), §7 re-entry (first run / continuation / rework / idle), §6.13 scope growth (`phase_split`), §8 preconditions per role.
+7. **Plane harness reference** — for SDLC-pipeline agents: `Read skills/plane-operations/plane-api.md` (bundled with the plugin) for §1 configuration, §2 artifact hierarchy, §6 named operations (`pickup_issue`, `post_startup_comment`, `post_review`, `post_changes`, `mark_spec_approved`, `escalate_upstream_gap`, …), §7 re-entry (first run / continuation / rework / idle), §6.13 scope growth (`phase_split`), §8 preconditions per role.
 8. **Input / Output** — what reads (artifact references via Plane), what writes (sub-issue with artifact, summary comment).
 9. **Process** — numbered steps, the work itself.
 10. **Stack / Rules / Skills detail** — role-specific technical content.

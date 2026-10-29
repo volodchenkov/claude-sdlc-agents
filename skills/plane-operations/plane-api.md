@@ -123,6 +123,8 @@ The old rule «mention initiator, never mention the next agent» still holds in 
 
 ---
 
+> **Tools.** Agents call the `mcp__plane-tower__*` operations listed in their `tools:` line (`pickup_issue`, `find_artifact_by_label`, `list_sub_issues`, `create_sub_issue`, `read_artifact`, `list_comments`, `update_sub_issue_description`, `post_*`, `mark_*`, `escalate_upstream_gap`, `request_handoff`, `update_comment`). Raw `mcp__plane-<workspace>__*` calls below show what the tower does underneath — the plane-tower equivalents are what you call.
+
 ## 6. Operations — named procedures
 
 All pipeline operations are tools on the **`plane-tower` MCP** — a single virtual server (one process per host, no per-workspace prefix). Workspace routing happens inside the tower from the `WORKSPACE_SLUG` env Plane Conductor injects on agent spawn. Agents call `mcp__plane-tower__<op>(…)` with role names (`spec`, `backend`, …) instead of raw label/state/member UUIDs; the tower resolves them from its in-memory snapshot of Plane state.
@@ -240,7 +242,7 @@ Response shape (all keys present on success):
 
 **Why markdown by default.** Plane stores the editor's HTML (`<p class="..." style="...">…`) which is ~30% markup by weight. For an agent's reasoning pass markdown carries the same structure (`# headings`, `- lists`, `**bold**`, fenced code, `[text](url)`) but at ~0.7× the size. On bloated SPECs the raw HTML response had been over Claude Code's MCP tool-result token cap, silently hanging agents in `--print` mode. Use `description_format='html'` only when you specifically need raw markup (e.g. relaying it back to Plane verbatim).
 
-**Pagination.** Comments default to the newest 20 — that's the slice that carries the latest verdict, clarification, or re-entry signal. If `has_more_comments` is true and you need older context, call again with `comments_offset=20` (then 40, …). `comments_limit=0` returns no comments at all — use it to read just the description.
+**Pagination.** Comments default to the newest 5 (`comments_limit=5`). If `has_more_comments` is true and you need older context, call again with `comments_offset=5` (then 10, …) or use `list_comments` with a larger `limit`. `comments_limit=0` returns no comments at all — use it to read just the description.
 
 ### 6.5 create_sub_issue
 
@@ -332,7 +334,7 @@ A review is a comment posted on the sub-issue (or root) whose contents you revie
 
 **How to get `sub_uuid`:**
 
-- **Architect** / **coders**: `sub_uuid` equals your spawn `issue_uuid` (you were spawned on your own artifact's sub-issue).
+- **Everyone**: the spawn `issue_uuid` is the issue you were mentioned on — usually the upstream artifact, not yours. Resolve your own: `pickup_issue(spawn uuid)` → `root_uuid = parent or id`; `find_artifact_by_label(role, root_uuid)` (or `create_sub_issue(role, root_uuid)` on the first run). The architect reviews the SPEC sub-issue found the same way.
 - **Final reviewer** iterating over multiple artifacts: resolve per-artifact via `find_artifact_by_label(role, root_uuid)` where `role` ∈ `spec` / `design` / `backend` / `frontend` / `api-tests` / `ux-tests`. For the cross-cutting verdict use `sub_uuid=root_uuid`.
 
 **How to compute `iter_n`:** read existing comments on the sub-issue (via `read_artifact`, which already returns the latest `comments_limit` comments by default), scan for prior `REVIEW (iter X) —` markers authored by your member id, and pass `iter_n = max(X) + 1` (or `1` if none).
@@ -341,7 +343,7 @@ A review is a comment posted on the sub-issue (or root) whose contents you revie
 
 ```python
 # 1. Determine iteration N from comments you already read via read_artifact:
-prior = [c for c in artifact.comments if c.author == AGENT_MEMBER_ID and re.search(r"REVIEW \(iter (\d+)\)", c.comment)]
+prior = [c for c in artifact.comments if c.actor == AGENT_MEMBER_ID and re.search(r"REVIEW \(iter (\d+)\)", c.comment)]
 N = (max(int(re.search(r"\(iter (\d+)\)", c.comment).group(1)) for c in prior) + 1) if prior else 1
 
 # 2. Idempotency guard — if your last review is the most recent activity AND
@@ -349,7 +351,7 @@ N = (max(int(re.search(r"\(iter (\d+)\)", c.comment).group(1)) for c in prior) +
 
 # 3. Post via tower (auto-stamps initiator mention; pass next_role to also ping the role that should pick up next):
 mcp__plane-tower__post_review(
-    sub_uuid=sub_uuid,            # the sub-issue being reviewed; for architect/coders this is your spawn issue_uuid
+    sub_uuid=sub_uuid,            # the sub-issue being reviewed, resolved via find_artifact_by_label(role, root_uuid) — not the spawn uuid
     verdict=verdict,              # 'APPROVED' | 'CHANGES_REQUIRED' | 'BLOCKED'
     body_html="<p>{findings, severity, traceability}</p>",   # NO <mention-component> — tower refuses
     iter_n=N,
@@ -379,25 +381,25 @@ mcp__plane-tower__escalate_upstream_gap(
 Then STOP. The initiator decides whether to re-trigger the upstream role; that role updates its **existing** artifact (no new sub-issue) and the initiator re-triggers you. This is how nuance is handled: artifacts are mutable, sub-issues are stable.
 
 ### 6.7d post_changes (coders)
-The coders' final CHANGES summary on a Backend / Frontend sub-issue. Wraps the `artifact-templates` CHANGES template — agent supplies fields, operation renders the canonical HTML and posts as a comment **on the sub-issue identified by `sub_uuid`** (= your spawn `issue_uuid`).
+The coders' final CHANGES summary on a Backend / Frontend sub-issue. Wraps the `artifact-templates` CHANGES template — agent supplies fields, operation renders the canonical HTML and posts as a comment **on the sub-issue identified by `sub_uuid`** (your own sub-issue, agent-base §9.7).
 
 ```python
 post_changes(
-    sub_uuid=<your spawn issue_uuid>,
-    target='backend',           # 'backend' or 'frontend' — used for display label + OpenAPI defense
-    files=[                     # list of changed files with one-line summaries
-        ("apps/orders/models.py", "Add `Order.tracking_number`"),
-        ("apps/orders/serializers.py", "URL-encode tracking_number"),
+    sub_uuid=<your own sub_uuid>,   # agent-base §9.7 — not the spawn uuid
+    target='backend',               # 'backend' or 'frontend' — display label + OpenAPI defense
+    summary='<implementation summary, agent-base §9.4>',
+    files=[                          # changed files with one-line summaries
+        ["apps/orders/models.py", "Add `Order.tracking_number`"],
+        ["apps/orders/serializers.py", "URL-encode tracking_number"],
     ],
-    migrations=[                # may be empty list
-        ("0042_order_tracking_number", "adds nullable column, default null"),
+    verification=[                   # each check actually run, with its observed result
+        ["pytest -q --ds conf.customers.test_settings tests/customers", "212 passed"],
     ],
-    perf=None,                  # optional dict with N+1 / latency notes
-    docs=[
-        "docstrings on Order.tracking_url",
-        "README §API: tracking endpoint section",
-    ],
-    ready_for_review=True,      # only set True when DoD met (see role prompt)
+    migrations=[["0042_order_tracking_number", "adds nullable column, default null"]],
+    deviations_from_plan=[],
+    not_implemented=[],
+    ready_for_review=True,          # only when DoD met (see role prompt)
+    next_role='api-tester',
 )
 ```
 
@@ -412,15 +414,15 @@ Validations the operation enforces:
 - **Frontend coders** (target='frontend') — analogous defense pending; for now `verification` must include the project's own type-check (e.g. `tsc --noEmit`) and lint runs as separate lines.
 
 ### 6.7e post_bug_report (api-tester, ui-tester)
-A bug found during testing. Single op writes the ISTQB-structured comment on **your test sub-issue** (`test_sub_uuid` = your spawn `issue_uuid`) and (optionally) links the affected coder's sub-issue.
+A bug found during testing. Single op writes the ISTQB-structured comment on **your test sub-issue** (`test_sub_uuid` = your own test sub-issue, agent-base §9.7) and (optionally) links the affected coder's sub-issue.
 
 ```python
 post_bug_report(
-    test_sub_uuid=<your spawn issue_uuid>,
+    test_sub_uuid=<your own test sub_uuid>,   # agent-base §9.7
     affected_sub_uuid=<resolved via find_artifact_by_label('backend' or 'frontend', root_uuid)>,  # or None to skip back-link
     severity='major',            # blocker | major | minor | cosmetic
     title='Order tracking link returns 500 when tracking_number contains special chars',
-    environment='storefront-app Vue 3, Chrome 120',
+    environment={'app': 'storefront-app Vue 3', 'browser': 'Chrome 120'},
     repro_steps=[
         'Login as customer (test acc 1)',
         "Open /account/orders/{id} where order has tracking_number='ABC/123'",
@@ -441,11 +443,11 @@ Recipe:
 The two-way link prevents bugs from getting lost when reviewer or coder reads only one side.
 
 ### 6.7f mark_spec_approved (architect)
-After posting an APPROVED `post_review`, the architect posts a separate flag comment that downstream coders look for as their "ready to start" signal.
+After an APPROVED `post_review` **and the initiator's OK on the gate-2 SPEC digest** (agent-base §9.1), the architect posts a separate flag comment that downstream coders look for as their "ready to start" signal.
 
 ```python
 mark_spec_approved(
-    spec_sub_uuid=<your spawn issue_uuid>,
+    spec_sub_uuid=<the SPEC sub_uuid — find_artifact_by_label('spec', root_uuid)>,
     summary_html="<p>backend scope: …</p><p>frontend scope: …</p>",
     next_role='django-developer',     # optional — pings the next coder alongside initiator
 )
@@ -493,17 +495,7 @@ mcp__plane-tower__request_handoff(
 ```
 
 ### 6.10 attach_screenshot (ui-tester)
-Plane MCP has no upload op. Push PNG to your project's screenshot store (S3 / object storage; configured in `$KB_DIR/kb/verify.md`), then attach a link to the sub-issue.
-
-```python
-# 1. Upload PNG to project's screenshot store (helper, not MCP).
-# 2. Attach link:
-mcp__plane-<workspace>__create_work_item_link(
-    project_id=PROJECT_ID,
-    work_item_id="<sub_uuid>",
-    url="<https-url-to-uploaded-png>",
-)
-```
+Plane MCP has no upload op. Push the PNG to the project's screenshot store (S3 / object storage), then pass the URL in `post_bug_report(screenshots=[<url>])` — that is the attachment. There is no plane-tower link operation; do not call workspace-level `create_work_item_link`.
 
 ### 6.11 redirect_task
 The mention reached the wrong role. Hand off to the correct role on root via `request_handoff` — tower stamps both the target-role mention and the initiator mention.
@@ -545,7 +537,7 @@ A documentation update or a one-line config tweak doesn't need 7 sub-issues + AR
 Flow:
 1. Initiator creates the root issue with the label `pipeline:doc-only` (in addition to any artifact label).
 2. Initiator triggers the relevant **coder** (django / react / vue) directly — there is no BA, SA, architect, designer, or tester run.
-3. The coder works in **doc-only mode**: skips PLAN, writes only documentation, posts `post_changes(target=…, files=[…doc files…], ready_for_review=False, summary='docs only')`.
+3. The coder works in **doc-only mode**: in its own worktree (agent-base §9.5), no PLAN, writes only documentation, posts `post_changes(sub_uuid=<own sub_uuid — agent-base §9.7>, target='backend'|'frontend', summary='docs only — see diff', files=[…doc files…], verification=[], ready_for_review=False)`.
 4. Initiator reviews the diff in the repo and closes manually. No final reviewer pass.
 
 Every other agent (BA, SA, architect, designer, testers, reviewer) MUST detect this label at startup and `redirect_task` to the coder before doing any work — see role prompts.
@@ -575,8 +567,8 @@ Use `blocks` / `blocked-by` only when the dependency is hard (the new phase cann
 Every agent run is one of: first run, continuation, rework, or idle. Algorithm:
 
 ```
-1. pickup_issue (§6.1) → root_uuid
-2. find_artifact_by_label(artifact:<my-role>, parent=root_uuid) (§6.3) → my_sub or None
+1. pickup_issue(issue_uuid=<spawn uuid>) (§6.1) → root_uuid = parent or id
+2. find_artifact_by_label(role=<my role key>, root_uuid=root_uuid) (§6.3) → my_sub or None
 
 3. If my_sub is None:
    → FIRST RUN.
@@ -591,17 +583,17 @@ Every agent run is one of: first run, continuation, rework, or idle. Algorithm:
        Previous run was interrupted. Re-read description + comments,
        determine where you stopped, drive to summary.
 
-   4b. After your comment there's an initiator/reviewer comment → REWORK.
+   4b. After your comment there's an initiator / reviewer / tester / designer comment or a handoff to you → REWORK.
        Read the feedback. Update description (§6.6). Post a comment
        describing changes (§6.7). Update startup-to-summary (§6.8).
 
-   4c. Latest is your own `done` summary, no new initiator activity → IDLE.
+   4c. Latest is your own `done` summary, nothing new from the initiator or another role → IDLE.
        Work already submitted, waiting on initiator. STOP without action.
 ```
 
 **Idempotency:** on continuation/rework — never create a second sub-issue, never post a fresh startup comment. Reuse the existing ones.
 
-**Reviewers (final reviewer + architect) skip steps 4a/4b — they have no own sub-issue.** They detect re-entry by reading their own previous review comments (markers `REVIEW (iter N)` / `ARCH_REVIEW (iter N)`) on the artifact they're reviewing (§6.7b). New iteration if and only if the artifact has changed since the last review.
+**Reviewers (final reviewer + architect) skip steps 4a/4b — they have no own sub-issue.** The architect also re-enters on an **unchanged** SPEC for a designer handback or the initiator's gate-2 reply (`architect.md` steps 12b/12c). They detect re-entry by reading their own previous review comments (markers `REVIEW (iter N)` / `ARCH_REVIEW (iter N)`) on the artifact they're reviewing (§6.7b). New iteration if and only if the artifact has changed since the last review.
 
 Phase-decomposed agents (BA, SA) layer a "Phase status" checklist inside the description on top of this. The first `[ ]` marks the next phase; their role prompt defines per-phase entry/exit.
 
@@ -616,7 +608,7 @@ What must already exist on the root issue for an agent to do meaningful work. Th
 | business-analyst | nothing (works with the root description draft) |
 | system-analyst | root description empty / no REQUIREMENTS |
 | architect | no sub-issue with `artifact:spec` |
-| designer | no `artifact:spec` sub-issue **or** no `SPEC_APPROVED` marker in its comments |
+| designer | no `artifact:spec` sub-issue **or** no APPROVED ARCH_REVIEW on it (the designer runs before gate 2; `SPEC_APPROVED` comes after) |
 | backend coder | no `artifact:spec` sub-issue **or** no `SPEC_APPROVED` marker |
 | frontend coder | no `artifact:backend` with CHANGES (when API integration needed) **or** no `artifact:design` sub-issue (when SPEC declared design dep) |
 | api-tester | no `artifact:backend` sub-issue (or no CHANGES comment in it) |
@@ -654,7 +646,7 @@ Before the first pipeline run, `plane-conductor setup` should:
 
 ## 11. Conventional Commits (coders)
 
-Coders commit only on the initiator's explicit OK. Format:
+Coders commit on their own worktree branch without asking (agent-base §6a, §9.5); push and merge to master need the initiator. Format:
 
 ```
 <type>(<scope>): <subject>
@@ -674,8 +666,8 @@ The `Refs:` footer is mandatory — links the commit to its Plane issue.
 
 - **Never** `curl` or hit Plane REST directly — only `mcp__plane-<workspace>__*` tools.
 - **Always** check preconditions (§8) before starting.
-- **Never** assign or mention the next agent — only the initiator triggers downstream runs.
+- **Never** hand-write mentions. Downstream roles are triggered through `request_handoff(target_role=…)` / `next_role=` (agent-base §9).
 - **Never** close the root issue or another agent's sub-issue — final close = §6.12, by the initiator.
 - On re-runs — only update existing sub-issues / comments (see §7). No duplicates.
-- Screenshots — via your project's storage + `create_work_item_link` (§6.10), never base64-embedded.
+- Screenshots — upload to the project's storage, pass the URL in `post_bug_report(screenshots=[…])`; never base64-embedded.
 - All comments are HTML (`<p>`, `<strong>`, `<code>`, `<a>`, `<mention-component>`).

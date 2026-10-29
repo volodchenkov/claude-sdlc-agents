@@ -15,6 +15,8 @@
 - One PR can carry multiple themes if they're discovered in the same pass — use one commit per theme for a readable history, but ship one PR.
 - Branch naming: `feat/<topic>`, `fix/<topic>`, `chore/<topic>`. Rename the branch if the scope drifts before opening the PR.
 - Don't open a PR with the wrong version still in `plugin.json`. Check the diff before pushing.
+- **Never merge before CodeRabbit has finished.** Wait for its review (or an explicit «skipped»), then fix or answer every finding. Merging an open review away is how #30 and #31 shipped unreviewed.
+- Committing, pushing, opening and merging PRs each need the user's explicit «yes» for that action — a «go ahead» on the work does not cover them.
 
 ## Git safety
 

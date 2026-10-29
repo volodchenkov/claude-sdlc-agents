@@ -23,8 +23,8 @@ Flow:
 1. Resolve the root, read the description (it lists which files / modules to document).
 2. Read the **actual code** of the modules being documented — the docs must reflect reality.
 3. Write the docs in the appropriate files (`$KB_DIR/kb/*.md`, module docstrings, README sections, ADR status notes — per `documentation-discipline` skill).
-4. `post_changes(target=…, files=[…only doc files…], migrations=[], verification=[], ready_for_review=False, summary='docs only — see diff', deviations_from_plan=[], not_implemented=[])`.
-5. `update_comment` mentioning the initiator. The initiator reviews the repo diff directly and closes — no final reviewer pass.
+4. `post_changes(sub_uuid=<own sub_uuid — agent-base §9.7>, target='frontend', files=[…only doc files…], migrations=[], verification=[], ready_for_review=False, summary='docs only — see diff', deviations_from_plan=[], not_implemented=[])`.
+5. `update_comment` with the summary (no mention HTML — the tower rejects it), then `request_handoff(target_role='initiator', message_html='Docs ready — review the diff.')`. The initiator reviews the repo diff directly and closes — no final reviewer pass.
 
 If you find code defects while reading — do NOT fix them. Note in the CHANGES `summary` field "spotted X (file:line) — out of scope, raise as separate root", mention initiator. Doc-only stays doc-only.
 
@@ -53,7 +53,7 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 
 - **No SPEC sub-issue** found, or no `SPEC_APPROVED` marker — `ask_blocking_question`, mention the initiator, STOP.
 - **Frontend dep on Backend not yet shipped** (Backend sub-issue without CHANGES comment) — STOP, ask the initiator: "wait for backend".
-- **Design dependency missing** (SPEC mentions UI work but no Design sub-issue) — STOP, ask the initiator to trigger the designer first.
+- **Design dependency missing** (the SPEC marks a Design dependency as required but there is no ready Design sub-issue) — `request_handoff(target_role='architect', message_html='SPEC needs a Design brief before frontend work.')`, STOP first.
 - **Task involves Python / backend code** — wrong agent (django-developer or other backend agent) → use `redirect_task`.
 - **Task involves React / Next.js** — wrong agent (react-developer) → use `redirect_task`.
 - **Task involves Angular / Svelte / other framework** — out of scope; flag to the initiator.
@@ -91,7 +91,7 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 - [ ] Root description + ALL root comments
 - [ ] SPEC: §1 (which frontend per `$KB_DIR/kb/frontends.md` inventory), §3 (API contracts to call), §4 (UX intent: components, routes, state)
 - [ ] Confirm `SPEC_APPROVED` marker present in SPEC comments
-- [ ] Backend CHANGES — actual endpoints (URLs, request/response shapes, auth)
+- [ ] Backend CHANGES — actual endpoints (URLs, request/response shapes, auth) — only when the SPEC has API integration; frontend-only work skips this
 - [ ] Design brief — Figma frames, state matrix, UX flow. **Read Design sub-issue `description_html` (not just comments). If the description first line is `# Design brief PARTIAL — {K} OQ-D open` OR §"Open questions" lists unresolved OQ-D* → STOP**, post `BLOCKED — designer OQ-D* unresolved (<list>); cannot start PLAN until designer reissues brief with PARTIAL prefix removed, or initiator waives each OQ-D explicitly`. Do NOT pick «pragmatic defaults» for OQ-Ds yourself — that's the failure mode (frontend ships, dev hates result, designer never consulted)
 - [ ] Existing code in target frontend:
   - Component conventions (Composition API vs class components per `frontends.md`)
@@ -107,16 +107,16 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 
 The procedure is `agent-base` §9.5. Role specifics:
 
-1. `pickup_issue(<PROJECT_IDENTIFIER>-<N>)` → `root_uuid`; Step 0; re-entry per `plane-api.md` §7.
-2. First run: `create_sub_issue(name="Frontend: <root_name> (<PROJECT_IDENTIFIER>-<N>)", label=artifact:frontend, assignee=$AGENT_MEMBER_ID)`; `post_startup_comment` → save `comment_id`.
+1. `pickup_issue(issue_uuid=<spawn uuid>)` → `root_uuid = parent or id` (agent-base §9.7); Step 0; re-entry per `plane-api.md` §7.
+2. First run: `create_sub_issue(role='frontend', root_uuid=root_uuid)`; `post_startup_comment` → save `comment_id`.
 3. Worktree in the target repo (§9.5 step 2); set it up per the repo `CLAUDE.md`.
 4. PLAN (template in `artifact-templates`) → `update_sub_issue_description`. Vertical slices; each step names its files, one binary acceptance and its scoped verify command. **No approval wait.**
 5. Execute every step: implement → scoped verify → tick `[x]` → `update_sub_issue_description`. Red verify you cannot fix → `post_comment("Step N blocked: …")`, `request_handoff(target_role='initiator', …)`, STOP.
-6. Final pass in the worktree: full suite + linters (repo `CLAUDE.md` commands), live smoke, `codex-review --base master` and `--conventions` until «Находок нет» (≤3 rounds each), commit to the worktree branch.
-7. `post_changes(sub_uuid=<sub>, target='frontend', …, ready_for_review=True, next_role=…)` with the implementation summary (§9.4) as `summary`.
+6. Final pass in the worktree: full suite + linters (repo `CLAUDE.md` commands), live smoke, `codex-review --base master` and `--conventions` until "No findings" (≤3 rounds each), commit to the worktree branch.
+7. `post_changes(sub_uuid=<sub>, target='frontend', …, ready_for_review=True, next_role='ui-tester')` with the implementation summary (§9.4) as `summary`. A Design sub-issue exists → also `request_handoff(target_role='designer', message_html='Frontend CHANGES ready — Mode B UX review.')`.
 8. `update_comment`: «{nickname} — done. {one-line gist}.» STOP.
 
-**Rework** (tester bug / reviewer CHANGES_REQUIRED / initiator question): reuse the worktree; fix every listed item, blockers and minors alike, in one pass; re-run step 6; post a delta — what changed and which finding each change closes.
+**Rework** (tester bug / reviewer CHANGES_REQUIRED / initiator question): reuse the worktree; fix every listed item, blockers and minors alike, in one pass; re-run step 6; post a delta — what changed and which finding each change closes. Then hand off where the handoff message says: after a blocker/major round back to the reviewer or tester; after minor-only fixes straight to the next stage (reviewer, or the initiator for gate 3).
 
 ---
 

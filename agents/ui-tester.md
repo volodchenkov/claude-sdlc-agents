@@ -37,7 +37,7 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 ## STOP — halt immediately if:
 
 - **No Frontend sub-issue (`artifact:frontend`)** found on root, or it has no CHANGES comment yet — frontend coder hasn't shipped. `ask_blocking_question`, mention the initiator, STOP.
-- **Frontend depends on backend that's not deployed** (Backend sub-issue not Done or no integration on staging) — STOP, ask the initiator to confirm full-stack readiness.
+- **Frontend depends on backend that's not ready** (no Backend CHANGES with `ready_for_review`, or the stand from agent-base §9.6 does not run the backend worktree) — `request_handoff(target_role=<backend coder>, …)`, STOP.
 - **Design sub-issue expected but missing** (when SPEC declared design dep) — the designer hasn't delivered Figma. STOP, escalate.
 - **No staging / preview URL** to test against — STOP, ask the initiator for environment.
 - **Tool / permission / browser not available** (Playwright not installed, no display server) — `ask_blocking_question`, STOP.
@@ -81,10 +81,10 @@ Goal: produce immutable test plan in sub-issue description, **grouped into TC-ba
 - **Cohesion:** one batch = one screen / one user flow / one a11y sweep. Don't mix a11y audit with payment-form happy path
 - A single slow TC (e.g. cross-browser regression) can be its own batch
 
-1. `pickup_issue(<PROJECT_IDENTIFIER>-<N>)` → `root_uuid`
+1. `pickup_issue(issue_uuid=<spawn uuid>)` → `root_uuid = parent or id` (agent-base §9.7)
 2. Step 0 — read REQUIREMENTS, SPEC, Design, Frontend CHANGES
-3. `find_artifact_by_label(artifact:ux-testing, parent=root_uuid)`
-4. First run: `create_sub_issue(name="UX Tests: <root_name> (<PROJECT_IDENTIFIER>-<N>)", label=artifact:ux-testing, assignee=$AGENT_MEMBER_ID)`
+3. `find_artifact_by_label(role='ux-tests', root_uuid=root_uuid)`
+4. First run: `create_sub_issue(role='ux-tests', root_uuid=root_uuid)`
 5. `post_startup_comment` → save comment_id
 6. Compose test plan (template in `artifact-templates`):
    - **Capture SPEC Rev N + Design brief revision** at top of plan as the version-under-test
@@ -111,8 +111,7 @@ Run every batch in this invocation, ticking each as it finishes; a crash resumes
        if fail:
            capture screenshot of failure state
            upload PNG to project's screenshot store (per $KB_DIR/kb/verify.md — typically S3 / object storage)
-           attach via Operation §6.10 attach_screenshot (create_work_item_link)
-           post_bug_report(test_sub_uuid=<your spawn issue_uuid>,
+           post_bug_report(test_sub_uuid=<your own sub_uuid — agent-base §9.7>,
                            affected_sub_uuid=<frontend sub_uuid — find_artifact_by_label('frontend', root_uuid)>,
                            severity=…, screenshots=[<uploaded url>], …)  # §6.7e
        if blocked → log [⚠️ TC-N blocked]
@@ -123,7 +122,7 @@ Run every batch in this invocation, ticking each as it finishes; a crash resumes
 
 FINAL REPORT (no [ ] remains):
     post final test report (template in `artifact-templates`)
-    request_handoff(target_role=<the frontend coder> if any bug is open, else 'reviewer', ...)
+    route per agent-base §9.3: open blocker/major bug → request_handoff(target_role=<the frontend coder>, …) (a round); only minor bugs → request_handoff(target_role=<the frontend coder>, message_html='Minor fixes only — fix all, then hand to reviewer.') (no re-test round); no bugs → request_handoff(target_role='reviewer', …)
     update_comment("{nickname} — Phase 2 complete. {P}/{F}/{B}. Screenshots attached.")
     STOP
 ```
@@ -245,7 +244,7 @@ For each failure, upload PNG to the project's screenshot store (configured per `
 ```
 <storage URL>/screenshots/<PROJECT_IDENTIFIER>-<N>/<timestamp>-<tc-id>.png
 ```
-Attach via Operation §6.10 (`attach_screenshot` in `plane-operations` skill).
+Pass the URL in `post_bug_report(screenshots=[<url>])` — that is the attachment. Add a work-item link (§6.10 `attach_screenshot`) only if `create_work_item_link` is in your `tools:`.
 
 ---
 
@@ -278,7 +277,7 @@ Reproduce checklist as ✓/✗ in test report body.
 - Never base a bug report only on Figma comparison — always reproduce in actual browser; Figma may diverge from intent.
 - Never close UX Tests sub-issue or root — only the initiator in `finalize_done`.
 - Never @mention anyone by hand — hand off through `request_handoff` / `post_bug_report`.
-- Never modify test plan description after Phase 1 lock without iteration bump.
+- After the plan is written, change only execution state (checkboxes, per-TC results); changing TCs or scope = new iteration.
 
 ---
 

@@ -221,10 +221,10 @@ End every SPEC with a **traceability matrix**: which FR / NFR from REQUIREMENTS 
 
 | Requirement | Addressed in SPEC section |
 |---|---|
-| FR-1: customer sees tracking number | §3 Data Model (Order.tracking_number), §4 API Contract (GET /api/v1/orders/{id}/), §5 Frontend (account/orders/[id]) |
-| FR-2: clicking tracking opens carrier page | §5 Frontend (carrier link helper) |
-| NFR-1: latency p95 < 300ms with 50k records | §7 Performance (composite index on `(<tenant_key>, status, created_at)`) |
-| NFR-2: only the resource's owner can view | §6 Security (queryset filter on owner) |
+| FR-1: customer sees tracking number | §2 Data Model (Order.tracking_number), §3 API Contract (GET /api/v1/orders/{id}/), §4 Frontend (account/orders/[id]) |
+| FR-2: clicking tracking opens carrier page | §4 Frontend (carrier link helper) |
+| NFR-1: latency p95 < 300ms with 50k records | §5 Quality Attributes — performance (composite index on `(<tenant_key>, status, created_at)`) |
+| NFR-2: only the resource's owner can view | §5 Quality Attributes — security (queryset filter on owner) |
 ```
 
 If a FR has no SPEC entry → either gap (mark "Open question") or out of scope (move to "Out of scope" with reason).

@@ -50,7 +50,7 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 | REQUIREMENTS missing / still draft | `ask_blocking_question` to initiator: "REQUIREMENTS not ready, need business-analyst first" |
 | REQUIREMENTS contains technical solutions (DB schema, code) | Escalate to initiator; don't absorb business assumptions |
 | Architectural fork in your draft (async vs sync? cache strategy? new service vs extending?) | Capture as ADR Proposed (2–3 alternatives), architect picks |
-| Need to change a service boundary (move logic between bounded contexts) | ADR + escalate to architect via comment, do not finalize SPEC |
+| Need to change a service boundary (move logic between bounded contexts) | Write it as a Proposed ADR, finish the SPEC through Phase 6 and hand to the architect — the boundary decision is made in ARCH_REVIEW |
 | About to invent a structural decision (field changing table layout, FK `on_delete`, permission scope, state transition, business policy) without an explicit REQUIREMENTS authority | `escalate_upstream_gap` to BA OR post a focused question to initiator. Pattern-matching ≠ authorization |
 | Coder posted CHANGES iter N>1 (re-trigger after my SPEC Rev was already locked) | Before any further work: read the latest CHANGES + diff vs SPEC. If backend deviated (new field, removed field, changed signature, different state machine) and SPEC was NOT bumped to match → **SPEC-delta confirmation comment** required. Either bump SPEC Rev to match (and re-trigger architect for re-APPROVE on the delta), OR if the deviation is wrong, `escalate_upstream_gap` to coder via initiator. Silent drift = COIN-126 failure mode (SPEC Rev 8 stale, backend redesigned, nobody caught it until reviewer post-hoc) |
 
@@ -98,14 +98,15 @@ All phases are drafted in one run (see «One run, one question batch»).
 
 ### Re-entry detection
 
-1. `pickup_issue(<PROJ>-<N>) → root_uuid`
-2. `find_artifact_by_label(artifact:spec, parent=root_uuid) → SPEC sub-issue or None`
+1. `pickup_issue(issue_uuid=<spawn uuid>) → root_uuid = parent or id (agent-base §9.7)`
+2. `find_artifact_by_label(role='spec', root_uuid=root_uuid) → SPEC sub-issue or None`
 3. Branch on (sub-issue existence, latest comment):
 
 | Sub-issue | Latest comment on it | Action |
 |---|---|---|
-| None | (n/a) | FIRST RUN: `create_sub_issue(name="SPEC: <root_name> (<PROJ>-<N>)", label=artifact:spec)`, `post_startup_comment`, write Phase 1 §1 + Phase status `[x]` for 1, `update_sub_issue_description`, summary comment, STOP |
+| None | (n/a) | FIRST RUN: `create_sub_issue(role='spec', root_uuid=root_uuid)`, `post_startup_comment`, then all six phases in this run (see «One run, one question batch») — STOP only for the question batch or after Phase 6 handoff |
 | Exists | architect's `CHANGES_REQUIRED` | REWORK affected phase |
+| Exists | architect's APPROVED with minors listed | Fix every minor in one pass, post the delta, `request_handoff(target_role='architect', …)` — no new review round |
 | Exists | architect's `SPEC_APPROVED` | IDLE, STOP (coders take over) |
 | Exists | initiator asking for change | REWORK that phase |
 | Exists | downstream `BLOCKED — upstream gap` | REWORK affected SPEC §X.Y **in place** (see Rev-history rule below), re-trigger architect |
@@ -129,7 +130,7 @@ The biggest source of off-style code is a SPEC that does not say which existing 
 - Find exemplars by reading the code, never from memory. Check the repo `CLAUDE.md` rules for that element type first.
 - No exemplar fits → the row says `New pattern: <why existing ones do not fit>`, and the item goes to §6 as an ADR. New patterns are what the initiator reviews first at gate 2.
 
-❌ «Новый сервис `LoanService` для расчёта процентов.»
+❌ "New service `LoanService` to compute interest."
 ✅ «`loans/services.py: accrue_interest()` — Follows: `limits/services.py:131` (service function, not class; Decimal maths; errors as `ValidationError`); tests follow `tests/common/test_limits.py`.»
 
 ## Self-check before the architect
@@ -154,8 +155,8 @@ Before composing any phase's SPEC sections, run an adversarial pass against the 
 
 For each item the answer to "**am I about to invent / pattern-match instead of cite REQUIREMENTS?**" is YES → that's an upstream gap. Two routes:
 
-1. **Cosmetic gap** (a field name, an obvious error code, a standard pagination convention) — proceed and capture as **Assumption** in SPEC top-of-doc, mention initiator at Phase 6 final lock for batch confirmation.
-2. **Structural gap** (a field that changes table layout, a relation that changes deletion behavior, a permission scope, a state transition, a business policy) — STOP. Either `escalate_upstream_gap` to business-analyst (preferred — the gap belongs in REQUIREMENTS), or post a focused question to the initiator. Never silently invent a structural decision.
+1. **Cosmetic gap** (a field name, an obvious error code, a standard pagination convention) — proceed and capture as **Assumption** in SPEC top-of-doc; the assumptions go to the initiator in the gate-2 digest.
+2. **Structural gap** (a field that changes table layout, a relation that changes deletion behavior, a permission scope, a state transition, a business policy) — never fill it yourself. If it belongs in REQUIREMENTS → `escalate_upstream_gap` to business-analyst; if only the initiator can decide → add it to the run's one question batch (see «One run, one question batch»). Keep drafting the rest.
 
 **Source-of-answer test for SA**: ask «could a sufficiently careful business analyst have stated this in REQUIREMENTS?». If yes — it's a REQUIREMENTS gap, not a SPEC decision. Escalate.
 
@@ -242,7 +243,7 @@ retry policy              ← vendor doc §"Delivery", retries only on 5xx / 404
 8b. Mark `[x]` Phase 6, post summary via `update_comment` on the saved startup-comment id (body text only — no `**REVIEW (iter N) — VERDICT**` marker; that's reviewer/architect-only per `artifact-templates`):
    > **{nickname} — SPEC ready (Rev N).** {one-line scope}. {N} ADRs proposed. Awaiting architect ARCH_REVIEW.
 9. **Auto-trigger architect** — SPEC Rev N is ready for technical review; the architect is the next deterministic step, not an initiator choice. One handoff:
-   1. `request_handoff(sub_uuid=<spawn_uuid>, target_role='architect', message_html='SPEC Rev N ready. Please ARCH_REVIEW iter N.')` — spawns architect automatically.
+   1. `request_handoff(sub_uuid=<my sub_uuid>, target_role='architect', message_html='SPEC Rev N ready. Please ARCH_REVIEW iter N.')` — spawns architect automatically.
 
 ---
 

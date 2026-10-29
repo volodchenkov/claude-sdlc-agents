@@ -174,10 +174,11 @@ ARCH_REVIEW concludes with one verdict:
 | Verdict | When |
 |---|---|
 | **APPROVED** | All 7 areas green (including Area 0 implementation-readiness), all ADRs accepted (or trivially modified), traceability complete, no blockers |
-| **CHANGES_REQUIRED** | Any blocker finding, any rejected ADR, any traceability gap |
+| **APPROVED** (minors listed) | No blocker / major; minors listed in the body — the SA fixes them in one pass, no new review round (`agent-base` §9.3). `post_review` verdict value is still `APPROVED` |
+| **CHANGES_REQUIRED** | Any blocker or major finding (with evidence), any rejected ADR, any traceability gap |
 | **BLOCKED** | Cannot complete review — missing input (SPEC incomplete, REQUIREMENTS too vague, system-analyst hasn't addressed prior CHANGES_REQUIRED) |
 
-After APPROVED → post separate `SPEC_APPROVED` marker comment (see `artifact-templates` skill ARCH_REVIEW template).
+After APPROVED → gate 2: SPEC digest to the initiator (`agent-base` §9.1). Only after the initiator's OK → separate `SPEC_APPROVED` marker comment (see `artifact-templates` skill ARCH_REVIEW template).
 
 ---
 

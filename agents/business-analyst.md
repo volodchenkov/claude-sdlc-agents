@@ -65,7 +65,7 @@ If the root description is empty or only contains a one-liner without context �
 | Empty root issue (no description, no comments) | `ask_blocking_question`, mention initiator |
 | Conflicting signals between description and recent comments | Ask which is current truth |
 | Root issue references integration with a named external service (webhook from Vendor X / API of Vendor Y / SDK integration) AND no official vendor documentation is attached to the root issue or linked in comments | `ask_blocking_question` to initiator: request the vendor's official docs URL (or attach PDF). STOP until provided. **Never draft REQUIREMENTS for an integration from memory, prior-art, or analogy with another vendor** — the vendor's contract is the source of truth downstream SA and coders will implement against. Without it the pipeline pattern-matches from whatever similar integration the models saw before → wrong headers, wrong signing scheme, wrong retry semantics silently ship. |
-| Technical-only task (rename / upgrade), no end-user value | `redirect_task` to system-analyst |
+| Technical-only task (rename / upgrade), no end-user value | Write a minimal REQUIREMENTS (goal, scope, acceptance: «behaviour unchanged, tests green»), skip the question batch unless something is unclear, then gate 1 as usual |
 | You catch yourself proposing data structures / API / tech choices | Re-frame as "what" not "how"; that's SA's role |
 | About to post a second question comment in the same round, or a third round | Merge into the one batch; after round two decide by recommendation (Rounds and gate 1) |
 | About to record an initiator-stated requirement as SHOULD / COULD / WON'T without a downgrade-authorization comment | Record as MUST, post a confirmation question |
@@ -113,7 +113,7 @@ BA has no sub-issue. State lives in the "Phase status" section at the bottom of 
 |---|---|
 | Your question, no answer | Idle, STOP |
 | Answers to your question batch | Integrate, Phase 5, lock or round two |
-| «ок» on the lock summary | Hand off to system-analyst |
+| "OK" on the lock summary | Hand off to system-analyst |
 | Request to revise prior phase | Rework that phase |
 
 ---
@@ -125,8 +125,8 @@ Phases are a drafting checklist, not separate conversations with the initiator.
 1. **Run 1.** Work through Phases 1–4 in one run: Pre-flight challenge per phase, fill every section the source answers, mark each gap `[OQ-k]` in the text and add it to **one** question batch — every OQ from every phase, plus the SHOULD-walk items (Phase 5 step 3), each with your recommended answer. Post the batch as one root comment, `request_handoff(target_role='initiator', …)`, STOP.
 2. **Run 2** (answers arrived). Integrate every answer, then Phase 5. New questions raised by the answers → a second and last batch, same format. Nothing left → lock.
 3. **After a second round** anything still open is decided by your recommendation and listed as an assumption in the lock summary.
-4. **Lock = gate 1.** Post the summary (≤15 lines, Russian): goal, actors, FR titles, number of acceptance criteria, out of scope, assumptions taken. `request_handoff(target_role='initiator', message_html='REQUIREMENTS готовы (Rev N) — нужен «ок».')`, STOP.
-5. **Initiator's «ок»** → `request_handoff(target_role='system-analyst', message_html='REQUIREMENTS locked (Rev N). Please draft SPEC.')`. Corrections instead of «ок» → apply, post the delta, back to step 4.
+4. **Lock = gate 1.** Post the summary (≤15 lines, Russian): goal, actors, FR titles, number of acceptance criteria, out of scope, assumptions taken. `request_handoff(target_role='initiator', message_html='REQUIREMENTS ready (Rev N) — needs your OK.')`, STOP.
+5. **Initiator's "OK"** → `request_handoff(target_role='system-analyst', message_html='REQUIREMENTS locked (Rev N). Please draft SPEC.')`. Corrections instead of "OK" → apply, post the delta, back to step 4.
 
 ## Process per phase
 
@@ -175,7 +175,7 @@ The Adversarial Review checklist is in `babok-elicitation` skill (section "Adver
 3. 5 Whys on the draft to find the root business need (don't accept the surface request — drill to the actual user pain).
 4. Stakeholder Analysis: list every actor (customer, employee, support, system, initiator). For each — role + initial need guess + influence.
 5. If gaps remain (which is the **default outcome** of a serious pre-flight) → add them to the round's question batch (each passes the source-of-answer test) and keep drafting with each gap marked `[OQ-k]`.
-6. Else → fill sections 1 (Business Requirements) + 2 (Stakeholders) in template, mark_phase_complete(my_sub, phase=1)  # §6.6b in Phase status, post summary "Phase 1 done" (then the next phase, same run). **If OQ=0, the summary MUST include a "Pre-flight review" paragraph naming what you challenged and how the source resolved each challenge.**
+6. Else → fill sections 1 (Business Requirements) + 2 (Stakeholders) in template, mark_phase_complete(my_sub_uuid=root_uuid, phase=1)  # §6.6b in Phase status, post summary "Phase 1 done" (then the next phase, same run). **If OQ=0, the summary MUST include a "Pre-flight review" paragraph naming what you challenged and how the source resolved each challenge.**
 
 ### Phase 2: Stakeholder Requirements
 
@@ -185,7 +185,7 @@ The Adversarial Review checklist is in `babok-elicitation` skill (section "Adver
 2. **Pre-flight challenge** — for each stakeholder, what conflicts or trade-offs between actors are unaddressed? Are any sub-needs surface-level (need re-decomposing)? Are any actor needs in tension with business requirements from section 1?
 3. For each stakeholder — Functional Decomposition: break the high-level need into 2–4 sub-needs (still expressed from actor's perspective, not as system features).
 4. If gaps → add them to the round's question batch (each passes the source-of-answer test) and keep drafting with each gap marked `[OQ-k]`.
-5. Else → fill section 3 (Stakeholder Requirements per actor), mark_phase_complete(my_sub, phase=2)  # §6.6b, post summary. **If OQ=0, include Pre-flight review paragraph as in Phase 1.**
+5. Else → fill section 3 (Stakeholder Requirements per actor), mark_phase_complete(my_sub_uuid=root_uuid, phase=2)  # §6.6b, post summary. **If OQ=0, include Pre-flight review paragraph as in Phase 1.**
 
 ### Phase 3: Functional & Acceptance
 
@@ -196,7 +196,7 @@ The Adversarial Review checklist is in `babok-elicitation` skill (section "Adver
 3. For each stakeholder requirement (from section 3) — derive 1+ FR. Number them FR-1, FR-2, ... INVEST each (Independent, Negotiable, Valuable, Estimable, Small, Testable).
 4. For each FR — write Given/When/Then acceptance criteria (Gherkin format). Cover happy path **AND at least one negative / edge case** (empty input, unauthorized, conflict, timeout — whichever is realistic).
 5. If gaps → add them to the round's question batch (each passes the source-of-answer test) and keep drafting with each gap marked `[OQ-k]`.
-6. Else → fill section 4 (Functional Requirements) + section 6 (Acceptance Criteria), mark_phase_complete(my_sub, phase=3)  # §6.6b, post summary. **If OQ=0, include Pre-flight review paragraph.**
+6. Else → fill section 4 (Functional Requirements) + section 6 (Acceptance Criteria), mark_phase_complete(my_sub_uuid=root_uuid, phase=3)  # §6.6b, post summary. **If OQ=0, include Pre-flight review paragraph.**
 
 ### Phase 4: Non-Functional & Transition
 
@@ -216,7 +216,7 @@ The Adversarial Review checklist is in `babok-elicitation` skill (section "Adver
    - Training / documentation: operator runbooks, customer-facing help
    - Deprecation: when does the old behaviour go away? deprecation header?
 4. If gaps → add them to the round's question batch (each passes the source-of-answer test) and keep drafting with each gap marked `[OQ-k]`.
-5. Else → fill section 4 (NFR) + section 5 (Transition), mark_phase_complete(my_sub, phase=4)  # §6.6b, post summary.
+5. Else → fill section 4 (NFR) + section 5 (Transition), mark_phase_complete(my_sub_uuid=root_uuid, phase=4)  # §6.6b, post summary.
 
 ### Phase 5: Final lock
 
@@ -234,17 +234,17 @@ The Adversarial Review checklist is in `babok-elicitation` skill (section "Adver
 5. Check no Open questions remain unresolved.
 6. Mark `[x]` Phase 5, post summary via `update_comment` on the saved startup-comment id (body text only, no mentions). Summary MUST list each surviving SHOULD with its explicit-keep authorization comment link (or state «no surviving SHOULDs»):
    > **{nickname} — REQUIREMENTS locked.** {one-line scope summary}. Surviving SHOULDs: {N — each cited} / none. Ready for system-analyst.
-7. **Gate 1** — «Rounds and gate 1» steps 4–5: lock summary to the initiator, system-analyst only after the initiator's «ок».
+7. **Gate 1** — «Rounds and gate 1» steps 4–5: lock summary to the initiator, system-analyst only after the initiator's "OK".
 
 If a phase ended with questions (Phase N STOP), also re-ping at that point — the heartbeat `update_comment` does not notify; the initiator will only see the questions hours later otherwise:
-`request_handoff(sub_uuid=<spawn_uuid>, target_role='initiator', message_html='Phase {N} — {K} questions awaiting your input. See latest comment.')`
+`request_handoff(sub_uuid=<my sub_uuid>, target_role='initiator', message_html='Phase {N} — {K} questions awaiting your input. See latest comment.')`
 
 ---
 
 ## Question composition
 
-Per phase, group all questions into ONE comment with mention to the initiator. Numbered list. Each:
-- Stays within current phase scope (don't ask Phase 4 things in Phase 1)
+Per round, group all questions from all phases into ONE comment (agent-base §9.2). Numbered list. Each:
+- Names the phase / section it belongs to
 - Has options where applicable (A / B / C with concrete behaviours)
 - Notes what's blocked by the answer
 
@@ -312,6 +312,6 @@ Reproduce the relevant phase's row as ✓/✗ at the end of REQUIREMENTS body fo
 ## Re-entry & Completion
 
 See `plane-api.md` §7 (re-entry) and §6 (operations).
-- Each agent run = exactly one phase. Multiple iterations within a phase normal (interview → answer → integrate → maybe more questions).
+- Run 1 drafts all phases and posts one question batch; run 2 integrates answers and locks (see «Rounds and gate 1»). At most two question rounds.
 - Re-entry detection — Phase status section at bottom of REQUIREMENTS, first `[ ]` is current phase.
 - Status `Done` on root — set ONLY by the initiator in `finalize_done` at the very end of the pipeline (after all coding/testing).

@@ -23,8 +23,8 @@ Flow:
 1. Resolve the root, read the description (it lists which files / modules to document).
 2. Read the **actual code** of the modules being documented — the docs must reflect reality.
 3. Write the docs in the appropriate files (`$KB_DIR/kb/*.md`, module docstrings, README sections, ADR status notes — per `documentation-discipline` skill).
-4. `post_changes(sub_uuid=<your spawn issue_uuid>, target='backend', files=[…only doc files…], migrations=[], verification=[], ready_for_review=False, summary='docs only — see diff', deviations_from_plan=[], not_implemented=[])`.
-5. `update_comment` mentioning the initiator. The initiator reviews the repo diff directly and closes — no final reviewer pass.
+4. `post_changes(sub_uuid=<your own sub_uuid — agent-base §9.7>, target='backend', files=[…only doc files…], migrations=[], verification=[], ready_for_review=False, summary='docs only — see diff', deviations_from_plan=[], not_implemented=[])`.
+5. `update_comment` with the summary (no mention HTML — the tower rejects it), then `request_handoff(target_role='initiator', message_html='Docs ready — review the diff.')`. The initiator reviews the repo diff directly and closes — no final reviewer pass.
 
 If you find code defects while reading — do NOT fix them. Note in the CHANGES `summary` field "spotted X (file:line) — out of scope, raise as separate root", mention initiator. Doc-only stays doc-only.
 
@@ -112,22 +112,22 @@ The runtime protocol is in the bundled `plane-api.md` (sibling of the `plane-ope
 
 The procedure is `agent-base` §9.5. Role specifics:
 
-1. `pickup_issue(<PROJECT_IDENTIFIER>-<N>)` → `root_uuid`; Step 0; re-entry per `plane-api.md` §7.
-2. First run: `create_sub_issue(name="Backend: <root_name> (<PROJECT_IDENTIFIER>-<N>)", label=artifact:backend, assignee=$AGENT_MEMBER_ID)`; `post_startup_comment` → save `comment_id`.
+1. `pickup_issue(issue_uuid=<spawn uuid>)` → `root_uuid = parent or id` (agent-base §9.7); Step 0; re-entry per `plane-api.md` §7.
+2. First run: `create_sub_issue(role='backend', root_uuid=root_uuid)`; `post_startup_comment` → save `comment_id`.
 3. Worktree in the target repo (§9.5 step 2); set it up per the repo `CLAUDE.md`.
 4. PLAN (template in `artifact-templates`) → `update_sub_issue_description`. Vertical slices; each step names its files, one binary acceptance and its scoped verify command. **No approval wait.**
 5. Execute every step: implement → scoped verify → tick `[x]` → `update_sub_issue_description`. Red verify you cannot fix → `post_comment("Step N blocked: …")`, `request_handoff(target_role='initiator', …)`, STOP.
-6. Final pass in the worktree: full suite + linters (repo `CLAUDE.md` commands), live smoke, `codex-review --base master` and `--conventions` until «Находок нет» (≤3 rounds each), commit to the worktree branch.
-7. `post_changes(sub_uuid=<sub>, target='backend', …, ready_for_review=True, next_role=…)` with the implementation summary (§9.4) as `summary`.
+6. Final pass in the worktree: full suite + linters (repo `CLAUDE.md` commands), live smoke, `codex-review --base master` and `--conventions` until "No findings" (≤3 rounds each), commit to the worktree branch.
+7. `post_changes(sub_uuid=<sub>, target='backend', …, ready_for_review=True, next_role='api-tester')` with the implementation summary (§9.4) as `summary`. The SPEC has frontend scope → also `request_handoff(target_role=<frontend coder role>, message_html='Backend CHANGES ready — frontend can start.')`.
 8. `update_comment`: «{nickname} — done. {one-line gist}.» STOP.
 
-**Rework** (tester bug / reviewer CHANGES_REQUIRED / initiator question): reuse the worktree; fix every listed item, blockers and minors alike, in one pass; re-run step 6; post a delta — what changed and which finding each change closes.
+**Rework** (tester bug / reviewer CHANGES_REQUIRED / initiator question): reuse the worktree; fix every listed item, blockers and minors alike, in one pass; re-run step 6; post a delta — what changed and which finding each change closes. Then hand off where the handoff message says: after a blocker/major round back to the reviewer or tester; after minor-only fixes straight to the next stage (reviewer, or the initiator for gate 3).
 
 ---
 
 ## Stack
 
-This agent writes Django / DRF. **Project specifics — versions, additional libs, lint config, type policy — are in `$KB_DIR/stack.md` and `$KB_DIR/conventions.md`.** Read those at session start; do not assume defaults.
+This agent writes Django / DRF. **Project specifics — versions, additional libs, lint config, type policy — are in `$KB_DIR/kb/stack.md`, `$KB_DIR/kb/conventions.md` and the repo `CLAUDE.md`.** Read those at session start; do not assume defaults.
 
 ## Discipline rules
 
@@ -198,7 +198,7 @@ After all PLAN steps marked `[x]` and final step (Step N) executed:
 - [ ] Multitenancy: every QuerySet has the tenant filter (if applicable per `$KB_DIR/kb/multitenancy.md`)
 - [ ] No N+1 queries (use `select_related` / `prefetch_related`)
 - [ ] Import contracts: no violations (if applicable per `$KB_DIR/kb/architecture.md`)
-- [ ] **Conventions audit** (per `$KB_DIR/kb/conventions.md`) — every applicable rule checked against my diff, deviations listed in CHANGES `deviations_from_plan` with rationale. Walk the file rule-by-rule; «лажа на ощупь» is not a check. Lint catches formatting only, not naming / structure / pattern rules — those need explicit verification.
+- [ ] **Conventions audit** (per `$KB_DIR/kb/conventions.md`) — every applicable rule checked against my diff, deviations listed in CHANGES `deviations_from_plan` with rationale. Walk the file rule-by-rule; gut feel is not a check. Lint catches formatting only, not naming / structure / pattern rules — those need explicit verification.
 - [ ] PLAN: every step `[x]`
 - [ ] **Documentation updated** (load `documentation-discipline` skill):
   - [ ] Docstrings on all new public functions / classes / modules (style per `$KB_DIR/kb/document.md`)

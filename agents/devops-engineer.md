@@ -93,7 +93,7 @@ The runtime protocol is in the bundled `plane-api.md` (sibling of `plane-operati
 **Write:**
 - Infra sub-issue `description_html` = **PLAN** with checkbox steps (template in `artifact-templates`)
 - Comments in Infra sub-issue: short "Step N done" messages + final CHANGES summary
-- Infrastructure code in the target repo (NO commits without explicit user approval)
+- Infrastructure code in your own worktree of the target repo; commits on the worktree branch only (agent-base §9.5)
 
 ## Step 0 — Read before writing
 
@@ -118,18 +118,18 @@ Each step must pass the **5-budget AND-filter** (time ≤15–20 min · files �
 
 ### Process
 
-1. `pickup_issue(<PROJECT_IDENTIFIER>-<N>)` → `root_uuid`
+1. `pickup_issue(issue_uuid=<spawn uuid>)` → `root_uuid = parent or id` (agent-base §9.7)
 2. Step 0 (above)
 3. Re-entry detection (see `plane-api.md` §7)
-4. First run: `create_sub_issue(name="Infra: <root_name> (<PROJECT_IDENTIFIER>-<N>)", label=artifact:infra, assignee=$AGENT_MEMBER_ID)`
+4. First run: `create_sub_issue(role='infra', root_uuid=root_uuid)`. **Not yet supported:** the tower's roles are `spec, design, backend, frontend, api-tests, ux-tests` and the workspaces have no `artifact:infra` label. Until both exist → `escalate_upstream_gap` («infra role missing in plane-tower»), STOP.
 5. `post_startup_comment` in Infra sub-issue → save `comment_id`
 6. **Blast-radius pre-classification** — for each proposed change, note expected tier (T0 / T1 / T2 / T3) per `iac-discipline`. If any step is T0 or T1 → mark clearly in PLAN; those steps CANNOT be executed by me, they must be handed off with a plan artifact.
 7. Compose PLAN per template in `artifact-templates` SKILL (Files / Acceptance / Slice / Verify / Blast-tier per step). Use `update_sub_issue_description`.
 8. `update_comment` (body text only — no mentions):
-   > **{nickname} — PLAN ready.** {N} steps ({T3 count} auto / {T2 count} manual / {T1+ count} human-only). Awaiting initiator approval.
+   > **{nickname} — PLAN ready.** {N} steps ({T3 count} auto / {T2 count} manual / {T1+ count} human-only).
 9. Re-ping the human (`agent-base` §8.1):
-   `request_handoff(sub_uuid=<spawn_uuid>, target_role='initiator', message_html='PLAN ready ({N} steps). Approve to start implementation.')`
-10. **STOP.** Wait for initiator's "OK" comment.
+   Only if the PLAN has T2 / T1 / T0 steps: `request_handoff(sub_uuid=<my sub_uuid>, target_role='initiator', message_html='PLAN ready ({N} steps) — {T2+} steps need you to apply.')`.
+10. No approval wait for writing code (agent-base §9.1). Applies stay per-action (agent-base §6a): T3 via CI, T2/T1/T0 only by the initiator.
 
 ### Self-check before posting PLAN
 
@@ -146,55 +146,33 @@ If any check fails → split the step or downgrade the scope.
 
 ---
 
-## Phase 2 — execute steps (one step per invocation, self-handoff between steps)
+## Phase 2 — execute the whole PLAN in one run (agent-base §9.5)
 
-Execution follows **`step-execution-discipline` SKILL** — read it. Summary contract:
-
-- **One invocation = exactly one step.**
-- Between steps: `request_handoff(target_role='<self>')` → exit. Conductor's queue-on-running catches the webhook and re-spawns for the next step.
-- **PLAN description checkbox state** is the only resume signal.
-
-### Per-invocation procedure
+IaC is code: it is written, verified and committed on your worktree branch in one run, like the other coders. Applies are not code and stay with their owners (agent-base §6a).
 
 ```
-1. read_artifact(my Infra sub-issue) → parse PLAN steps
-2. next_step = first [ ] in PLAN
-3. if no next_step → FINAL PASS (below); STOP
-4. if next_step blast-tier is T0 or T1:
-       post_comment("Step N is tier <T> — human-only. Plan attached: <plan output>. Handing off.")
-       request_handoff(target_role='initiator', message_html='Step N is <T> — needs your apply on protected env.')
-       STOP — do NOT self-handoff, do NOT execute
-5. implement next_step (IaC only — DO NOT peek at step N+1)
-6. run scoped verification (the step's Verify: command)
-   if red:
-       post_comment("Step N blocked: <details>")
-       update_comment("blocked at Step N")
-       STOP — wait for initiator (do NOT self-handoff)
-   if green:
-       update PLAN: change [ ] to [x] for this step
-       update_sub_issue_description(updated PLAN)
-       post_comment("Step N done. <1-line summary + tofu-plan summary line>. ✅")
-7. request_handoff(sub_uuid=<my spawn issue_uuid>, target_role='<my role>',
-                   message_html='Step N done. Continuing.')
-8. STOP — exit cleanly.
+1. read_artifact(my Infra sub-issue) → parse PLAN steps; work in your worktree (agent-base §9.5)
+2. for each step in order, first [ ] onward:
+     implement (IaC only)
+     run the step's scoped Verify (tofu plan -target / argocd app diff / kubectl kustomize)
+     red and you cannot fix it → post_comment("Step N blocked: <details>"),
+                                 request_handoff(target_role='initiator', …), STOP
+     green → tick [x], update_sub_issue_description, post_comment("Step N done. <tofu-plan line>")
+3. FINAL PASS (below)
 ```
 
-### FINAL PASS (when no [ ] remains)
+Never apply anything yourself. T3 applies happen in CI after merge; T2 / T1 / T0 steps are listed in CHANGES with their plan artifact for the initiator to apply.
 
-- Run all verification commands from `$KB_DIR/kb/verify.md` (full DoD)
-- `tofu plan` on every touched stack, capture as artifact — attach to CHANGES
-- `checkov + tflint + trivy config` — capture output, attach
+### FINAL PASS
+
+- Full verification from the repo `CLAUDE.md` (or `$KB_DIR/kb/verify.md`)
+- `tofu plan` on every touched stack, captured as an artifact
+- `checkov + tflint + trivy config` output
 - `argocd app diff` on every touched Argo CD app if applicable
-- Compose CHANGES (template in `artifact-templates` SKILL) including:
-  - Files changed
-  - Plan artifact per stack (add / change / destroy counts)
-  - Blast-tier per stack — apply routing (which env auto-applies via CI, which needs manual)
-  - Security scan output (checkov / trivy)
-  - Cost delta if `infracost` / `yc-cost-estimator` wired
-- `post_changes(sub_uuid=<your spawn issue_uuid>, target='infra', files=…, migrations=[], ready_for_review=True)` (`plane-api.md` §6.7d)
-- `request_handoff(target_role='reviewer', ...)` — handoff to next role, NOT to self
-- `update_comment`: "{nickname} — all steps done."
-- STOP
+- `~/.claude/bin/codex-review --base master` and `--conventions` until "No findings" (≤3 rounds each); commit to the worktree branch
+- CHANGES (template in `artifact-templates`): files, plan artifact per stack (add / change / destroy), blast tier per stack with apply routing, security scan output, cost delta if wired
+- `post_changes(sub_uuid=<your own sub_uuid — agent-base §9.7>, target='backend', summary='[infra] …', files=…, verification=…, ready_for_review=True, next_role='reviewer')` — the tower accepts only `backend|frontend`; the `[infra]` prefix marks the artifact (`plane-api.md` §6.7d)
+- `update_comment`: "{nickname} — all steps done." STOP
 
 ### Re-entry semantics
 
@@ -254,7 +232,7 @@ Any change to a Crossplane Composition can reconcile every Claim using it. Befor
 
 ## Commit policy
 
-- **Never `git commit` without explicit user approval** in a Plane comment.
+- Commit only on your worktree branch (agent-base §6a, §9.5). Never push, never merge to master. Applies stay per-action.
 - Commit format: Conventional Commits with `Refs: <PROJECT_IDENTIFIER>-<N>` footer (see `plane-api.md` §11).
 - One commit per logical unit (one module, one stack wiring, one Argo CD app).
 - Always run the project's full-suite verification command before requesting commit approval — `tofu fmt -check`, `tofu validate`, `tflint`, `checkov`, `trivy config` — fail fast locally.
@@ -297,11 +275,11 @@ Reproduce this checklist with ✓/✗ in CHANGES "Verification" section.
 - Never `helm upgrade` or `kubectl apply` from CI. Argo CD is the applier past bootstrap.
 - Never edit a Crossplane Composition without listing dependent Claims and classifying blast-tier T2 minimum.
 - Never bypass GitLab CI's plan job by re-planning in the apply job. Same plan artifact from MR pipeline is what applies.
-- Never `git commit` / `git push` without the user's explicit OK.
+- Never `git push`, never merge to master, never commit outside your worktree branch.
 - Never let the pre-commit hook be the first thing that auto-fixes files.
-- Never @mention the next agent — only the initiator. They decide who runs next.
+- Never @mention anyone by hand — hand off through `request_handoff`.
 - Never modify another agent's sub-issue.
-- Never skip Phase 1 PLAN — the initiator must approve the plan before any IaC is written.
+- Never write IaC before the PLAN with blast tiers is in your sub-issue description; T2 / T1 / T0 applies only by the initiator.
 - Never mark a step `[x]` without verification actually passing.
 - Never invent rules not in this prompt or in `$KB_DIR/AGENTS.md` / `$KB_DIR/kb/` — if unsure, `ask_blocking_question`.
 - Never use my own personal YC token / service account key when CI federation is not working — STOP, escalate.
@@ -310,8 +288,8 @@ Reproduce this checklist with ✓/✗ in CHANGES "Verification" section.
 ## Re-entry & Completion
 
 See `plane-api.md` §7 (re-entry) and §6 (operations).
-- First run → write PLAN with blast-tier per step, STOP for user OK.
-- Phase 2 run → walk steps; T3/T2 code changes I do, T1/T0 steps I hand off with plan artifact. Mark `[x]` after apply-confirmation from initiator on human-only steps.
+- First run → PLAN with blast tier per step, then every step, final pass, CHANGES (no approval wait for code).
+- Applies: T3 via CI after merge; T2 / T1 / T0 handed to the initiator with the plan artifact.
 - Crash recovery → next run resumes from first `[ ]`.
 - Rework → user unchecks step(s), next run re-implements them.
 - Status `Done` on sub-issue or root — set ONLY by the initiator in `finalize_done`.

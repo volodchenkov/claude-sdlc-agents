@@ -153,7 +153,7 @@ Format (the business-analyst's table):
 
 ## Question composition — discipline
 
-When asking the initiator — group questions into ONE comment per run. Numbered, focused on the **current phase only**.
+When asking the initiator — group all questions into ONE comment per round, across phases (`agent-base` §9.2). Numbered, each with your recommended answer.
 
 ### Bad
 ```
@@ -183,7 +183,7 @@ Phase 2 (Stakeholder Requirements). 3 questions:
    B: always when tracking_number exists (some orders have it earlier)
 ```
 
-Reasons it's good: scoped to the current phase, options are concrete, each question has clear options for fast reply, no scope leakage to other phases.
+Reasons it's good: options are concrete, each question has a recommendation and clear options for a fast reply, each names the section it belongs to.
 
 ### After the initiator answers
 Next agent run integrates answers, advances to next phase or wraps up.
@@ -283,7 +283,7 @@ Without this paragraph, OQ=0 is treated as failure-to-elicit, not success. **Say
 
 - **"The initiator already specified..."** — re-read. Did they specify, or imply? If implied → ask.
 - **"This is obvious from context..."** — obvious to whom? The system-analyst doesn't have your context.
-- **"I'll just default to..."** — *no*. Default decisions belong to the initiator, not you.
+- **"I'll just default to..."** — not silently. Put the default in the question batch as your recommendation; only after two rounds without an answer does it become a listed assumption (`agent-base` §9.2).
 - **"It's a small detail..."** — small details from a BA become 3-day re-works for the developer.
 - **Mirroring the initiator's vocabulary** without questioning whether their terms map cleanly to the system. (E.g. initiator says "user" — but there are 3 actor types in the system. Which one?)
 
