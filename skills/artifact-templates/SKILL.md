@@ -342,7 +342,7 @@ One line per revision after the initial Phase 6 lock. Append only — earlier en
 
 Each iteration of review = **new comment** (don't edit previous; preserve history).
 
-**Zero-tolerance verdict rule** — any finding of any severity (blocker / major / minor) → `CHANGES_REQUIRED`. `APPROVED` requires the findings list to be empty. No «non-blocking follow-up», no «punted minor», no «accept-with-comment», no «recommend separate ticket». If the issue is real enough to write down, it's real enough to block. See `code-review-discipline` skill (Verdict logic).
+**Verdict rule** — every finding gets fixed; only blocker / major return the artifact (`CHANGES_REQUIRED`); minors are listed and fixed in the same pass; iteration N>1 reviews the delta only. See `code-review-discipline` skill (Verdict logic) and `agent-base` §9.3.
 
 ```markdown
 # ARCH_REVIEW iteration {N}
