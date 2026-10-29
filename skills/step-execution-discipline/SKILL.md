@@ -11,6 +11,8 @@ Two parts:
 1. **Sizing** — how to decompose a SPEC into the right number of steps with the right edges.
 2. **Execution** — one invocation per step + self-handoff + checkbox state in PLAN sub-issue description.
 
+> **Pipeline v2 (agent-base §9.5):** coders and testers use **Part 1 only** — they execute the whole PLAN in one invocation, ticking checkboxes as they go. Part 2 (one invocation per step + self-handoff) applies to `devops-engineer` only.
+
 The infra side (queue-on-running so self-handoff doesn't race the webhook) lives in `plane-conductor` ≥ the PR that landed queue-on-running. If your conductor is older, self-handoff drops on the floor — escalate before relying on this skill.
 
 ---

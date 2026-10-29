@@ -199,22 +199,24 @@ If finding is security / quality / coherence → the reviewer's core domain, fil
 
 ## Severity classification
 
-Severity describes *what kind* of finding it is — not whether it blocks the verdict. Use it to help the implementer prioritise the rework order, not to decide skip-vs-fix.
+Severity decides whether a finding costs a round (blocker / major) or is fixed in the same pass (minor). Everything gets fixed either way.
 
 - **blocker** — release-stopping at any reasonable interpretation. Examples: security vulnerability (any A01–A10), missing FR coverage, untested critical path, broken multitenancy
 - **major** — degrades the feature meaningfully. Examples: missing audit log on sensitive action, SOLID violation that will hurt maintenance, test coverage gap on edge case
 - **minor** — small but real. Examples: naming inconsistency, comment polish, minor refactor opportunity, low-impact a11y violation, drift from APPROVED SPEC on an unimportant detail
 
-## Verdict logic (zero-tolerance)
+## Verdict logic — fix everything, iterate only on what matters
 
-**Any finding of any severity → CHANGES_REQUIRED.** APPROVED requires the finding list to be empty AND a populated `Runtime smoke` section per the next §.
+The initiator's rule (2026-05-13) stands: «закрываем все замечания. Фиксите все». What changed is **how**: fixing everything must not cost a review round per nit. Rounds follow `agent-base` §9.3.
 
-- ❌ «Minor — leave as follow-up ticket» — forbidden. Either it's worth fixing (file as finding → CHANGES_REQUIRED) or it isn't (don't write it down at all).
-- ❌ «Non-blocking, recommend separate issue» — forbidden. Same logic.
-- ❌ «Major punted by discretion» — forbidden. The reviewer / architect doesn't have skip discretion.
-- ✅ APPROVED is the **only** terminal verdict for «code is clean»; any concern that warrants writing down is, by definition, worth fixing in this iteration.
+- **Every finding is written down and gets fixed.** No «follow-up ticket», no «non-blocking, separate issue», no discretionary punts.
+- **Only blocker / major return the work** (CHANGES_REQUIRED). Each needs evidence: `file:line` + the scenario that breaks.
+- **Minors** are listed in the same verdict; the author fixes all of them in the same pass. A verdict with only minors is **APPROVED with fixes listed** — the author fixes them before gate 3 and states so in the delta; no extra review round for them.
+- **Iteration 1 = one full pass**; iteration N>1 reviews only the delta plus the status of earlier findings. No new findings on unchanged code unless it is a missed blocker, labelled `missed in iter N-1`.
+- **Third CHANGES_REQUIRED on the same item** → stop iterating; raise it to the initiator as a design question.
 
-**Why**: every «non-blocking follow-up» the reviewer leaves behind becomes technical debt that no one comes back to. The initiator's stated rule (2026-05-13): «закрываем все замечания. Фиксите все». Don't pre-judge what's worth the implementer's time — surface everything, let the implementer fix everything, then APPROVED.
+- ❌ iter 3 adds four new naming nits in files nobody touched since iter 1.
+- ✅ iter 1 lists all 9 findings (2 major, 7 minor); the coder fixes all 9; iter 2 checks the delta → APPROVED.
 
 If a finding genuinely doesn't fit this iteration (e.g. requires SPEC change), escalate it as `BLOCKED — upstream gap` and STOP — not as a punted minor.
 

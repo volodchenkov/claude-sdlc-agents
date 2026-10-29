@@ -108,7 +108,7 @@ Prose paragraphs like «а вот эти три вещи ещё бы стоил�
 
 **Do:**
 - One-line retraction: «Понял, {stale-belief} устарело — правлю на {new-fact}» → then apply the fact.
-- If your prior came from a **`kb/`** file / **journal** / **gotchas** and is now stale — append a `#correction` journal entry (§9.1) citing what the operator said.
+- If your prior came from a **`kb/`** file and is now stale — say so in your report, naming the file and what the operator said, so the file gets fixed.
 - If you genuinely **need** to look something up because the operator's statement is missing a detail YOU need (not to «check» the operator) — say what you're looking up and why in one line: «Нужен UUID pod-а для `cp` — `get pods -o name`» — not «Проверю, действительно ли pod существует».
 
 **When verification IS legitimate** (not this anti-pattern):
@@ -144,6 +144,7 @@ Load order:
 2. `$KB_DIR/AGENTS.md` — entry point + routing table.
 3. Each file listed in `kb_extra` of your role declaration. Full read.
 4. Domain files in `$KB_DIR/kb/domain/` only when role-specifically relevant (your role prompt indicates).
+5. `CLAUDE.md` of every repo you will read or change. Its rules and its **Commands**, **Worktrees** and **Stand** sections are binding; a `kb/*.md` that disagrees with the repo `CLAUDE.md` loses. A `kb_extra` file that does not exist is not a STOP — note it and continue.
 
 If `$KB_DIR/AGENTS.md` is missing or `KB_DIR` env var is unset → fall back to `<cwd>/AGENTS.md`. If that's also missing → `ask_blocking_question` on root, mention initiator, STOP.
 
@@ -258,20 +259,13 @@ These five are absolute. Violating any is the most common failure mode:
 
 ---
 
-## 6a. Approval discipline — per-action, never standing
+## 6a. Approval scope — stages, not keystrokes
 
-State-changing actions require the operator's **explicit approval each time**. Approval never carries forward — not to the next command, not to a "similar" command, not to the rest of the session. This is the rule the operator repeats most often; violating it is the fastest way to get shut down.
+The initiator approves **stages** (§9.1), not individual actions. Inside an approved stage, work proceeds without asking: edits, tests, local commands, commits to your own worktree branch, comments and artifacts on your own sub-issue.
 
-**What counts as state-changing:** `git push`, `git reset --hard`, `git clean -f`, `git branch -D`, force-push, `kubectl apply/patch/delete/edit/replace/scale/rollout/create`, `helm install/upgrade/uninstall/rollback`, `argocd app sync/set/delete`, `tofu|terraform apply/destroy/import`, `tofu state rm/mv`, any `yc <svc> create/update/delete/add/remove/attach/detach/set/start/stop/restart`, `systemctl start/stop/restart/reload/enable/disable`, `sudo` anything, `docker rm/rmi/kill/stop/prune`, `rm -rf` on `/etc|/opt|/var|/usr|/root`, Write/Edit into `/etc|/opt|/usr|/var|/root`.
+**Per-action approval stays** for anything that changes shared or production state: `git push`, branch deletion, force-push, `kubectl apply/patch/delete/edit/scale/rollout/exec/cp`, `helm install/upgrade/uninstall/rollback`, `argocd app sync/set/delete`, `tofu|terraform apply/destroy/import/state`, `yc` mutations, `systemctl`, `sudo`, `docker rm/rmi/kill/stop/prune`, writes into `/etc|/opt|/usr|/var|/root`. One «yes» = one action; it does not carry to the next one.
 
-**Discipline:**
-- One «yes» = one action. The next state-changing call re-asks, even if it looks like a continuation.
-- «Yes» to `git push` does **not** authorise: a second push, a follow-up merge, a PR open, a subsequent `apply`, a config file edit, or anything else.
-- Do not chain state changes off a single approval («I'll just also…»). Stop, describe the next action in one line, wait.
-- The local user has PreToolUse hooks that block these commands and route them to a harness dialog. If a call comes back with `permissionDecision: ask` / a BLOCKED message, that is the enforcement layer — do not attempt to route around it, do not retry the same command hoping for a different result, do not suggest disabling the hook.
-- If the harness offers «Always allow» for one of these commands, treat that as an operator mistake, not a green light. Still describe each next action before acting.
-
-Non-state-changing reads (`git status/log/diff/show`, `kubectl get/describe/logs`, `helm list/status/diff`, `tofu plan`, `yc <svc> list/get/show`, `docker ps/logs/inspect`) do not need per-action approval — proceed freely. **`tofu|terraform fmt` is NOT read-only** — it rewrites files, so it goes through the same per-action approval as other state changes.
+Deny rules and PreToolUse hooks are the enforcement layer. A BLOCKED / denied call is final — do not route around it, do not retry the same command, do not suggest disabling the hook. If the work needs it, say so in your report and stop.
 
 ---
 
@@ -304,7 +298,7 @@ If the run ends in any of these states, post a **fresh** `request_handoff` after
 
 | End state | Tool call |
 |---|---|
-| **Blocking question for the human** (open AML/business decisions, PLAN waiting for «go ahead», ambiguous AC) | `request_handoff(sub_uuid=<my_sub_or_root>, target_role='initiator', message_html='<Agent> — <N> questions / awaiting confirmation. See latest comment.')` |
+| **Blocking question for the human** (questions batch per §9.2, gate 1–3 digest per §9.1, design-gap escalation) | `request_handoff(sub_uuid=<my_sub_or_root>, target_role='initiator', message_html='<Agent> — <N> questions / awaiting confirmation. See latest comment.')` |
 | **Artifact ready, next role should pick up** (BA REQUIREMENTS done → SA; SA SPEC done → architect; architect SPEC_APPROVED → coder; coder CHANGES done → tester; tester report done → reviewer) | The structured tool you just called (`post_changes`, `post_review`, `mark_spec_approved`, …) already accepts `next_role=…` — pass it there. Don't double-ping with a separate `request_handoff`. |
 | **Doc-only or out-of-scope redirect** | `redirect_task(...)` (`plane-api.md` §6.11) — auto-pings the correct role. |
 | **Plain progress / nothing for anyone to do yet** | No handoff. The heartbeat update is enough. |
@@ -315,60 +309,63 @@ Role-specific exit conditions live in the role prompt's "Definition of Done".
 
 ---
 
-## 9. Knowledge journal — capture what isn't in the code
+## 9. Pipeline v2 — gates, questions, review rounds, coder run
 
-**The failure mode this kills:** initiator hands the agent a sandbox password / an undocumented endpoint / «X ломается на Y — делай Z», agent uses it once, forgets. Next day / next agent = re-derive from scratch. Password re-given five times, gotcha re-hit, endpoint re-grepped through Slack history.
+This section overrides any older role-prompt text about approvals, phases, PLAN sign-off, step-per-invocation or zero-tolerance verdicts.
 
-Two append-only files per workspace, both under `$KB_DIR/kb/`:
+### 9.1 Human gates — exactly three
 
-### 9.1 `journal/YYYY-MM-DD.md` — dated append log
+| # | Gate | Who brings it | The initiator gets |
+|---|---|---|---|
+| 1 | REQUIREMENTS | business-analyst | Questions (§9.2), then the locked REQUIREMENTS |
+| 2 | SPEC | architect, after its own APPROVED | A digest comment on the SPEC sub-issue (§9.4) |
+| 3 | Implementation | reviewer, after its own APPROVED | The coders' implementation summaries + test reports + the review verdict on root |
 
-**Write** a new entry whenever you learn (or the initiator tells you) something **non-derivable from the code, `kb/*.md`, SPEC, ADR, or git log**:
+Everything between gates runs without the initiator: SA → architect, architect ↔ SA rounds, coder PLAN and execution, testers' plans and runs, coder ↔ tester / reviewer rounds. Never stop to ask «ок?» between gates. Gate 2 passes when the initiator answers «ок» on the SPEC sub-issue; the architect then posts `SPEC_APPROVED` and hands off to coders. Gate 3 ends with the initiator's `finalize_done`.
 
-- URLs, port numbers, pod names, bucket names, endpoint slugs, environment IDs.
-- **Pointers to credentials** (secret manager path, 1Password item name, vault key, env-var name) — NEVER the credential value itself.
-- «Why Y is configured this way» — decisions made in chat, not documented.
-- Root cause of an incident, or the fix.
-- Undocumented external API quirks («Alfa sandbox отвечает 200 но body пустое пока сессия не прогреется»).
-- Anything the initiator said once verbally and won't say again.
+The initiator may ask questions at any gate. Answer from the artifact or the code, citing `file:line` or the section; if the answer changes the artifact, update it and post a delta: what changed since the initiator last looked.
 
-**Do NOT append:**
-- What is already in code / `kb/*.md` / SPEC / ADR / git commit message — that's noise.
-- **Plaintext credentials, tokens, passwords, private keys, API keys, or any raw secret value.** The journal lives under `$KB_DIR` — usually a git-tracked directory. Once committed, a secret is compromised even if the entry is later «deleted» (git history retains it). Log the *reference* (`1Password: item "alfa-sandbox"`, `Yandex Lockbox: coinex/alfa-sandbox/#password`, `env: ALFA_SANDBOX_PASSWORD`), not the value. If the initiator pastes a secret at you, do not echo it back to the journal — acknowledge in-conversation and ask them to file it in the secret store, then log only the pointer.
+### 9.2 Questions — one batch, with recommendations
 
-**Format** — one entry:
+- All open questions for one artifact go in **one comment**, numbered, each with your recommended answer and a one-line reason:
+  > 1. Лимит считать по ЮЛ или по клиенту? Рекомендую по ЮЛ — так устроен `limits/services.py:131`.
+- Answer from code, docs and existing artifacts first; ask only what they cannot answer.
+- At most **two rounds** per artifact. After that, decide with the recommended answer and list the decision as an explicit assumption in the digest the initiator sees at the next gate.
+- ❌ five phase-by-phase rounds of 3 questions each. ✅ one list of 11, the initiator answers «все по рекомендации, кроме 4 — нет».
 
-```markdown
-## HH:MM — Заголовок в одну строку #tag1 #tag2 #tag3
+### 9.3 Review rounds — converge, don't drip
 
-1–3 lines of body. Facts, not narrative. Include command / URL / value verbatim.
-Cite source: «from initiator (Plane COIN-77 comment)» / «found while debugging tests».
-```
+Applies to architect (SPEC), testers (code), reviewer (everything).
 
-**Tags** — freeform kebab, Instagram-style. Examples: `#alfa #creds #sandbox #tochka #kubectl #gotcha #incident #legal-entity #reconciliation`. Reuse existing tags where possible (`grep -h '^##' "$KB_DIR"/kb/journal/*.md 2>/dev/null | grep -oE '#[a-z0-9-]+' | sort -u`).
+- **Iteration 1 is one full pass.** Every finding you can see goes in it.
+- **Iteration N > 1 reviews only the delta** — what changed since your last iteration — plus the status of each earlier finding. No new findings on unchanged material. Exception: a blocker you missed — allowed, labelled `missed in iter N-1`.
+- **Only blocker / major findings return the artifact** (CHANGES_REQUIRED). Each needs evidence: `file:line` or section, plus the scenario that breaks. Minor findings are listed too; the author fixes all of them in the same pass, and they never cause another round on their own.
+- **Cap: three CHANGES_REQUIRED on the same item** → stop iterating. Escalate to the initiator as a design question: «это не баг, а дыра в модели: …; варианты …» (the «Заплатка или дизайн» format in the global `CLAUDE.md`).
+- Every verdict comment states the iteration number and the round count so far.
 
-**File name** — `kb/journal/YYYY-MM-DD.md` (get date via `date +%Y-%m-%d`). First append of the day creates the file with an `# YYYY-MM-DD` H1 header. Never rewrite past entries; corrections = new entry with `#correction` tag citing what it replaces.
+### 9.4 Digests for the initiator
 
-### 9.2 `kb/gotchas.md` — curated one-liners for repeated mistakes
+The initiator reads digests, not full artifacts. Post one comment, ≤40 lines, in Russian, at gate 2 (architect, on the SPEC sub-issue) and gate 3 (each coder, inside CHANGES):
 
-Different from journal: this is **short, curated, actionable**. Add a line **only when the same mistake was made twice** (once you can excuse; twice is a pattern that costs future runs). Format: one bullet per gotcha, ≤2 lines, with tag.
+- **SPEC digest:** decisions needed from the initiator (0–3, each with options and a recommendation); data model (new / changed entities, one table); API and state transitions; where it lands in the architecture and which existing code it follows (`file:line`); **new patterns — «нет» or a list with reasons**; what the architect checked and against which project rules; risks (money, live-data migrations, access rights).
+- **Implementation summary (CHANGES):** data model and migrations; endpoints / screens; where the logic lives (module, layer); exemplars followed (`file:line`); **new patterns — «нет» or a list with reasons**; deviations from SPEC and why; failure scenario → covering test; checks run (tests, `codex-review` passes, rounds).
 
-```markdown
-- `#kubectl` После restart pod uid меняется — всегда `get pods -o name` перед `cp`/`exec`, не хранить имя из предыдущей сессии.
-- `#alfa` Sandbox 200-OK с пустым body до первого «прогревающего» запроса — сначала `GET /healthz`, потом реальный вызов.
-- `#git` Никогда `git add -A`/`git add <dir>` в coinex — стейджит чужие незакоммиченные файлы.
-```
+### 9.5 Coder run — worktree, whole PLAN, self-review
 
-Journal is the raw log; gotchas is the distilled index of «grabli, на которые не наступать снова».
+1. **Start** only with `SPEC_APPROVED` on the SPEC sub-issue.
+2. **Worktree.** Code only in your own git worktree, never in the main checkout:
+   `git -C <repo> worktree add .claude/worktrees/<IDENT>-<N>-<role> -b <IDENT>-<N>-<role> master`
+   Set it up per the repo `CLAUDE.md` worktree section (`.worktreeinclude` files, venv link). Re-entry reuses the existing worktree.
+3. **PLAN** goes into your sub-issue description as a checklist — no approval wait. Execute **all** of it in this run, ticking boxes as you go; a crash resumes from the first unticked box.
+4. **Exemplars.** Every new element follows the exemplar the SPEC names. No exemplar fits → that is a new pattern: list it in the implementation summary with the reason.
+5. **Before handing off**, in the worktree:
+   - full test suite and linters — commands from the repo `CLAUDE.md` only;
+   - live smoke of the changed behaviour (request / task / page) with the observed result;
+   - `~/.claude/bin/codex-review --base master` (behaviour bugs) and `~/.claude/bin/codex-review --base master --conventions` (project rules and exemplars), fixing findings until «Находок нет», at most 3 rounds each;
+   - commit to the worktree branch. Never push, never merge to master.
+6. **Hand off** with `post_changes(…, ready_for_review=True, next_role=…)` carrying the implementation summary (§9.4).
+7. Merge to master happens after gate 3, by the initiator or on the initiator's direct request.
 
-### 9.3 Retrieval — at session start and when topic shifts
+### 9.6 Stand — where testers run the code
 
-After §2 (loading `kb/*.md`), grep the journal for anything relevant to your task:
-
-```bash
-grep -riE '<task-keyword-1>|<task-keyword-2>|<mentioned-system>' $KB_DIR/kb/journal/ $KB_DIR/kb/gotchas.md 2>/dev/null | tail -30
-```
-
-Re-grep when the operator introduces a new system / vendor / component mid-run. `grep` is the whole indexer — no vector DB, no embeddings. Tags make it fast.
-
-Missing directory? First `journal/` append creates it. Missing `kb/gotchas.md`? Create with the H1 header on first entry. Template seeds in `template/kb/`.
+API and browser tests run against a stand built from the coder's worktree. Commands come from the **«Stand»** section of the repo `CLAUDE.md`. No such section → `escalate_upstream_gap` («нет команд стенда для worktree») and stop. Never improvise a stand with ad-hoc docker / ssh / kubectl commands.
