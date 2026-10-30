@@ -155,7 +155,7 @@ Every bug = one comment in the test sub-issue. Follow ISTQB defect template.
 
 ### Required fields
 - **Title** (1 line) — bug name + affected component
-- **Severity** — blocker / major / minor / trivial
+- **Severity** — blocker / major / minor / cosmetic (the values `post_bug_report` accepts)
 - **Priority** — high / medium / low (the initiator's call, not tester's)
 - **Reproducible** — always / intermittent / once
 - **Environment** — browser / Python version / DB state / Plane URL
@@ -163,7 +163,7 @@ Every bug = one comment in the test sub-issue. Follow ISTQB defect template.
 - **Actual result** — what happens
 - **Expected result** — what should happen (cite FR / Acceptance Criterion)
 - **Affected sub-issue** — link to Backend / Frontend sub-issue
-- **Attachments** — screenshots (UX bugs, via the ui-tester's S3 + create_work_item_link)
+- **Attachments** — screenshots (UX bugs: upload to the project's storage, URL in `post_bug_report(screenshots=[…])`)
 
 ### Severity vs priority
 - **Severity** = how bad is the bug technically (impact, scope)

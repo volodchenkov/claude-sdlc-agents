@@ -15,13 +15,13 @@ This skill provides the **uniform Markdown structure** for every artifact produc
 |---|---|
 | REQUIREMENTS | `description_html` of root issue (the business-analyst) |
 | SPEC | `description_html` of SPEC sub-issue (the system-analyst) |
-| ARCH_REVIEW | comment in SPEC sub-issue (the architect) — posted via `post_review(sub_uuid=<spawn issue_uuid>, …)` |
-| SPEC_APPROVED marker | comment in SPEC sub-issue (the architect, after iterations) — posted via `mark_spec_approved(spec_sub_uuid=<spawn issue_uuid>, …)` |
+| ARCH_REVIEW | comment in SPEC sub-issue (the architect) — posted via `post_review(sub_uuid=<the SPEC sub_uuid — find_artifact_by_label('spec', root_uuid)>, …)` |
+| SPEC_APPROVED marker | comment in SPEC sub-issue (the architect, after iterations) — posted via `mark_spec_approved(spec_sub_uuid=<the SPEC sub_uuid — find_artifact_by_label(role='spec', root_uuid)>, …)` |
 | Design brief | `description_html` of Design sub-issue (the designer) |
 | PLAN (backend / frontend) | `description_html` of role sub-issue (the django-developer / the vue-developer / the react-developer) |
-| CHANGES (backend / frontend) | comment in role sub-issue (the django-developer / the vue-developer / the react-developer) — posted via `post_changes(sub_uuid=<spawn issue_uuid>, target=…, …)` |
+| CHANGES (backend / frontend) | comment in role sub-issue (the django-developer / the vue-developer / the react-developer) — posted via `post_changes(sub_uuid=<own sub_uuid — agent-base §9.7>, target=…, …)` |
 | Test plan (API / UX) | `description_html` of test sub-issue (the api-tester / the ui-tester) |
-| Bug report | comment in test sub-issue + back-link to relevant Code sub-issue — posted via `post_bug_report(test_sub_uuid=<spawn issue_uuid>, affected_sub_uuid=…, …)` |
+| Bug report | comment in test sub-issue + back-link to relevant Code sub-issue — posted via `post_bug_report(test_sub_uuid=<own sub_uuid — agent-base §9.7>, affected_sub_uuid=…, …)` |
 | Test report | comment in test sub-issue (final summary by the api-tester / the ui-tester) |
 | Per-artifact REVIEW | comment on the artifact's sub-issue (the reviewer) |
 | Cross-cutting REVIEW verdict | comment on root issue (the reviewer) |
@@ -32,7 +32,7 @@ All artifacts written as **Markdown**, then converted to HTML for `description_h
 
 ## Mandatory footer — Completion Report (every artifact)
 
-Every template below ends with a **Completion Report** section. Do not omit it — it is what kills the «сделал X, Y, но Z оставил на потом» tail (see `agent-base` §0b for the full doneness rule).
+Every template below ends with a **Completion Report** section. For CHANGES and bug reports the tower renders the comment from fields, so the Completion Report goes into the fields: done items are `files`, every blocked / skipped item with its reason goes into `not_implemented`. Do not omit it — it is what kills the «сделал X, Y, но Z оставил на потом» tail (see `agent-base` §0b for the full doneness rule).
 
 ```markdown
 ## Completion Report
@@ -48,7 +48,7 @@ Every template below ends with a **Completion Report** section. Do not omit it �
 - `Reason` for `done` — always `—`.
 - `Reason` for `blocked` — the specific blocker + what unblocks it.
 - `Reason` for `skipped` — one of: `вне scope, отдельным тикетом <ID>` / `делает {role} — тег поставил` / `требует ADR — вопрос initiator сформулирован`.
-- **Banned reasons** (auto-reject; see `agent-base` §0b): «следующим заходом», «в следующей итерации», «MVP-упрощение», «отдельным PR-ом» без ID, «почти готово», «остался нюанс», «UI/тесты/миграция позже» без тикета.
+- **Banned reasons** (auto-reject; see `agent-base` §0b): «следующим заходом», «в следующей итерации», «MVP-упрощение», «отдельным PR-ом» without a ticket ID, «почти готово», «остался нюанс», «UI/тесты/миграция позже» without a ticket.
 
 Free-form prose paragraphs like «а вот эти три вещи ещё бы стоило когда-нибудь сделать» after the Completion Report are **noise** — either it's a real follow-up (row in the table with a ticket ID) or it's an aside (drop it).
 
@@ -385,7 +385,7 @@ If SPEC has architectural choices NOT captured as ADR but should be → list the
 Briefly note what's done right — so the system-analyst keeps it on iteration N+1.
 
 ## Status next
-- APPROVED → in next comment, post `SPEC_APPROVED` marker (template below). Coders unblocked.
+- APPROVED → post the SPEC digest for gate 2 (`agent-base` §9.1, §9.4). After the initiator's OK, post the `SPEC_APPROVED` marker (template below); coders unblocked.
 - CHANGES_REQUIRED → the system-analyst addresses findings, updates SPEC, the architect re-reviews as iteration {N+1}.
 - BLOCKED → upstream input missing (e.g. REQUIREMENTS too vague). Mention the initiator, escalate.
 ```
@@ -394,7 +394,7 @@ Briefly note what's done right — so the system-analyst keeps it on iteration N
 
 ## SPEC_APPROVED marker (the architect — final comment after APPROVED ARCH_REVIEW)
 
-Posted via `mark_spec_approved(spec_sub_uuid=<spawn issue_uuid>, summary_html=…, next_role=…)` (`plane-api.md` §6.7f). The named op renders the canonical "**SPEC_APPROVED**" comment with the architect's summary and posts it on the SPEC sub-issue with a mention to the initiator (and optional `next_role`). Coders find it by scanning SPEC comments for the leading `**SPEC_APPROVED**` token. Tower no longer verifies that a prior APPROVED REVIEW exists — the architect just posted it one step earlier.
+Posted via `mark_spec_approved(spec_sub_uuid=<the SPEC sub_uuid — find_artifact_by_label(role='spec', root_uuid)>, summary_html=…, next_role=…)` (`plane-api.md` §6.7f). The named op renders the canonical "**SPEC_APPROVED**" comment with the architect's summary and posts it on the SPEC sub-issue with a mention to the initiator (and optional `next_role`). Coders find it by scanning SPEC comments for the leading `**SPEC_APPROVED**` token. Tower no longer verifies that a prior APPROVED REVIEW exists — the architect just posted it one step earlier.
 
 ---
 
@@ -515,7 +515,7 @@ Every step in §Steps MUST pass the **5-budget AND-filter** from `step-execution
 - [ ] **Step N (final): full DoD pass**
   - Run all verification commands from `$KB_DIR/kb/verify.md`
   - Compose CHANGES (template below)
-  - Hand off to reviewer (not to self)
+  - Hand off per agent-base §9.5: backend → api-tester; frontend → ui-tester (+ designer when a Design sub-issue exists)
 
 ## Migrations (backend only)
 - `{app}`: {description}, backward-compatible / breaking + multi-step plan
@@ -529,14 +529,14 @@ Every step in §Steps MUST pass the **5-budget AND-filter** from `step-execution
 
 ## CHANGES (the django-developer / the vue-developer / the react-developer)
 
-Posted via `post_changes(sub_uuid=<spawn issue_uuid>, target='backend'|'frontend', …)` (`plane-api.md` §6.7d). The named op renders the canonical "Files / Migrations / Verification / Performance / Deviations from PLAN / Not implemented" sections from your fields and posts as a comment on `sub_uuid`.
+Posted via `post_changes(sub_uuid=<own sub_uuid — agent-base §9.7>, target='backend'|'frontend', …)` (`plane-api.md` §6.7d). The named op renders the canonical "Files / Migrations / Verification / Performance / Deviations from PLAN / Not implemented" sections from your fields and posts as a comment on `sub_uuid`.
 
 **Fields you must supply** (all but `migrations` and `perf` mandatory):
 
 | Field | Type | Notes |
 |---|---|---|
 | `target` | `'backend'` / `'frontend'` | resolves the role sub-issue |
-| `summary` | str | one-line gist for the comment header |
+| `summary` | str | the implementation summary (agent-base §9.4) — first line is the gist, the rest is the digest the initiator reads at gate 3 |
 | `files` | list[(path, oneline)] | every changed file with a one-line edit summary |
 | `migrations` | list[(name, descr)] | empty list if none; if non-empty the rendered comment includes a Migrations section |
 | `verification` | list[(cmd, result)] | every DoD check from your role prompt — linter, tests, build/type-check, etc. |
@@ -553,7 +553,7 @@ The op refuses to post with `ready_for_review=True` if `verification` is empty o
 
 Each TC declares its **technique** (Equivalence Partitioning / BVA / Decision Table / State Transition / Use Case / Error Guessing). Coverage matrix at the end traces TC → FR/NFR/Acceptance Criterion from REQUIREMENTS.
 
-Description is **immutable after Phase 1 lock** — once test plan is posted, results live in comments. Plan revisions = new iteration if SPEC / REQUIREMENTS change.
+Test cases and scope are fixed once the plan is written; changing them = new iteration if SPEC / REQUIREMENTS change. Execution state — batch checkboxes and per-TC results — is updated in the description as you run.
 
 ```markdown
 # {API | UX} Test plan: {Title}
@@ -598,14 +598,14 @@ Every FR / NFR / Acceptance Criterion has at least one TC. Gaps = test plan inco
 
 ## Bug report (the api-tester / the ui-tester) — ISTQB defect
 
-Posted via `post_bug_report(test_sub_uuid=<spawn issue_uuid>, affected_sub_uuid=<resolved via find_artifact_by_label>, …)` (`plane-api.md` §6.7e). The named op renders the canonical ISTQB defect comment (Failing TC / Steps / Actual / Expected / Environment / Suggested area / Attachments) on your test sub-issue and (when `affected_sub_uuid` is provided) adds a back-link from the affected coder's sub-issue.
+Posted via `post_bug_report(test_sub_uuid=<your own test sub_uuid>, affected_sub_uuid=<resolved via find_artifact_by_label>, …)` (`plane-api.md` §6.7e). The named op renders the canonical ISTQB defect comment (Failing TC / Steps / Actual / Expected / Environment / Suggested area / Attachments) on your test sub-issue and (when `affected_sub_uuid` is provided) adds a back-link from the affected coder's sub-issue.
 
 **Fields you must supply:**
 
 | Field | Type | Notes |
 |---|---|---|
-| `target` | `'api-tests'` / `'ux-tests'` | your test sub-issue |
-| `affected_role` | `'backend'` / `'frontend'` | the coder's sub-issue to back-link |
+| `test_sub_uuid` | str | your own test sub-issue (agent-base §9.7) |
+| `affected_sub_uuid` | str, optional | the coder's sub-issue, via `find_artifact_by_label('backend'|'frontend', root_uuid)` |
 | `severity` | `'blocker'` / `'major'` / `'minor'` / `'cosmetic'` | technical impact, set by you. Priority stays TBD by the initiator |
 | `title` | str | bug name + affected component |
 | `failing_tc` | str | `TC-{N}` from your test plan + technique cited (e.g. "BVA — boundary value 0") |
@@ -803,15 +803,14 @@ See REVIEW (iter {N}) on root: {<PROJECT_IDENTIFIER>-<N>} for end-to-end traceab
 
 ## Common rules across all artifacts
 
-### Markdown only
-Plane converts to HTML on save. Stick to standard Markdown. No Slack/Discord syntax.
+### HTML for writes
+`description_html`, `body_html` and `comment_html` are sent to Plane as-is — write simple HTML (`<p>`, `<h2>`, `<ul><li>`, `<code>`, `<pre>`, `<table>`). Markdown is not converted on write. `read_artifact` returns Markdown for reading. No Slack/Discord syntax.
 
 ### Short titles
 First-line `#` heading should fit in a Plane sub-issue listing (~80 chars).
 
-### Mention syntax
-For the initiator: full HTML mention-component (see `plane-operations` skill, "Mention syntax" section).
-For other agents: don't mention. the initiator triggers them.
+### Mentions
+Never hand-write mention HTML — the tower rejects it. Route people and roles through `request_handoff(target_role=…)` or a structured tool's `next_role=`.
 
 ### Don't dump irrelevant context
 Each artifact has one purpose. Don't paste REQUIREMENTS into SPEC. Refer by sub-issue identifier (`<PROJECT_IDENTIFIER>-N`).

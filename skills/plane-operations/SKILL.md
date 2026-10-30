@@ -19,30 +19,29 @@ This skill provides the **operational vocabulary** every agent uses to interact 
 | **pickup_issue** | At the start of every run. Resolves `<PROJECT_IDENTIFIER>-<N>` to a UUID. |
 | **find_artifact_by_label** | To locate an upstream artifact (SPEC, Backend CHANGES, etc.) among root sub-issues. |
 | **list_sub_issues** | All children of a root in one call (regardless of label). Used by reviewer's audit pass. See `plane-api.md` §6.3b. |
-| **read_artifact** | Read a sub-issue's description + a slice of its comments. Returns Markdown by default (`description_format='markdown'`), with the newest 20 comments and `has_more_comments` so you can page back via `comments_offset`. See `plane-api.md` §6.4. |
+| **read_artifact** | Read a sub-issue's description + a slice of its comments. Returns Markdown by default (`description_format='markdown'`), with the newest 5 comments (`comments_limit=5`) and `has_more_comments` so you can page back via `comments_offset`. See `plane-api.md` §6.4. |
 | **create_sub_issue** | First-run only — create your role's sub-issue with proper label and assignee. |
 | **post_startup_comment** | First-run heartbeat. Tool: `mcp__plane-tower__request_handoff(sub_uuid, target_role='initiator', message_html='@<nick> picking up. Working on it — this comment will be updated when the agent finishes.')`. Save the returned `comment_id`; you'll edit the same comment at end of run via `update_comment`. |
 | **update_sub_issue_description** | When the artifact lives in `description_html` (PLAN, SPEC, Design brief) and needs to be updated. |
 | **mark_phase_complete** | BA / SA — flip `[ ] Phase N` → `[x] Phase N` in your sub-issue's description with ordering check. See `plane-api.md` §6.6b. |
 | **post_comment** | Free-form comment on any sub-issue or root (intermediate notes, ad-hoc updates). Tool: `mcp__plane-tower__post_comment(work_item_uuid, comment_html=…)`. For canonical CHANGES / bug reports / reviews use the dedicated ops below. Mentions in `comment_html` are rejected by `_assert_no_mentions` — use `request_handoff` for routing. |
-| **post_changes** | Coder finals — `post_changes(sub_uuid=<spawn issue_uuid>, target='backend', files=…, migrations=…, ready_for_review=True)` renders the canonical CHANGES from fields and posts on your sub-issue. See `plane-api.md` §6.7d. |
-| **post_bug_report** | Testers — `post_bug_report(test_sub_uuid=<spawn issue_uuid>, affected_sub_uuid=<discover via find_artifact_by_label>, severity=…, …)` writes the ISTQB bug on your test sub-issue and back-links the affected coder's sub-issue. See `plane-api.md` §6.7e. |
-| **post_review** | Reviewer & architect. Call as `post_review(sub_uuid=<the sub-issue being reviewed>, verdict=…, body_html=…, iter_n=<N>)`. For the architect and coders `sub_uuid` equals the spawn `issue_uuid`. For the final reviewer iterating over multiple artifacts, resolve per-artifact sub_uuid via `find_artifact_by_label`. See `plane-api.md` §6.7b. |
-| **mark_spec_approved** | Architect — after posting an APPROVED ARCH_REVIEW, call `mark_spec_approved(spec_sub_uuid=<spawn issue_uuid>, summary_html=…, next_role=…)` to post the SPEC_APPROVED marker. Tower no longer verifies the prior review — you just posted it. See `plane-api.md` §6.7f. |
+| **post_changes** | Coder finals — `post_changes(sub_uuid=<own sub_uuid — agent-base §9.7>, target='backend', files=…, migrations=…, ready_for_review=True)` renders the canonical CHANGES from fields and posts on your sub-issue. See `plane-api.md` §6.7d. |
+| **post_bug_report** | Testers — `post_bug_report(test_sub_uuid=<own sub_uuid — agent-base §9.7>, affected_sub_uuid=<discover via find_artifact_by_label>, severity=…, …)` writes the ISTQB bug on your test sub-issue and back-links the affected coder's sub-issue. See `plane-api.md` §6.7e. |
+| **post_review** | Reviewer & architect. Call as `post_review(sub_uuid=<the sub-issue being reviewed>, verdict=…, body_html=…, iter_n=<N>)`. Resolve `sub_uuid` with `find_artifact_by_label(role, root_uuid)` — never assume it equals the spawn `issue_uuid` (agent-base §9.7). For the final reviewer iterating over multiple artifacts, resolve per-artifact sub_uuid via `find_artifact_by_label`. See `plane-api.md` §6.7b. |
+| **mark_spec_approved** | Architect — after an APPROVED ARCH_REVIEW **and** the initiator's OK on the gate-2 SPEC digest (agent-base §9.1), call `mark_spec_approved(spec_sub_uuid=<the SPEC sub_uuid — find_artifact_by_label(role='spec', root_uuid)>, summary_html=…, next_role=…)` to post the SPEC_APPROVED marker. Never right after APPROVED. |
 | **escalate_upstream_gap** | When you find a defect upstream (missing FR, ambiguous AC, broken design contract) — comment in your own sub-issue, mention initiator, STOP. Do not patch locally, do not create a "prerequisite" sub-issue. See `plane-api.md` §6.7c. |
 | **update_comment** | Tool: `mcp__plane-tower__update_comment(work_item_uuid, comment_id, comment_html=…)`. Edits an existing comment in place. At end of run use it to turn the startup heartbeat into the final "done" / "PLAN ready" summary — same `comment_id`, new body. Mentions in body are rejected; routing goes via `request_handoff` instead. |
 | **ask_blocking_question** | When stuck. Tool: `mcp__plane-tower__request_handoff(sub_uuid, target_role='initiator', message_html='BLOCKING: <question>')`. Tower stamps the initiator mention; you cannot embed it yourself. STOP after the call. |
-| **attach_screenshot** | UX Tester only — upload PNG to object storage, link via `create_work_item_link`. |
+| **attach_screenshot** | UX Tester only — upload PNG to object storage, pass the URL in `post_bug_report(screenshots=[…])`. |
 | **redirect_task** | When triggered for a task outside your role. Tool: `mcp__plane-tower__request_handoff(sub_uuid, target_role='<correct-role>', message_html='Redirecting to <role>: <one-line reason>')`. Tower resolves the role to a member UUID and stamps the mention. STOP after the call. |
 
 Full operation specs with parameter schemas and examples are in the bundled [`plane-api.md`](plane-api.md) §6.
 
 ---
 
-## MCP tool naming — workspace-prefixed
+## MCP tool naming — use plane-tower
 
-The Plane MCP server is registered **per workspace** in your Claude Code config. Tool names take the form `mcp__plane-<workspace_slug>__<operation>` — e.g. `mcp__plane-acme__retrieve_work_item`. Throughout this skill, examples may show the bare `mcp__plane__*` form for brevity; substitute your workspace slug in real calls. Each agent's `tools:` allowlist enumerates the exact prefixed names for the workspaces it can serve.
-
+Pipeline agents call `mcp__plane-tower__<operation>` — the tools in their `tools:` line (`pickup_issue`, `find_artifact_by_label`, `list_sub_issues`, `create_sub_issue`, `read_artifact`, `list_comments`, `update_sub_issue_description`, `post_*`, `mark_*`, `escalate_upstream_gap`, `request_handoff`, `update_comment`). Workspace-prefixed `mcp__plane-<workspace_slug>__*` names in `plane-api.md` describe what the tower does underneath; agents do not call them.
 ---
 
 ## Project context vs. KB — two layers
@@ -123,20 +122,21 @@ These invariants override anything below. Violating them is the most common fail
 
 ```
 0. read_project_context() → operational map (optional; None if empty, no STOP)
-1. pickup_issue(<PROJECT_IDENTIFIER>-<N>) → root_uuid, root_name
-2. find_artifact_by_label(<label_for_my_role>, parent=root_uuid) → my_sub
+1. pickup_issue(issue_uuid=<spawn issue_uuid>) → issue; root_uuid = issue.parent or issue.id
+2. find_artifact_by_label(role=<my role key>, root_uuid=root_uuid) → my_sub
+   role keys: spec · design · backend · frontend · api-tests · ux-tests (requirements live in the root description)
 3. Branch on result:
    - my_sub is None → first run → continue at step 4
    - my_sub exists → re-entry → see "Re-entry algorithm" below
    - len > 1        → fatal consistency error → BLOCKED, STOP
-4. find_artifact_by_label(<labels_for_my_dependencies>) → upstream artifacts
+4. find_artifact_by_label(role=<each dependency role key>, root_uuid=root_uuid) → upstream artifacts
 5. read_artifact(<each upstream>) → context
 6. Check preconditions per role prompt. If unmet → ask_blocking_question, STOP.
-7. create_sub_issue(name="<Role>: <root_name> (<PROJECT-N>)", label=<my role label>) → my_sub
+7. create_sub_issue(role=<my role key>, root_uuid=root_uuid, description_html=…) → my_sub  (the tower sets the name and label)
 8. post_startup_comment(my_sub) → save comment_id
 9. Do the role work (varies per agent — see role prompt)
-10. update_sub_issue_description(my_sub, content=<artifact text>)
-    OR post_comment(my_sub, content=<artifact text>)
+10. update_sub_issue_description(sub_uuid=my_sub, description_html=<artifact>)
+    OR post_comment(work_item_uuid=my_sub, comment_html=<artifact>)
 11. update_comment(work_item_uuid, comment_id, "<role> done. Summary.")  # body only, no mention HTML
 ```
 
@@ -144,7 +144,7 @@ These invariants override anything below. Violating them is the most common fail
 1. `pickup_issue` → root_uuid, root_name
 2. `find_artifact_by_label` for each artifact in scope (SPEC, Backend, Frontend, tests, design)
 3. Read each + scan its comments for prior review markers (`REVIEW (iter N)` / `ARCH_REVIEW (iter N)`) → determine iteration
-4. If artifact unchanged since last review → IDLE, STOP
+4. If artifact unchanged since last review → IDLE, STOP — except the architect's gate-2 re-entries (designer handback, initiator reply; `architect.md` step 12b/12c)
 5. Compose review, `post_review` on each artifact sub-issue (and root for cross-cutting verdict)
 6. `update_comment` (startup comment lives on root since no own sub-issue)
 
@@ -175,7 +175,7 @@ my = [i for i in items if i["parent"] == root_uuid]
 Only the initiator transitions root → Done at the end of the pipeline. Agents only manage their own sub-issue status. Even that is decorative — protocol does not depend on status.
 
 ### Don't mention the next agent
-Plane Conductor only triggers from initiator's mentions. If you `@mention` the next role, nothing happens — but it pollutes the comment thread.
+Hand-written `@mention`s do not trigger anything and pollute the thread. Route the next role through `request_handoff(target_role=…)` or a structured tool's `next_role=` — the tower stamps the mention the conductor reacts to.
 
 ---
 

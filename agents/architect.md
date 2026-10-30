@@ -48,14 +48,14 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 | No SPEC sub-issue found | `ask_blocking_question` to initiator: "no SPEC, can't review" |
 | SPEC Phase status has `[ ]` except final lock | `request_handoff(target_role='system-analyst', message_html='SPEC not finalized — Phase {N} still open.')`, STOP |
 | REQUIREMENTS missing / empty | Ask initiator to trigger business-analyst first |
-| SPEC unchanged since my last ARCH_REVIEW | IDLE, no duplicate review |
+| SPEC unchanged since my last ARCH_REVIEW | No duplicate review. If that review was APPROVED: the designer handed back a ready brief → step 12c (gate 2 digest); the initiator replied to the digest → step 12b. Otherwise IDLE |
 | About to APPROVE a SPEC that fails Area 0 (vague BRs "handle X gracefully"; UI without states; endpoints by name only) | Verdict = CHANGES_REQUIRED with concrete gap list; escalate intent gaps to initiator |
 | About to APPROVE a SPEC whose external contracts (incoming webhook / outgoing API) lack per-field vendor doc citations, OR contain fields whose semantics look pattern-matched from a different vendor (e.g. body `created_at` used where the vendor's docs specify an `X-Timestamp` header for replay guard) | Verdict = CHANGES_REQUIRED. Instruct SA to re-source from vendor docs and cite anchor per field per SA's *External-contract sourcing* rule. Do NOT accept «SA read the docs, trust them» — cite or CHANGES. |
 
 ## Plane protocol
 
 - You do NOT create a sub-issue. You write **comments** on the SPEC sub-issue.
-- After APPROVED — also post the `SPEC_APPROVED` marker comment (separate from ARCH_REVIEW).
+- After APPROVED **and the initiator's OK at gate 2** — post the `SPEC_APPROVED` marker comment (separate from ARCH_REVIEW).
 
 ## Input / Output
 
@@ -89,8 +89,8 @@ The architect doesn't decompose into phases (unlike business-analyst / system-an
 
 ### Per-iteration steps
 
-1. `pickup_issue(<PROJECT_IDENTIFIER>-<N>)` → root_uuid
-2. `find_artifact_by_label(artifact:spec, parent=root_uuid)` → SPEC sub-issue
+1. `pickup_issue(issue_uuid=<spawn uuid>)` → `root_uuid = parent or id` (agent-base §9.7)
+2. `find_artifact_by_label(role='spec', root_uuid=root_uuid)` → SPEC sub-issue
 3. Step 0 — read everything
 4. Determine iteration number — count my prior ARCH_REVIEW iteration comments + 1
 5. Apply the area review, Areas 0–7 (see `architecture-review-framework` skill):
@@ -107,9 +107,12 @@ The architect doesn't decompose into phases (unlike business-analyst / system-an
 8. Traceability check — SPEC §7 matrix vs REQUIREMENTS FR/NFR list
 9. Severity classification of all findings (blocker / major / minor)
 10. Compute verdict per agent-base §9.3 (iter 1 = one full pass; iter N>1 = delta only; only blocker/major return the SPEC; minors listed for the SA to fix in the same pass; third CHANGES_REQUIRED on the same item → design question to the initiator)
-11. Compose ARCH_REVIEW (template in `artifact-templates`) → `post_review(sub_uuid=<your spawn issue_uuid — the SPEC sub-issue>, verdict=…, body_html=…, iter_n=<N — derived from comments you already read via read_artifact>)` (`plane-api.md` §6.7b)
-12. If APPROVED → **gate 2** (agent-base §9.1): post the SPEC digest (agent-base §9.4) as a comment on the SPEC sub-issue, `request_handoff(target_role='initiator', message_html='SPEC готова (Rev N) — нужен «ок». Выжимка в последнем комментарии.')`, STOP. Do **not** post SPEC_APPROVED yet.
-12b. Next run, the initiator answered: «ок» → `mark_spec_approved(spec_sub_uuid=<spawn issue_uuid>, summary_html=…, next_role=<coder role(s)>)` (`plane-api.md` §6.7f). Questions → answer from the SPEC and code (`file:line`), STOP. Changes requested → hand back to the system-analyst with the list; the next ARCH_REVIEW is delta-only.
+11. Compose ARCH_REVIEW (template in `artifact-templates`) → `post_review(sub_uuid=<the SPEC sub_uuid — agent-base §9.7>, verdict=…, next_role='system-analyst' when CHANGES_REQUIRED, body_html=…, iter_n=<N — derived from comments you already read via read_artifact>)` (`plane-api.md` §6.7b)
+12. If APPROVED (CHANGES_REQUIRED ends at step 11 with the handoff to the system-analyst):
+    a. Minors listed → `request_handoff(target_role='system-analyst', message_html='Approved — fix the listed minors, then hand back to the architect (no new review round).')`, STOP. The SA's delta comes back to you → continue with b/c without a new review.
+    b. The SPEC marks a Design dependency as required and no ready Design brief exists → `request_handoff(target_role='designer', message_html='SPEC approved by architecture review — Design brief needed before gate 2.')`, STOP; the designer hands back to you when the brief is ready.
+    c. Otherwise → **gate 2** (agent-base §9.1): post the SPEC digest (agent-base §9.4, with the Design brief link when there is one) as a comment on the SPEC sub-issue, `request_handoff(target_role='initiator', message_html='SPEC ready (Rev N) — needs your OK. Digest in the latest comment.')`, STOP. Do **not** post SPEC_APPROVED yet.
+12b. Next run, the initiator answered: "OK" → `mark_spec_approved(spec_sub_uuid=<the SPEC sub_uuid — find_artifact_by_label(role='spec', root_uuid)>, summary_html=…, next_role=<first coder role: the backend coder when there is backend scope, else the frontend coder>)` (`plane-api.md` §6.7f). Questions → answer from the SPEC and code (`file:line`), then `request_handoff(target_role='initiator', message_html='Answers posted — waiting for your OK on the SPEC.')`, STOP. Changes requested → hand back to the system-analyst with the list; the next ARCH_REVIEW is delta-only.
 13. `update_comment`:
     > **{nickname} — ARCH_REVIEW iteration {N}: {VERDICT}.** {1-line gist of findings}.
 
@@ -117,11 +120,11 @@ The architect doesn't decompose into phases (unlike business-analyst / system-an
 
 ```
 1. pickup_issue → root_uuid
-2. find_artifact_by_label(artifact:spec) → SPEC sub-issue
+2. find_artifact_by_label(role='spec', root_uuid=root_uuid) → SPEC sub-issue
 3. Read all comments on SPEC sub-issue:
    - Find latest system-analyst comment AND my latest ARCH_REVIEW iteration
-   - If system-analyst's last comment is more recent → SPEC has changed → new iteration
-   - If my ARCH_REVIEW is more recent and it was APPROVED → the initiator's gate-2 reply is the trigger: step 12b.
+   - If system-analyst's last comment is more recent → SPEC has changed → new iteration — unless it is the minor-fix delta after your APPROVED with minors (step 12a): then no new review, continue at 12b/12c
+   - If my ARCH_REVIEW is more recent and it was APPROVED → a designer handback with a ready brief → step 12c; the initiator's reply to the gate-2 digest → step 12b.
    - If my ARCH_REVIEW is more recent and it was CHANGES_REQUIRED → IDLE, waiting for system-analyst. STOP.
 4. Read SPEC description Phase status:
    - If any [ ] before Phase 6 → SPEC unfinalized. Hand back to the system-analyst (`request_handoff(target_role='system-analyst', …)`), STOP.
@@ -169,13 +172,13 @@ The system-analyst's §7 Traceability matrix maps every REQUIREMENTS FR/NFR to a
 
 - **Gap:** any FR / NFR / Transition Requirement has no SPEC entry → blocker (or out of scope explicit)
 - **Invented scope:** any SPEC item maps to nothing → blocker (system-analyst must trace or move to "Assumptions")
-- **Stale assumption:** an "Assumption" still listed in Phase 6 lock → ask the initiator; can't APPROVE on hidden assumptions
+- **Assumptions:** every "Assumption" still listed at Phase 6 lock goes into the gate-2 digest as an explicit line the initiator sees — never hidden, never a reason for another question round (agent-base §9.2)
 
 ---
 
 ## SPEC_APPROVED marker (separate comment after final APPROVED iteration)
 
-After APPROVED — post a **separate** `SPEC_APPROVED` marker comment (so coders can find it via simple substring search). Template:
+After APPROVED **and the initiator's OK at gate 2** (step 12b) — post a **separate** `SPEC_APPROVED` marker comment (so coders can find it via simple substring search). Template:
 
 ```markdown
 **SPEC_APPROVED**
@@ -198,7 +201,7 @@ Ready for implementation. Coders can pick up.
 - [ ] Traceability matrix fully validated (every FR/NFR cross-checked)
 - [ ] Findings classified by severity
 - [ ] Verdict per agent-base §9.3: blockers/majors with evidence return the SPEC; minors listed; iteration N>1 reviewed only the delta
-- [ ] If APPROVED → SPEC digest posted and initiator pinged (gate 2); SPEC_APPROVED only after the initiator's «ок»
+- [ ] If APPROVED → SPEC digest posted and initiator pinged (gate 2); SPEC_APPROVED only after the initiator's "OK"
 - [ ] Iteration number incremented from previous
 - [ ] No drive-by superficial review — read full SPEC, full REQUIREMENTS, prior history
 
@@ -216,7 +219,7 @@ Reproduce checklist as ✓/✗ at end of ARCH_REVIEW comment body.
 - Never edit the system-analyst's SPEC description — your channel is comments only.
 - Never @mention anyone by hand — hand off through `mark_spec_approved(next_role=…)` / `request_handoff`.
 - Never close SPEC sub-issue or root issue — only the initiator in `finalize_done`.
-- Never write a re-iteration if SPEC hasn't changed since your last comment — IDLE, STOP.
+- Never write a re-iteration if SPEC hasn't changed since your last comment. Unchanged SPEC is still a valid re-entry for a designer handback (step 12c) or the initiator's gate-2 reply (step 12b).
 - Never skip ADR validation — every Proposed ADR needs explicit action this iteration.
 
 ---
@@ -226,5 +229,5 @@ Reproduce checklist as ✓/✗ at end of ARCH_REVIEW comment body.
 See `plane-api.md` §7 (re-entry) and §6 (operations).
 - One iteration per agent run. Multiple iterations normal: ARCH_REVIEW v1 → system-analyst revises → ARCH_REVIEW v2 → ... → APPROVED.
 - Each iteration = new comment (don't edit previous; preserve history).
-- After APPROVED: digest + gate 2. After the initiator's «ок»: SPEC_APPROVED → coders. Then idle.
+- After APPROVED: digest + gate 2. After the initiator's "OK": SPEC_APPROVED → coders. Then idle.
 - Status `Done` on SPEC sub-issue — set ONLY by the initiator in `finalize_done` at the very end of the pipeline.

@@ -32,6 +32,8 @@ The role declaration is the agent's contract with this skill. Anything not in th
 
 ## 0. Output contract — clarity first, every turn
 
+Instructions in this skill are English. Phrases in «guillemets» in Russian are examples of what agents write to the initiator, who reads Russian.
+
 Rambling, hedged, filler-heavy answers force the operator to re-read to extract the point. Kill that. This section applies to **every** message an agent posts (Plane comment, terminal output, question to initiator) — not just artifacts.
 
 **Rules:**
@@ -41,7 +43,7 @@ Rambling, hedged, filler-heavy answers force the operator to re-read to extract 
 3. **Concrete, not abstract.** `file.py:42`, exact command, exact number, exact tool call. Not «в некоторых местах», «при определённых условиях», «в целом», «where appropriate».
 4. **No hedging chains.** «Возможно / вероятно / может быть / стоит рассмотреть / в целом можно было бы» → one word: «да» / «нет» / «не знаю, проверю через X».
 5. **Numbers over adjectives.** «3 упавших теста в `tests/orders/`» not «несколько падений»; «+200ms на p95» not «стало медленнее»; «12 файлов затронуто» not «пара мест».
-6. **One question at a time.** Blocking question to initiator = one question. Not a stack of «а ещё уточни, а также, и заодно». Stack means you didn't decide what actually blocks you.
+6. **Questions: one batch per artifact, not a drip.** A mid-run blocker = one question. Elicitation questions = one numbered batch with a recommendation each (§9.2). Never a trickle of «а ещё уточни, а также, и заодно» across messages.
 7. **Structured artifacts stay structured.** REQUIREMENTS / SPEC / ARCH_REVIEW / REVIEW / PLAN follow their templates verbatim (see `artifact-templates`). Those templates already lead with a verdict header — don't insert prose above the header.
 
 **Enforcement:** if you catch yourself typing a banned opener or a hedging chain — delete it, write the verdict instead. If the answer is «I don't know», say «не знаю» and name what you'll read to find out. Prose defending a decision is not the decision.
@@ -81,9 +83,9 @@ Every artifact (REQUIREMENTS, SPEC, PLAN, CHANGES, test plan, test report, ARCH_
 These phrasings do NOT count as valid `skipped` / `blocked` reasons — they are unilateral scope cuts by the agent and must be replaced:
 
 - «следующим заходом» / «в следующей итерации» / «потом» / «оставил на потом»
-- «UI/тесты/миграция позже» без тикета и без запроса initiator
-- «отдельным PR-ом» без ID тикета
-- **«MVP-упрощение: сделал X, Y добавим отдельно»** — если Y входил в исходную задачу, это тот же tail; либо доделать, либо STOP + вопрос initiator: «Y входит в scope? да → делаю; нет → тикет».
+- «UI/тесты/миграция позже» without a ticket and without an initiator request
+- «отдельным PR-ом» without a ticket ID
+- **«MVP-упрощение: сделал X, Y добавим отдельно»** — if Y was part of the original task, this is the same tail: either finish it, or STOP and ask the initiator whether Y is in scope (yes → do it; no → ticket).
 - «в целом работает, остался нюанс» / «почти готово» / «в основном сделано»
 
 **Rule:** if you're about to write one of these — either finish the work now, or STOP and ask the initiator whether the item is in-scope. Do not decide unilaterally.
@@ -96,14 +98,14 @@ Prose paragraphs like «а вот эти три вещи ещё бы стоил�
 
 ## 0c. Trust the operator on their own domain
 
-**The failure mode this kills:** initiator says «есть KYB-воркфлоу, UUID X», agent replies «в моей заметке / памяти его нет, не буду спорить — покажу факты» → запускает API-вызов чтобы «доказать», у initiator горит. Три раунда позже агент признаёт «ты был прав, заметка устаревшая». Полчаса времени initiator — коту под хвост.
+**The failure mode this kills:** initiator says «есть KYB-воркфлоу, UUID X», agent replies «в моей заметке / памяти его нет, не буду спорить — покажу факты» → runs an API call to «prove» it while the initiator fumes. Three rounds later the agent admits the note was stale. Half an hour of the initiator's time wasted.
 
 **Rule:** when the operator asserts a fact about **their own** system, account, credentials, config, ticket state, external vendor account, or business decision — **treat it as authoritative**. Update your beliefs / cached notes / assumptions immediately, retract any stale statement in one line, act on the new fact. Do not run confirmation queries just to satisfy your prior.
 
 **Do not do:**
 - «В моей заметке X, но раз ты говоришь Y — проверю через API» → don't run the check; act on Y.
 - «Не буду спорить — покажу факты» → this phrase is itself the anti-pattern; you ARE spurring, wrapped in politeness.
-- «Позволь перепроверю» когда operator только что сказал что.
+- «Позволь перепроверю» right after the operator stated it.
 - Multiple round-trips where operator has to defend obvious ground truth about their own account.
 
 **Do:**
@@ -140,7 +142,7 @@ Two parallel sources of orientation, with non-overlapping scope (also documented
 | `$KB_DIR/AGENTS.md` + `kb/*.md` | Technical truth: stack, conventions, multitenancy, migration discipline |
 
 Load order:
-1. `plane-operations:read_project_context()` — fetches the Plane project description. Optional; if `None`, no STOP.
+1. `plane-operations:read_project_context()` — fetches the Plane project description. Optional: skip it when its tool (`mcp__plane-<workspace>__retrieve_project`) is not in your `tools:`; a `None` result is not a STOP either.
 2. `$KB_DIR/AGENTS.md` — entry point + routing table.
 3. Each file listed in `kb_extra` of your role declaration. Full read.
 4. Domain files in `$KB_DIR/kb/domain/` only when role-specifically relevant (your role prompt indicates).
@@ -237,7 +239,7 @@ Same rule for Figma frame IDs, vendor-doc anchors, package version numbers, thir
 How it works in practice:
 
 - **Structured tools auto-stamp the initiator** at the end of their comment. `post_review`, `post_changes`, `post_bug_report`, `mark_spec_approved`, `mark_phase_complete`, `escalate_upstream_gap` all already include the initiator mention — you don't do anything.
-- **Add a downstream mention via `next_role=`** on the same tools. Tower resolves the role to the bot's member UUID and stamps a second mention alongside the initiator. Example: `post_changes(target='backend', …, next_role='reviewer')` → comment gets both initiator mention AND reviewer mention.
+- **Add a downstream mention via `next_role=`** on `post_review`, `post_changes`, `post_bug_report`, `mark_spec_approved` (`escalate_upstream_gap` takes `upstream_role=`; `mark_phase_complete` takes no routing — follow it with `request_handoff`). Tower resolves the role to the bot's member UUID and stamps a second mention alongside the initiator. Example: `post_changes(target='backend', …, next_role='reviewer')` → comment gets both initiator mention AND reviewer mention.
 - **Standalone handoffs use `mcp__plane-tower__request_handoff(sub_uuid, target_role, message_html='', workspace=…)`.** Use it when you need to post a routing comment without an attached artifact action — e.g. "PLAN ready, awaiting confirmation" pings the initiator (`target_role='initiator'`); "everything done, your turn" pings the reviewer (`target_role='reviewer'`). Tower stamps the mention; you supply only `message_html` body text.
 - **`target_role='initiator'`** is the magic value for pinging the human (the user who triggered the workflow). Anything else (`reviewer`, `architect`, `business-analyst`, `django-developer`, `react-developer`, `system-analyst`, `designer`, `api-tester`, `ui-tester`, …) is matched against the workspace's agents roster.
 - **Free-form `post_comment` and `update_comment` refuse `<mention-component>` in the body** — the tower raises `MentionInBodyError` before the POST. Use them for diagnostics / progress text *without* mentions; route handoffs through `request_handoff` or the `next_role` parameter.
@@ -321,17 +323,17 @@ This section overrides any older role-prompt text about approvals, phases, PLAN 
 | 2 | SPEC | architect, after its own APPROVED | A digest comment on the SPEC sub-issue (§9.4) |
 | 3 | Implementation | reviewer, after its own APPROVED | The coders' implementation summaries + test reports + the review verdict on root |
 
-Everything between gates runs without the initiator: SA → architect, architect ↔ SA rounds, coder PLAN and execution, testers' plans and runs, coder ↔ tester / reviewer rounds. Never stop to ask «ок?» between gates. Gate 2 passes when the initiator answers «ок» on the SPEC sub-issue; the architect then posts `SPEC_APPROVED` and hands off to coders. Gate 3 ends with the initiator's `finalize_done`.
+Everything between gates runs without the initiator: SA → architect, architect ↔ SA rounds, coder PLAN and execution, testers' plans and runs, coder ↔ tester / reviewer rounds. Never stop to ask "OK?" between gates. Gate 2 passes when the initiator answers "OK" on the SPEC sub-issue; the architect then posts `SPEC_APPROVED` and hands off to coders. Gate 3 ends with the initiator's `finalize_done`.
 
 The initiator may ask questions at any gate. Answer from the artifact or the code, citing `file:line` or the section; if the answer changes the artifact, update it and post a delta: what changed since the initiator last looked.
 
 ### 9.2 Questions — one batch, with recommendations
 
 - All open questions for one artifact go in **one comment**, numbered, each with your recommended answer and a one-line reason:
-  > 1. Лимит считать по ЮЛ или по клиенту? Рекомендую по ЮЛ — так устроен `limits/services.py:131`.
+  > 1. Count the limit per legal entity or per customer? Recommend per legal entity — that is how `limits/services.py:131` works.
 - Answer from code, docs and existing artifacts first; ask only what they cannot answer.
 - At most **two rounds** per artifact. After that, decide with the recommended answer and list the decision as an explicit assumption in the digest the initiator sees at the next gate.
-- ❌ five phase-by-phase rounds of 3 questions each. ✅ one list of 11, the initiator answers «все по рекомендации, кроме 4 — нет».
+- ❌ five phase-by-phase rounds of 3 questions each. ✅ one list of 11, the initiator answers "all as recommended, except 4 — no".
 
 ### 9.3 Review rounds — converge, don't drip
 
@@ -340,15 +342,16 @@ Applies to architect (SPEC), testers (code), reviewer (everything).
 - **Iteration 1 is one full pass.** Every finding you can see goes in it.
 - **Iteration N > 1 reviews only the delta** — what changed since your last iteration — plus the status of each earlier finding. No new findings on unchanged material. Exception: a blocker you missed — allowed, labelled `missed in iter N-1`.
 - **Only blocker / major findings return the artifact** (CHANGES_REQUIRED). Each needs evidence: `file:line` or section, plus the scenario that breaks. Minor findings are listed too; the author fixes all of them in the same pass, and they never cause another round on their own.
-- **Cap: three CHANGES_REQUIRED on the same item** → stop iterating. Escalate to the initiator as a design question: «это не баг, а дыра в модели: …; варианты …» (the «Заплатка или дизайн» format in the global `CLAUDE.md`).
+- **Minor-only outcome** (no open blocker / major): hand the work to the author with the minor list (`request_handoff`, message names the next stage). The author fixes every minor in one pass, posts the delta, and hands straight to that next stage — tester → reviewer, reviewer → initiator (gate 3). No new review round.
+- **Cap: three CHANGES_REQUIRED on the same item** → stop iterating. Escalate to the initiator as a design question: "this is not a bug but a gap in the model: …; options …" (the "Patch or design" format in the global `CLAUDE.md`).
 - Every verdict comment states the iteration number and the round count so far.
 
 ### 9.4 Digests for the initiator
 
 The initiator reads digests, not full artifacts. Post one comment, ≤40 lines, in Russian, at gate 2 (architect, on the SPEC sub-issue) and gate 3 (each coder, inside CHANGES):
 
-- **SPEC digest:** decisions needed from the initiator (0–3, each with options and a recommendation); data model (new / changed entities, one table); API and state transitions; where it lands in the architecture and which existing code it follows (`file:line`); **new patterns — «нет» or a list with reasons**; what the architect checked and against which project rules; risks (money, live-data migrations, access rights).
-- **Implementation summary (CHANGES):** data model and migrations; endpoints / screens; where the logic lives (module, layer); exemplars followed (`file:line`); **new patterns — «нет» or a list with reasons**; deviations from SPEC and why; failure scenario → covering test; checks run (tests, `codex-review` passes, rounds).
+- **SPEC digest:** decisions needed from the initiator (0–3, each with options and a recommendation); data model (new / changed entities, one table); API and state transitions; where it lands in the architecture and which existing code it follows (`file:line`); **new patterns — "none" or a list with reasons**; what the architect checked and against which project rules; risks (money, live-data migrations, access rights).
+- **Implementation summary (CHANGES):** data model and migrations; endpoints / screens; where the logic lives (module, layer); exemplars followed (`file:line`); **new patterns — "none" or a list with reasons**; deviations from SPEC and why; failure scenario → covering test; checks run (tests, `codex-review` passes, rounds).
 
 ### 9.5 Coder run — worktree, whole PLAN, self-review
 
@@ -356,16 +359,21 @@ The initiator reads digests, not full artifacts. Post one comment, ≤40 lines, 
 2. **Worktree.** Code only in your own git worktree, never in the main checkout:
    `git -C <repo> worktree add .claude/worktrees/<IDENT>-<N>-<role> -b <IDENT>-<N>-<role> master`
    Set it up per the repo `CLAUDE.md` worktree section (`.worktreeinclude` files, venv link). Re-entry reuses the existing worktree.
-3. **PLAN** goes into your sub-issue description as a checklist — no approval wait. Execute **all** of it in this run, ticking boxes as you go; a crash resumes from the first unticked box.
+3. **PLAN** goes into your sub-issue description as a checklist — no approval wait. (Doc-only mode, `pipeline:doc-only`: worktree yes, PLAN not required.) Execute **all** of it in this run, ticking boxes as you go; a crash resumes from the first unticked box.
 4. **Exemplars.** Every new element follows the exemplar the SPEC names. No exemplar fits → that is a new pattern: list it in the implementation summary with the reason.
 5. **Before handing off**, in the worktree:
    - full test suite and linters — commands from the repo `CLAUDE.md` only;
    - live smoke of the changed behaviour (request / task / page) with the observed result;
-   - `~/.claude/bin/codex-review --base master` (behaviour bugs) and `~/.claude/bin/codex-review --base master --conventions` (project rules and exemplars), fixing findings until «Находок нет», at most 3 rounds each;
+   - `~/.claude/bin/codex-review --base master` (behaviour bugs) and `~/.claude/bin/codex-review --base master --conventions` (project rules and exemplars), fixing findings until "No findings", at most 3 rounds each;
    - commit to the worktree branch. Never push, never merge to master.
 6. **Hand off** with `post_changes(…, ready_for_review=True, next_role=…)` carrying the implementation summary (§9.4).
 7. Merge to master happens after gate 3, by the initiator or on the initiator's direct request.
 
 ### 9.6 Stand — where testers run the code
 
-API and browser tests run against a stand built from the coder's worktree. Commands come from the **«Stand»** section of the repo `CLAUDE.md`. No such section → `escalate_upstream_gap` («нет команд стенда для worktree») and stop. Never improvise a stand with ad-hoc docker / ssh / kubectl commands.
+API and browser tests run against a stand built from the coder's worktree. Commands come from the **«Stand»** section of the repo `CLAUDE.md`. No such section → `escalate_upstream_gap` ("no stand commands for worktrees") and stop. Never improvise a stand with ad-hoc docker / ssh / kubectl commands.
+
+### 9.7 Your own sub-issue — never the spawn uuid
+
+The conductor spawns you with the `issue_uuid` you were mentioned on — usually an upstream artifact (the SPEC for coders, the coder's sub-issue for testers). Resolve your own every run:
+`pickup_issue(issue_uuid=<spawn uuid>)` → `root_uuid = parent or id` → `find_artifact_by_label(role=<your role key>, root_uuid)`; none → `create_sub_issue(role=<your role key>, root_uuid)`. Role keys: `spec`, `design`, `backend`, `frontend`, `api-tests`, `ux-tests`. Post your artifacts, CHANGES, bugs and status to **that** sub_uuid.

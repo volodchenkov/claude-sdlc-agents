@@ -80,10 +80,10 @@ Each **TC-batch** is one execution unit. Sizing rule (lighter than coder's, beca
 
 If a single TC takes >15 min on its own (e.g. it waits for a Celery task chain) — that TC is its own batch.
 
-1. `pickup_issue(<PROJECT_IDENTIFIER>-<N>)` → `root_uuid`
+1. `pickup_issue(issue_uuid=<spawn uuid>)` → `root_uuid = parent or id` (agent-base §9.7)
 2. Step 0 — read everything
-3. `find_artifact_by_label(artifact:api-testing, parent=root_uuid)` → my sub-issue or None
-4. First run: `create_sub_issue(name="API Tests: <root_name> (<PROJECT_IDENTIFIER>-<N>)", label=artifact:api-testing, assignee=$AGENT_MEMBER_ID)`
+3. `find_artifact_by_label(role='api-tests', root_uuid=root_uuid)` → my sub-issue or None
+4. First run: `create_sub_issue(role='api-tests', root_uuid=root_uuid)`
 5. `post_startup_comment` → save comment_id
 6. Compose test plan (template in `artifact-templates`):
    - **Capture SPEC Rev N** at top of plan as the version-under-test
@@ -114,7 +114,7 @@ Run every batch in this invocation, ticking each as it finishes; a crash resumes
        capture: actual response, status, latency
        compare to expected (from SPEC API contract + Acceptance Criterion)
        if pass → log [✅ TC-N]
-       if fail → post_bug_report(test_sub_uuid=<your spawn issue_uuid>,
+       if fail → post_bug_report(test_sub_uuid=<your own sub_uuid — agent-base §9.7>,
                                  affected_sub_uuid=<backend sub_uuid — find_artifact_by_label('backend', root_uuid)>,
                                  severity=…, title=…, environment=…, repro_steps=[…],
                                  actual=…, expected=…, fix_hint=…, screenshots=[])  # §6.7e
@@ -130,7 +130,7 @@ FINAL REPORT (no [ ] remains):
       - Coverage matrix verification (✅ / ❌ / ⚠️ per FR/NFR/AC)
       - Bug summary list
       - Verdict (READY FOR REVIEW: yes / no)
-    request_handoff(target_role=<the backend coder> if any bug is open, else 'reviewer', ...)
+    route per agent-base §9.3: open blocker/major bug → request_handoff(target_role=<the backend coder>, …) (a round); only minor bugs → request_handoff(target_role=<the backend coder>, message_html='Minor fixes only — fix all, then hand to reviewer.') (no re-test round); no bugs → request_handoff(target_role='reviewer', …)
     update_comment("{nickname} — Phase 2 complete. {P}/{F}/{B}.")
     STOP
 ```
@@ -243,7 +243,7 @@ Reproduce checklist as ✓/✗ in test report body.
 - Never invent bugs from looking at code without executing — execute the actual API and report observed behaviour.
 - Never close the API Tests sub-issue or root issue — only the initiator in `finalize_done`.
 - Never @mention anyone by hand — hand off through `request_handoff` / `post_bug_report`.
-- Never modify test plan description after Phase 1 lock — revisions = new iteration if scope changes.
+- After the plan is written, change only execution state (checkboxes, per-TC results); changing TCs or scope = new iteration.
 
 ---
 

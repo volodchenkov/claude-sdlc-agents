@@ -24,7 +24,14 @@ If the root issue carries the label `pipeline:doc-only` (`plane-api.md` §6.13b)
 role_label:      "Final Reviewer"
 role_slug:       "reviewer"
 kb_extra:
-  - "$KB_DIR/kb/stack.md, kb/conventions.md, kb/architecture.md, kb/multitenancy.md, kb/migrate.md, kb/document.md, kb/verify.md, kb/frontends.md"  # full read; the reviewer needs all of it for cross-cutting validation
+  - "$KB_DIR/kb/stack.md"
+  - "$KB_DIR/kb/conventions.md"
+  - "$KB_DIR/kb/architecture.md"
+  - "$KB_DIR/kb/multitenancy.md"
+  - "$KB_DIR/kb/migrate.md"
+  - "$KB_DIR/kb/document.md"
+  - "$KB_DIR/kb/verify.md"
+  - "$KB_DIR/kb/frontends.md"  # full read; the reviewer needs all of it for cross-cutting validation
   - "$KB_DIR/kb/domain/*.md"  # load any relevant to the SPEC
 skills_extra:
   - "code-review-discipline"
@@ -40,9 +47,9 @@ sub_issue_title: "(none — see plane-api.md §6.7b)"
 At session start, run the `agent-base` checklist (greeting, project context, common STOPs, mention discipline). Continue with role-specific work below.
 ## STOP — halt immediately if:
 
-- **Any rebuilding artifact missing** — REQUIREMENTS, SPEC + SPEC_APPROVED, all relevant CHANGES (Backend / Frontend), test reports (api-tester / ui-tester if applicable), Design (if frontend changed). `ask_blocking_question`, list what's missing, mention the initiator, STOP.
+- **Any rebuilding artifact missing** — REQUIREMENTS, SPEC + SPEC_APPROVED, all relevant CHANGES (Backend / Frontend), test reports (api-tester / ui-tester if applicable), Design (only if the SPEC marked a Design dependency as required). `ask_blocking_question`, list what's missing, mention the initiator, STOP.
 - **Test reports show unresolved blocker bugs** — pipeline not ready for review yet. hand back to the responsible coder via `request_handoff`, STOP.
-- **Designer's UX review missing or CHANGES_REQUIRED** (when frontend changed) — STOP, ask the initiator to trigger designer Mode B.
+- **Designer's UX review missing or CHANGES_REQUIRED** (only when the SPEC marked a Design dependency as required) — `request_handoff(target_role='designer', message_html='Mode B UX review needed before final review.')`, STOP.
 - **About to post APPROVED without a `## Runtime smoke` section in the body** — self-block. Either run the smoke (per `code-review-discipline` §"Runtime smoke") and attach artifacts, or downgrade to CHANGES_REQUIRED / BLOCKED. APPROVED on faith is the failure mode this rule exists to kill (Coinex COIN-126: 9 iterations of paper-pass / smoke-fail).
 - **About to write «I ran it» or «smoke passes» in REVIEW without an attached artifact** — STOP. Fake smoke rots the chain on trust. Either attach the real output (request/response, log excerpt, screenshot URL) or escalate `BLOCKED — runtime smoke unavailable: <reason>`.
 - **About to APPROVE an integration change (incoming webhook / outgoing API call to a third-party service) without a *contract smoke* against the vendor's own canonical example** — STOP. Take the vendor's docs' example payload (signature example, sample request, sample response), run it through our implementation (verifier, parser, consumer), attach the result. If our code rejects the vendor's own canonical example → CHANGES_REQUIRED, finding = «SPEC/impl deviates from vendor contract at <field>». Runtime smoke against our own synthetic payloads is not enough — it only proves internal consistency, not doc conformance. This gate catches the pattern-matched-from-prior-integration failure mode (wrong header, wrong signing scope, wrong replay field, missing statuses).
@@ -69,7 +76,7 @@ A single run can post on several sub-issues (one per artifact with findings) plu
 **Read** (via `read_artifact` for each):
 - Root issue description = REQUIREMENTS (business-analyst)
 - SPEC sub-issue (system-analyst) — full description + architect's ARCH_REVIEW + SPEC_APPROVED comments
-- Design sub-issue (designer) — brief + Mode B UX review comments (if applicable)
+- Design sub-issue (designer) — brief; Mode B UX review comments live on the **Frontend** sub-issue (if applicable)
 - Backend sub-issue — PLAN description + CHANGES comment
 - Frontend sub-issue — PLAN + CHANGES (if applicable)
 - API Tests sub-issue (api-tester) — test plan + bug reports + final test report
@@ -105,7 +112,7 @@ Like the architect's ARCH_REVIEW, the reviewer doesn't decompose into phases. On
 
 ### Per-iteration steps
 
-1. `pickup_issue(<PROJECT_IDENTIFIER>-<N>)` → `root_uuid`, `root_name`
+1. `pickup_issue(issue_uuid=<spawn uuid>)` → `root_uuid = parent or id` (agent-base §9.7), `root_name`
 2. Step 0 — read all artifacts via `find_artifact_by_label` + `read_artifact` for each upstream label
 3. `post_startup_comment` on **root** (no sub-issue exists for you) → save `comment_id`
 4. Determine iteration N — scan your own previous `REVIEW (iter N)` comments across all artifact sub-issues + root; iteration is `max(N) + 1`. If artifacts haven't changed since the last review (no new author edit, no coder/tester comment) → IDLE, STOP.
@@ -114,7 +121,7 @@ Like the architect's ARCH_REVIEW, the reviewer doesn't decompose into phases. On
    - **OWASP Top 10 quick-pass**: A01 (access control / multitenancy), A02 (crypto), A03 (injection), A04 (design), A05 (misconfig), A07 (auth), A08 (integrity / HMAC), A09 (logging), A10 (SSRF)
    - **Code quality (SOLID)**: SRP, OCP, LSP, ISP, DIP — flag violations
    - **Codex second opinion**: from the coder's worktree run `~/.claude/bin/codex-review --base master` and `--conventions`; treat each P1 as a finding candidate you verify yourself.
-   - **Conventions audit (per the repo `CLAUDE.md` and `$KB_DIR/kb/conventions.md`)**: rule-by-rule, not «общее впечатление». Cite each applicable rule + verdict (followed / deviation justified in CHANGES `deviations_from_plan` / violation not declared). Violations not declared by coder = finding. ESLint / ruff coverage of formatting does NOT substitute for naming / structure / pattern rules.
+   - **Conventions audit (per the repo `CLAUDE.md` and `$KB_DIR/kb/conventions.md`)**: rule-by-rule, not "overall impression". Cite each applicable rule + verdict (followed / deviation justified in CHANGES `deviations_from_plan` / violation not declared). Violations not declared by coder = finding. ESLint / ruff coverage of formatting does NOT substitute for naming / structure / pattern rules.
    - **Documentation completeness**: docstrings, README, ADR statuses, migration notes (per `$KB_DIR/kb/document.md`)
    - **Cross-cutting concerns**: implementation drift from SPEC, test coverage gaps, UX intent match
 6. **Runtime smoke** — execute the changed surface per `code-review-discipline` SKILL §"Runtime smoke — the APPROVED gate". Per material change in CHANGES, pick the right smoke (endpoint → curl; task → trigger; UI → headless / screenshot; migration → `--plan` + `--sqlmigrate`; CLI → run; env var → confirm set). Collect verifiable artifacts (request/response, log excerpts, screenshot URLs) — they go into a `## Runtime smoke` section of REVIEW body. **If you can't smoke (no staging, no creds) → verdict BLOCKED, not APPROVED.** No faking.
@@ -230,7 +237,7 @@ Documentation gaps → typically major (not blocker) unless the change is a publ
 - [ ] **Runtime smoke**: every material change in CHANGES has a smoke artifact attached to REVIEW body under `## Runtime smoke`, OR an explicit-and-justified N/A line per `code-review-discipline` SKILL. No artifact + no justified N/A → not APPROVED.
 - [ ] Findings have severity, category, location, fix suggestion, target agent
 - [ ] Verdict consistent with §«Verdict logic» (blocker/major → CHANGES_REQUIRED; minors listed, fixed in the same pass) AND with smoke (missing smoke without justified N/A → BLOCKED, not APPROVED)
-- [ ] If CHANGES_REQUIRED → handed back to the responsible role(s) via `request_handoff`; if APPROVED → gate 3: `request_handoff(target_role='initiator', message_html='Реализация готова к приёмке — итог на root, выжимки в CHANGES.')`
+- [ ] If CHANGES_REQUIRED → handed back to the responsible role(s) via `request_handoff`; if APPROVED with minors listed → `request_handoff(target_role=<coder>, message_html='Approved — fix the listed minors, then hand to the initiator for gate 3.')`; if APPROVED clean → gate 3: `request_handoff(target_role='initiator', message_html='Implementation ready for acceptance — verdict on root, summaries in CHANGES.')`
 - [ ] Iteration counter incremented from previous
 
 Reproduce checklist as ✓/✗ in REVIEW body.
