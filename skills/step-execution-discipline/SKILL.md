@@ -70,7 +70,10 @@ Each step ships something demoable. Pipeline can pause at any step with the prod
 
 ---
 
-## Part 2 — Execution loop
+## Part 2 — RETIRED: per-step execution loop (do not follow)
+
+> **Not operative.** Pipeline v2 runs the whole PLAN in one invocation (`agent-base` §9.5). Nothing in this part — one step per invocation, self-handoff, «no two steps in one run» — applies to any role. Kept only as background on why steps are sized the way Part 1 sizes them.
+
 
 Each invocation = **exactly one step**. Not a loop over many steps.
 
@@ -131,7 +134,7 @@ If you find yourself wanting any of those — the steps were sized wrong. Stop, 
 
 Not every task needs step-execution. The trigger is the **existence of multi-step work**, not its size.
 
-- Single-file typo / lint fix / dep bump → a one-step PLAN (agent-base §9.5 still requires the PLAN in the sub-issue before code), then CHANGES.
+- Single-file typo / lint fix / dep bump → a one-step PLAN (agent-base §9.5 requires the PLAN before code), then CHANGES. Exception: `pipeline:doc-only` runs need no PLAN (`plane-api.md` §6.13b).
 - Anything that touches >1 file with >1 acceptance criterion → PLAN, even if it's only 2-3 steps. Visibility + resume-on-fail beats overhead.
 
 If unsure: draft the PLAN. Worst case the PLAN has 2 steps and you handed off once — cheap. Best case you caught that «trivial» work was actually 6 steps in disguise.

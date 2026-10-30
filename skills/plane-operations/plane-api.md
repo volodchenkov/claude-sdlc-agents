@@ -215,7 +215,7 @@ Read a sub-issue's description + a slice of its comments. Tower-managed:
 mcp__plane-tower__read_artifact(
     sub_uuid="<sub_uuid>",
     description_format="markdown",   # default; or "html" if you genuinely need raw markup
-    comments_limit=20,                # default; newest-first
+    comments_limit=5,                 # default; newest-first
     comments_offset=0,                # bump to page back into older comments
 )
 ```
@@ -234,7 +234,7 @@ Response shape (all keys present on success):
   ],
   "comments_order": "desc",
   "comments_offset": 0,
-  "comments_returned": 20,
+  "comments_returned": 5,
   "total_comments": 36,
   "has_more_comments": true
 }
@@ -438,7 +438,7 @@ post_bug_report(
 Recipe:
 1. Tower renders the ISTQB bug template per `artifact-templates`/`istqb-test-design`.
 2. `create_work_item_comment(test_sub_uuid, comment_html)` — the bug lives in the test sub-issue.
-3. If `affected_sub_uuid` is provided: `create_work_item_link(affected_sub_uuid, url=<URL of the comment from step 2>)` — back-link from the affected sub-issue.
+3. If `affected_sub_uuid` is provided, the tower adds the back-link to the affected coder sub-issue inside `post_bug_report` — agents make no separate link call.
 
 The two-way link prevents bugs from getting lost when reviewer or coder reads only one side.
 
