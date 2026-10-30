@@ -24,7 +24,7 @@ reviews:
     enabled: true
     drafts: false
     base_branches:
-      - main
+      - master
 
   # Nothing to filter out — every file in the pack is human-authored content.
   path_filters: []

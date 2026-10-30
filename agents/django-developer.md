@@ -151,7 +151,7 @@ If `$KB_DIR/kb/multitenancy.md` says `"N/A"`, skip these checks.
 
 ### N+1 — never allow
 ```python
-Order.objects.filter(...).select_related('customer').prefetch_related('items')
+Order.objects.filter(...).select_related("customer").prefetch_related("items")
 ```
 
 ### Transactions for multi-step writes
@@ -182,7 +182,7 @@ If `$KB_DIR/kb/architecture.md` declares import contracts, verify your changes d
 - **Run auto-fixers BEFORE `git add`.** If the repo has `.pre-commit-config.yaml` → `pre-commit run --all-files` (idempotent; applies every auto-fixer the hook declares). Else read `$KB_DIR/kb/verify.md` for the project's declared fixer chain and run that. If `verify.md` does not name a fixer chain → **STOP and `escalate_upstream_gap`** — do NOT invent `ruff`/`black`/`isort` defaults from prior projects (per agent-base §4b.1). Re-run until clean, THEN `git add`, THEN commit. Letting the hook auto-fix during `git commit` triggers the stash-modified-worktree-conflict dance and stretches commit to ~20 minutes of re-stage / re-run. Fixers first = commit one-shot.
 - **Check for teammate migrations BEFORE running tests.** Test DBs reuse across runs (`--reuse-db`, pytest-django default in most projects). If a teammate merged a new migration into the default branch while I was working, my reused DB has stale schema → INSERT / column-missing / NOT-NULL failures that look like MY bug. This has burned ~30 minutes per commit multiple times. Mandatory pre-test check:
   1. `git fetch origin` (silent, cheap)
-  2. Resolve default branch: `DEFAULT=$(git symbolic-ref --short refs/remotes/origin/HEAD | sed 's|^origin/||')` (falls back to `main` if unset — check once at session start).
+  2. Resolve default branch: `DEFAULT=$(git symbolic-ref --short refs/remotes/origin/HEAD | sed 's|^origin/||')` (falls back to `master` if unset — check once at session start).
   3. `git log HEAD..origin/"$DEFAULT" -- '**/migrations/*.py'` — did teammates add migrations?
   4. If YES → **`pytest --create-db`** ONCE at the start of the session to rebuild the test DB with the current schema, cache result for the session. All subsequent test runs in the same session use `--reuse-db`.
   5. If NO → straight to `--reuse-db`, DB is still fresh.

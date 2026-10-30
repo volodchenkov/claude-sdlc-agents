@@ -355,6 +355,8 @@ The initiator reads digests, not full artifacts. Post one comment, ≤40 lines, 
 
 ### 9.5 Coder run — worktree, whole PLAN, self-review
 
+`master` below is the repo's main line: `master`, or `dev` in a pre-prod repo that has no `master` yet (vineo). Never base a task on `dev` when `master` exists — there `dev` is a verification stand.
+
 1. **Start** only with `SPEC_APPROVED` on the SPEC sub-issue.
 2. **Worktree.** Code only in your own git worktree, never in the main checkout:
    `git -C <repo> worktree add .claude/worktrees/<IDENT>-<N>-<role> -b <IDENT>-<N>-<role> master`
@@ -369,7 +371,7 @@ The initiator reads digests, not full artifacts. Post one comment, ≤40 lines, 
      ❌ `feat: model` → `feat: serializer` → `fix: review findings` — three commits for COINEX-177.
      ✅ one `feat(limits): per-entity limit (COINEX-177)`, amended through every round.
 6. **Hand off** with `post_changes(…, ready_for_review=True, next_role=…)` carrying the implementation summary (§9.4).
-7. Merge to master happens after gate 3: Tron rebases the branch onto master, then checks it is one commit over master (`git rev-list --count master..HEAD` = 1; more → `git reset --soft $(git merge-base master HEAD)` and one commit with the coder's message), fast-forwards it into master (hook-confirmed by the initiator) and removes your worktree and branch (`git branch -d` — refuses an unmerged branch, so it is part of the merge, not a separate approval). The initiator never merges branches by hand.
+7. Merge to master happens after gate 3: Tron rebases the branch onto master, then checks it is one commit over master (`git rev-list --count master..HEAD` = 1; more → `git reset --soft $(git merge-base master HEAD)` and one commit with the coder's message), runs the full test suite (red → back to you, no merge), fast-forwards it into master (hook-confirmed by the initiator) and removes your worktree and branch (`git branch -d` — refuses an unmerged branch, so it is part of the merge, not a separate approval). The initiator never merges branches by hand.
 
 ### 9.6 Stand — where testers run the code
 
