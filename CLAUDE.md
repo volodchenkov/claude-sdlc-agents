@@ -17,6 +17,7 @@ Hooks: whitespace / EOF / JSON / YAML, `ruff` on `tools/*.py` only (it would rew
 - Default to **patch** bumps (`0.5.6 → 0.5.7`). Prompt rewording, bug fixes, contradiction cleanup — all patch, even if commits are labelled `feat:`.
 - **Minor** bumps only when the surface grows: a new agent file, a new skill directory, a new MCP integration, a new top-level capability. If unsure between patch and minor, ask — don't guess up.
 - Major (`1.x.0`) — never without explicit user instruction.
+- `.claude-plugin/marketplace.json` `version` moves with it — always equal to `plugin.json` (the pre-push hook checks both).
 - Bump goes in the same commit as the content change. One PR = one commit (unless explicitly split).
 
 ## PR workflow
@@ -33,7 +34,8 @@ Hooks: whitespace / EOF / JSON / YAML, `ruff` on `tools/*.py` only (it would rew
 - Never `git push --force` to `master`, never `git reset --hard` on a shared branch.
 - Never `--no-verify` / `--no-gpg-sign` unless the user explicitly asked.
 - `git commit` / `git push` require explicit user OK before each batch — don't chain pushes from one "yes".
-- If a hook fails, fix the underlying issue and create a NEW commit. Don't `--amend` past hook failures.
+- `--amend` is normal while you work on your task branch.
+- If a hook fails, the commit was not made: fix the cause and re-run the same command.
 
 ## Memory hygiene
 

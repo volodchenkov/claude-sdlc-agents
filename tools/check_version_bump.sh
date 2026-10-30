@@ -12,19 +12,29 @@ ref=${PRE_COMMIT_TO_REF:-HEAD}
 
 if ! git fetch -q origin master 2>/dev/null; then
   if ! git rev-parse -q --verify "$base" >/dev/null; then
-    echo "version-bump: no $base and cannot fetch it — check skipped" >&2
-    exit 0
+    echo "version-bump: no $base and cannot fetch it — cannot verify the plugin version." >&2
+    echo "  Run 'git fetch origin master' and push again." >&2
+    exit 1
   fi
   echo "version-bump: fetch failed — comparing with the local $base" >&2
 fi
-
-changed=$(git diff --name-only "$base"..."$ref" -- agents skills template tools)
-[ -z "$changed" ] && exit 0
 
 version() {
   git show "$1:.claude-plugin/plugin.json" |
     python3 -c 'import json, sys; print(json.load(sys.stdin)["version"])'
 }
+
+# marketplace.json carries the same version; drift there went unnoticed
+# from 0.6.18 to 0.6.22.
+market_v=$(git show "$ref:.claude-plugin/marketplace.json" |
+  python3 -c 'import json, sys; print(json.load(sys.stdin)["plugins"][0]["version"])')
+if [ "$market_v" != "$(version "$ref")" ]; then
+  echo "version-bump: marketplace.json has $market_v, plugin.json has $(version "$ref") — keep them equal." >&2
+  exit 1
+fi
+
+changed=$(git diff --name-only "$base"..."$ref" -- agents skills template tools)
+[ -z "$changed" ] && exit 0
 
 base_v=$(version "$base")
 ref_v=$(version "$ref")
