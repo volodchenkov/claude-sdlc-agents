@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # pre-push hook: a branch that changes agents/, skills/, template/ or tools/
-# must carry a plugin version different from origin/master (CLAUDE.md
+# must carry a plugin version greater than origin/master (SemVer) (CLAUDE.md
 # «Release / version bump»). Without it the marketplace refuses to update.
 #
 # Checks the ref being pushed (pre-commit sets PRE_COMMIT_TO_REF), HEAD when
@@ -26,9 +26,22 @@ version() {
     python3 -c 'import json, sys; print(json.load(sys.stdin)["version"])'
 }
 
-if [ "$(version "$base")" = "$(version "$ref")" ]; then
+base_v=$(version "$base")
+ref_v=$(version "$ref")
+# Greater, not just different: a branch cut at 0.6.22 must not pass once
+# master has moved to 0.6.23 on its own.
+if ! python3 - "$ref_v" "$base_v" <<'PY'
+import sys
+def key(v):
+    core, _, pre = v.split("+")[0].partition("-")
+    nums = tuple(int(p) for p in core.split("."))
+    ids = tuple((0, int(i), "") if i.isdigit() else (1, 0, i) for i in pre.split(".")) if pre else ()
+    return nums, not pre, ids  # a release outranks its prereleases
+sys.exit(0 if key(sys.argv[1]) > key(sys.argv[2]) else 1)
+PY
+then
   echo "version-bump: $ref changes agents/skills/template/tools but" >&2
-  echo "  .claude-plugin/plugin.json still has $(version "$ref"), same as $base." >&2
+  echo "  .claude-plugin/plugin.json has $ref_v, not greater than $base_v on $base." >&2
   echo "  Bump the patch version in the same commit (CLAUDE.md «Release / version bump»)." >&2
   exit 1
 fi
