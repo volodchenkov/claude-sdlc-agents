@@ -365,9 +365,11 @@ The initiator reads digests, not full artifacts. Post one comment, ≤40 lines, 
    - full test suite and linters — commands from the repo `CLAUDE.md` only;
    - live smoke of the changed behaviour (request / task / page) with the observed result;
    - `~/.claude/bin/codex-review --base master` (behaviour bugs) and `~/.claude/bin/codex-review --base master --conventions` (project rules and exemplars), fixing findings until "No findings", at most 3 rounds each;
-   - commit to the worktree branch. Never push, never merge to master.
+   - **one commit per task**: the branch carries exactly one commit over master, in `plane-api.md` §11 format. Commit once, when the run is ready to hand off; every later change (rework, minor fixes, rebase conflicts) goes into that commit with `git commit --amend` — the branch is never pushed, so amending is safe. Amend only when that commit exists (`git rev-list --count master..HEAD` = 1); at 0 a plain `git commit` — an `--amend` there rewrites master's last commit. A hook failure creates no commit: fix the cause, re-run the same command. Never push, never merge to master.
+     ❌ `feat: model` → `feat: serializer` → `fix: review findings` — three commits for COINEX-177.
+     ✅ one `feat(limits): per-entity limit (COINEX-177)`, amended through every round.
 6. **Hand off** with `post_changes(…, ready_for_review=True, next_role=…)` carrying the implementation summary (§9.4).
-7. Merge to master happens after gate 3: Tron fast-forwards your branch into master (hook-confirmed by the initiator) and removes your worktree and branch (`git branch -d` — refuses an unmerged branch, so it is part of the merge, not a separate approval). The initiator never merges branches by hand.
+7. Merge to master happens after gate 3: Tron rebases the branch onto master, then checks it is one commit over master (`git rev-list --count master..HEAD` = 1; more → `git reset --soft $(git merge-base master HEAD)` and one commit with the coder's message), fast-forwards it into master (hook-confirmed by the initiator) and removes your worktree and branch (`git branch -d` — refuses an unmerged branch, so it is part of the merge, not a separate approval). The initiator never merges branches by hand.
 
 ### 9.6 Stand — where testers run the code
 

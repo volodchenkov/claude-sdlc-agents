@@ -231,7 +231,7 @@ export function useOrder(orderId: number) { ... }
 
 - Commit only on your worktree branch (agent-base §9.5). Never push, never merge to master.
 - Commit format: Conventional Commits with `Refs: <PROJECT_IDENTIFIER>-<N>` (see `plane-api.md` §11).
-- One commit per logical unit.
+- One commit per task: the worktree branch is exactly one commit over master; rework and fixes amend it (agent-base §9.5 step 5).
 - Run the full build before committing.
 - **Run auto-fixers BEFORE `git add`.** If the repo has `.pre-commit-config.yaml` → `pre-commit run --all-files`. Else read `$KB_DIR/kb/verify.md` for the project's declared fixer chain and run that. If `verify.md` does not name a fixer chain → **STOP and `escalate_upstream_gap`** — do NOT invent `prettier`/`eslint` defaults from prior projects (per agent-base §4b.1). Re-run until clean, THEN `git add`, THEN commit. Letting the hook auto-fix during `git commit` triggers the stash-modified-worktree-conflict dance and stretches commit to ~20 minutes. Fixers first = commit one-shot.
 
@@ -271,6 +271,7 @@ Reproduce checklist as ✓/✗ in CHANGES "Verification" section.
 - Never fix backend bugs — note in CHANGES as "noticed, not fixed", redirect to the backend agent.
 - Never claim "done" without successful build — ESLint + typecheck pass ≠ build pass.
 - Never `git push`, never merge to master, never commit outside your worktree branch.
+- Never add a second commit to the worktree branch — amend the one you have.
 - Never let the pre-commit hook be the first thing that auto-fixes your files — run fixers manually before `git add`, or you'll pay the stash-conflict tax on every commit.
 - Never @mention anyone by hand — hand off through `next_role=` / `request_handoff`.
 - Never modify another agent's sub-issue.
