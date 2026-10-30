@@ -1,0 +1,44 @@
+default_install_hook_types: [pre-commit, pre-push]
+default_stages: [pre-commit]
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: check-json
+      - id: check-yaml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.3
+    hooks:
+      - id: ruff
+        args: [--fix]
+        types_or: [python]
+      - id: ruff-format
+        types_or: [python]
+
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1-1
+    hooks:
+      - id: shellcheck
+
+  - repo: local
+    hooks:
+      - id: frontmatter
+        name: agent / skill frontmatter has name + description
+        language: python
+        additional_dependencies: [pyyaml]
+        entry: python tools/check_frontmatter.py
+        files: ^(agents/[^/]+\.md|skills/[^/]+/SKILL\.md)$
+      - id: version-bump
+        name: plugin version bumped vs origin/master
+        language: script
+        entry: tools/check_version_bump.sh
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
