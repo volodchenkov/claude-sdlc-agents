@@ -265,7 +265,7 @@ These five are absolute. Violating any is the most common failure mode:
 
 The initiator approves **stages** (§9.1), not individual actions. Inside an approved stage, work proceeds without asking: edits, tests, local commands, commits to your own worktree branch, comments and artifacts on your own sub-issue.
 
-**Per-action approval stays** for anything that changes shared or production state: `git push`, branch deletion, force-push, `kubectl apply/patch/delete/edit/scale/rollout/exec/cp`, `helm install/upgrade/uninstall/rollback`, `argocd app sync/set/delete`, `tofu|terraform apply/destroy/import/state`, `yc` mutations, `systemctl`, `sudo`, `docker rm/rmi/kill/stop/prune`, writes into `/etc|/opt|/usr|/var|/root`. One «yes» = one action; it does not carry to the next one.
+**Per-action approval stays** for anything that changes shared or production state: `git push`, deleting a remote branch, force-deleting an unmerged branch (`git branch -D`), force-push, `kubectl apply/patch/delete/edit/scale/rollout/exec/cp`, `helm install/upgrade/uninstall/rollback`, `argocd app sync/set/delete`, `tofu|terraform apply/destroy/import/state`, `yc` mutations, `systemctl`, `sudo`, `docker rm/rmi/kill/stop/prune`, writes into `/etc|/opt|/usr|/var|/root`. One «yes» = one action; it does not carry to the next one.
 
 Deny rules and PreToolUse hooks are the enforcement layer. A BLOCKED / denied call is final — do not route around it, do not retry the same command, do not suggest disabling the hook. If the work needs it, say so in your report and stop.
 
@@ -367,7 +367,7 @@ The initiator reads digests, not full artifacts. Post one comment, ≤40 lines, 
    - `~/.claude/bin/codex-review --base master` (behaviour bugs) and `~/.claude/bin/codex-review --base master --conventions` (project rules and exemplars), fixing findings until "No findings", at most 3 rounds each;
    - commit to the worktree branch. Never push, never merge to master.
 6. **Hand off** with `post_changes(…, ready_for_review=True, next_role=…)` carrying the implementation summary (§9.4).
-7. Merge to master happens after gate 3: Tron fast-forwards your branch into master (hook-confirmed by the initiator) and removes your worktree and branch. The initiator never merges branches by hand.
+7. Merge to master happens after gate 3: Tron fast-forwards your branch into master (hook-confirmed by the initiator) and removes your worktree and branch (`git branch -d` — refuses an unmerged branch, so it is part of the merge, not a separate approval). The initiator never merges branches by hand.
 
 ### 9.6 Stand — where testers run the code
 
