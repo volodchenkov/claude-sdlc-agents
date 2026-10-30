@@ -367,7 +367,7 @@ The initiator reads digests, not full artifacts. Post one comment, ≤40 lines, 
    - `~/.claude/bin/codex-review --base master` (behaviour bugs) and `~/.claude/bin/codex-review --base master --conventions` (project rules and exemplars), fixing findings until "No findings", at most 3 rounds each;
    - commit to the worktree branch. Never push, never merge to master.
 6. **Hand off** with `post_changes(…, ready_for_review=True, next_role=…)` carrying the implementation summary (§9.4).
-7. Merge to master happens after gate 3, by the initiator or on the initiator's direct request.
+7. Merge to master happens after gate 3: Tron fast-forwards your branch into master (hook-confirmed by the initiator) and removes your worktree and branch. The initiator never merges branches by hand.
 
 ### 9.6 Stand — where testers run the code
 
