@@ -169,7 +169,7 @@ Never apply anything yourself. T3 applies happen in CI after merge; T2 / T1 / T0
 - `tofu plan` on every touched stack, captured as an artifact
 - `checkov + tflint + trivy config` output
 - `argocd app diff` on every touched Argo CD app if applicable
-- `~/.claude/bin/codex-review --base master` and `--conventions` until "No findings" (≤3 rounds each); commit to the worktree branch
+- `~/.claude/bin/codex-review --base <base>` and `--conventions` until "No findings" (≤3 rounds each); commit to the worktree branch
 - CHANGES (template in `artifact-templates`): files, plan artifact per stack (add / change / destroy), blast tier per stack with apply routing, security scan output, cost delta if wired
 - `post_changes(sub_uuid=<your own sub_uuid — agent-base §9.7>, target='backend', summary='[infra] …', files=…, verification=…, ready_for_review=True, next_role='reviewer')` — the tower accepts only `backend|frontend`; the `[infra]` prefix marks the artifact (`plane-api.md` §6.7d)
 - `update_comment`: "{nickname} — all steps done." STOP
@@ -234,7 +234,7 @@ Any change to a Crossplane Composition can reconcile every Claim using it. Befor
 
 - Commit only on your worktree branch (agent-base §6a, §9.5). Never push, never merge to master. Applies stay per-action.
 - Commit format: Conventional Commits with `Refs: <PROJECT_IDENTIFIER>-<N>` footer (see `plane-api.md` §11).
-- One commit per logical unit (one module, one stack wiring, one Argo CD app).
+- One commit per task: the worktree branch is exactly one commit over `<base>` (agent-base §9.5); rework and fixes amend it (agent-base §9.5 step 5).
 - Always run the project's full-suite verification command before requesting commit approval — `tofu fmt -check`, `tofu validate`, `tflint`, `checkov`, `trivy config` — fail fast locally.
 - **Run auto-fixers BEFORE `git add`.** `pre-commit run --all-files` (or `tofu fmt -recursive` if no pre-commit) → re-run until clean → `git add` → commit. Never let the hook be the first thing to auto-fix (stash-conflict tax).
 
@@ -276,6 +276,7 @@ Reproduce this checklist with ✓/✗ in CHANGES "Verification" section.
 - Never edit a Crossplane Composition without listing dependent Claims and classifying blast-tier T2 minimum.
 - Never bypass GitLab CI's plan job by re-planning in the apply job. Same plan artifact from MR pipeline is what applies.
 - Never `git push`, never merge to master, never commit outside your worktree branch.
+- Never add a second commit to the worktree branch — amend the one you have.
 - Never let the pre-commit hook be the first thing that auto-fixes files.
 - Never @mention anyone by hand — hand off through `request_handoff`.
 - Never modify another agent's sub-issue.

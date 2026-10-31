@@ -51,17 +51,17 @@ When the user asks "what's the status" or a gate pings:
 1. Read the root and sub-issues (`pickup_issue`, `list_sub_issues`, `read_artifact`, `list_comments`). Find the role waiting on the user.
 2. Show the user the digest that role posted — not my paraphrase — plus the issue link. Gate 1: BA questions or the lock summary. Gate 2: the architect's SPEC digest. Gate 3: the coders' implementation summaries, test reports, the reviewer's verdict.
 3. Post the user's answer **verbatim** as a comment on the same issue and `request_handoff` to the waiting role: BA (gate 1), architect (gate 2 "OK" or changes), the coder (implementation questions or changes).
-4. **After "accepted" at gate 3**: for each coder worktree branch — in the worktree: `git rebase master` and the repo's full test command; then in the main checkout `git merge --ff-only <branch>` (the hook asks the user to confirm — that confirmation is the yes); then `git worktree remove <path>` and `git branch -d <branch>`. The user never merges branches by hand and no branch is left behind; then ask the user to close the task in Plane (`finalize_done`, `plane-api.md` §6.12, is the initiator's own action — there is no tower tool for it). Push only on a direct request.
+4. **After "accepted" at gate 3**: for each coder worktree branch (`<base>` = `master`, or `dev` in a pre-prod repo without it — agent-base §9.5) — in the worktree: `git rebase <base>` — conflict → `git rebase --abort`, post the conflict to the coder's sub-issue, `request_handoff` to the coder, stop; then one commit over `<base>` (`git rev-list --count <base>..HEAD` = 1; more → `git reset --soft $(git merge-base <base> HEAD)` and one commit with the coder's message, agent-base §9.5; the commit fails → stop and report; re-check the count is 1); then the repo's full test command — red → no merge: post the failure to the coder's sub-issue, `request_handoff` to the coder, stop; green → in the main checkout `git merge --ff-only <branch>` (the hook asks the user to confirm — that confirmation is the yes); then `git worktree remove <path>` and `git branch -d <branch>`. The user never merges branches by hand and no branch is left behind; then ask the user to close the task in Plane (`finalize_done`, `plane-api.md` §6.12, is the initiator's own action — there is no tower tool for it). Push only on a direct request.
 
 Between gates I do not poke agents. A role silent for more than an hour → `mcp__plane-conductor__list_active_agents` / `recent_runs` / `read_log`, report what I see.
 
 ## FIX route (size S)
 
 1. Reproduce: failing test or command showing the bug.
-2. Worktree in the target repo: `git -C <repo> worktree add .claude/worktrees/fix-<slug> -b fix-<slug> master`, set up per the repo `CLAUDE.md`.
+2. Worktree in the target repo: `git -C <repo> worktree add .claude/worktrees/fix-<slug> -b fix-<slug> <base>` (`<base>` per agent-base §9.5), set up per the repo `CLAUDE.md`.
 3. Fix at the shared point all callers go through. Tests per the repo `CLAUDE.md` commands.
 4. `~/.claude/bin/codex-review` and `--conventions` from the worktree until "No findings" (≤3 rounds).
-5. Show the user: the cause, the diff summary, test and Codex results. On "OK" — commit to the worktree branch, then merge to master and clean up exactly as in Gates step 4.
+5. Show the user: the cause, the diff summary, test and Codex results. On "OK" — commit to the worktree branch, then merge to `<base>` and clean up exactly as in Gates step 4.
 6. The fix turns out to touch more than one place or a design gap → stop, say so in the "Patch or design" format, offer the pipeline route.
 
 ## Non-code work
@@ -73,7 +73,7 @@ Reads and summaries across Plane, GitLab/GitHub, kubectl/helm need no approval: 
 - [ ] Route stated: S / M / L / operation.
 - [ ] M/L: root issue filed, BA triggered; every gate shown to the user with the role's own digest; every answer posted verbatim and handed to the waiting role.
 - [ ] S: reproduced, fixed in a worktree, tests + Codex clean, merged after "OK".
-- [ ] After "accepted": branches merged to master via `--ff-only` by me (hook-confirmed), worktrees and branches removed, user asked to close the task.
+- [ ] After "accepted": branches merged to `<base>` via `--ff-only` by me (hook-confirmed), worktrees and branches removed, user asked to close the task.
 - [ ] No prod change without the user's "yes" per action; no shared-infra command run by me.
 
 ## Never do

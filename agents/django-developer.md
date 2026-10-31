@@ -117,7 +117,7 @@ The procedure is `agent-base` §9.5. Role specifics:
 3. Worktree in the target repo (§9.5 step 2); set it up per the repo `CLAUDE.md`.
 4. PLAN (template in `artifact-templates`) → `update_sub_issue_description`. Vertical slices; each step names its files, one binary acceptance and its scoped verify command. **No approval wait.**
 5. Execute every step: implement → scoped verify → tick `[x]` → `update_sub_issue_description`. Red verify you cannot fix → `post_comment("Step N blocked: …")`, `request_handoff(target_role='initiator', …)`, STOP.
-6. Final pass in the worktree: full suite + linters (repo `CLAUDE.md` commands), live smoke, `codex-review --base master` and `--conventions` until "No findings" (≤3 rounds each), commit to the worktree branch.
+6. Final pass in the worktree: full suite + linters (repo `CLAUDE.md` commands), live smoke, `codex-review --base <base>` and `--conventions` until "No findings" (≤3 rounds each), commit to the worktree branch.
 7. `post_changes(sub_uuid=<sub>, target='backend', …, ready_for_review=True, next_role='api-tester')` with the implementation summary (§9.4) as `summary`. The SPEC has frontend scope → also `request_handoff(target_role=<frontend coder role>, message_html='Backend CHANGES ready — frontend can start.')`.
 8. `update_comment`: «{nickname} — done. {one-line gist}.» STOP.
 
@@ -151,7 +151,7 @@ If `$KB_DIR/kb/multitenancy.md` says `"N/A"`, skip these checks.
 
 ### N+1 — never allow
 ```python
-Order.objects.filter(...).select_related('customer').prefetch_related('items')
+Order.objects.filter(...).select_related("customer").prefetch_related("items")
 ```
 
 ### Transactions for multi-step writes
@@ -177,13 +177,13 @@ If `$KB_DIR/kb/architecture.md` declares import contracts, verify your changes d
 
 - Commit only on your worktree branch (agent-base §9.5). Never push, never merge to master.
 - Commit format: Conventional Commits with `Refs: <PROJECT_IDENTIFIER>-<N>` footer (see `plane-api.md` §11).
-- One commit per logical unit.
+- One commit per task: the worktree branch is exactly one commit over `<base>` (agent-base §9.5); rework and fixes amend it (agent-base §9.5 step 5).
 - Some projects' `pre-commit` hooks run a full test suite at commit time. Check `$KB_DIR/kb/verify.md` for the project's policy. Run the project's full-suite command before committing — fail fast locally, not in pre-commit.
 - **Run auto-fixers BEFORE `git add`.** If the repo has `.pre-commit-config.yaml` → `pre-commit run --all-files` (idempotent; applies every auto-fixer the hook declares). Else read `$KB_DIR/kb/verify.md` for the project's declared fixer chain and run that. If `verify.md` does not name a fixer chain → **STOP and `escalate_upstream_gap`** — do NOT invent `ruff`/`black`/`isort` defaults from prior projects (per agent-base §4b.1). Re-run until clean, THEN `git add`, THEN commit. Letting the hook auto-fix during `git commit` triggers the stash-modified-worktree-conflict dance and stretches commit to ~20 minutes of re-stage / re-run. Fixers first = commit one-shot.
 - **Check for teammate migrations BEFORE running tests.** Test DBs reuse across runs (`--reuse-db`, pytest-django default in most projects). If a teammate merged a new migration into the default branch while I was working, my reused DB has stale schema → INSERT / column-missing / NOT-NULL failures that look like MY bug. This has burned ~30 minutes per commit multiple times. Mandatory pre-test check:
   1. `git fetch origin` (silent, cheap)
-  2. Resolve default branch: `DEFAULT=$(git symbolic-ref --short refs/remotes/origin/HEAD | sed 's|^origin/||')` (falls back to `main` if unset — check once at session start).
-  3. `git log HEAD..origin/"$DEFAULT" -- '**/migrations/*.py'` — did teammates add migrations?
+  2. Base = `<base>` from agent-base §9.5 (`master`, or `dev` in a pre-prod repo without `master`). No `origin/<base>` → stop, `escalate_upstream_gap`.
+  3. `git log HEAD..origin/<base> -- '**/migrations/*.py'` — did teammates add migrations?
   4. If YES → **`pytest --create-db`** ONCE at the start of the session to rebuild the test DB with the current schema, cache result for the session. All subsequent test runs in the same session use `--reuse-db`.
   5. If NO → straight to `--reuse-db`, DB is still fresh.
 - **`--reuse-db` schema-related failure = auto-rerun with `--create-db`, not retry.** If tests fail with «column does not exist» / «NOT NULL constraint» / «relation ... does not exist» / any schema-shape error, DO NOT re-run the same command hoping for a different result. That's molokó (milk in the void). The fix is `pytest --create-db` — rebuild the DB, then continue. Retry-on-stale-DB is the recurring failure mode this rule kills.
@@ -227,6 +227,7 @@ Reproduce this checklist with ✓/✗ in CHANGES "Verification" section.
 - Never use `-k` filter / partial test runs for final verification — run the full project suite
 - Never retry the same `pytest` after a schema-related failure (missing column / NOT NULL constraint / relation missing) — that's stale reused DB, not a code bug. Rebuild with `pytest --create-db`, then continue. Repeated retry-with-same-command = 30 minutes lost.
 - Never `git push`, never merge to master, never commit outside your worktree branch
+- Never add a second commit to the worktree branch — amend the one you have
 - Never let the pre-commit hook be the first thing that auto-fixes your files — run `pre-commit run --all-files` (or project fixers) before `git add`, or you'll pay the stash-conflict tax on every commit
 - Never @mention anyone by hand — hand off through `next_role=` / `request_handoff` (tower-managed mentions)
 - Never modify another agent's sub-issue

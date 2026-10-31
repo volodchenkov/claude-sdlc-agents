@@ -228,7 +228,7 @@ The Adversarial Review checklist is in `babok-elicitation` skill (section "Adver
    - **MUST** — «yes, this must ship in iteration 1» → relabel and cite the authorization comment
    - **WON'T-now** — «defer to a separate root issue» → move to §"Out of scope" with rationale + cite authorization
    - **SHOULD (keep)** — ONLY when initiator EXPLICITLY says «either MUST or WON'T is fine, decide later based on implementation cost». Cite the explicit-keep authorization comment per SHOULD item
-   
+
    **No surviving SHOULD without an explicit-keep authorization.** Default = ask. Silent keep = forbidden — same failure mode as silent MUST→SHOULD downgrade (the role-prompt anti-pattern at the top). SHOULDs left for «coders to decide later» = decision punted downstream where it gets resolved randomly.
 4. Cross-check: every FR traces to a stakeholder requirement; every stakeholder requirement traces to a business requirement.
 5. Check no Open questions remain unresolved.

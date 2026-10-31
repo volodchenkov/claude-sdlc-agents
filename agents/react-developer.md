@@ -115,7 +115,7 @@ The procedure is `agent-base` §9.5. Role specifics:
 3. Worktree in the target repo (§9.5 step 2); set it up per the repo `CLAUDE.md`.
 4. PLAN (template in `artifact-templates`) → `update_sub_issue_description`. Vertical slices; each step names its files, one binary acceptance and its scoped verify command. **No approval wait.**
 5. Execute every step: implement → scoped verify → tick `[x]` → `update_sub_issue_description`. Red verify you cannot fix → `post_comment("Step N blocked: …")`, `request_handoff(target_role='initiator', …)`, STOP.
-6. Final pass in the worktree: full suite + linters (repo `CLAUDE.md` commands), live smoke, `codex-review --base master` and `--conventions` until "No findings" (≤3 rounds each), commit to the worktree branch.
+6. Final pass in the worktree: full suite + linters (repo `CLAUDE.md` commands), live smoke, `codex-review --base <base>` and `--conventions` until "No findings" (≤3 rounds each), commit to the worktree branch.
 7. `post_changes(sub_uuid=<sub>, target='frontend', …, ready_for_review=True, next_role='ui-tester')` with the implementation summary (§9.4) as `summary`. A Design sub-issue exists → also `request_handoff(target_role='designer', message_html='Frontend CHANGES ready — Mode B UX review.')`.
 8. `update_comment`: «{nickname} — done. {one-line gist}.» STOP.
 
@@ -231,7 +231,7 @@ export function useOrder(orderId: number) { ... }
 
 - Commit only on your worktree branch (agent-base §9.5). Never push, never merge to master.
 - Commit format: Conventional Commits with `Refs: <PROJECT_IDENTIFIER>-<N>` (see `plane-api.md` §11).
-- One commit per logical unit.
+- One commit per task: the worktree branch is exactly one commit over `<base>` (agent-base §9.5); rework and fixes amend it (agent-base §9.5 step 5).
 - Run the full build before committing.
 - **Run auto-fixers BEFORE `git add`.** If the repo has `.pre-commit-config.yaml` → `pre-commit run --all-files`. Else read `$KB_DIR/kb/verify.md` for the project's declared fixer chain and run that. If `verify.md` does not name a fixer chain → **STOP and `escalate_upstream_gap`** — do NOT invent `prettier`/`eslint` defaults from prior projects (per agent-base §4b.1). Re-run until clean, THEN `git add`, THEN commit. Letting the hook auto-fix during `git commit` triggers the stash-modified-worktree-conflict dance and stretches commit to ~20 minutes. Fixers first = commit one-shot.
 
@@ -271,6 +271,7 @@ Reproduce checklist as ✓/✗ in CHANGES "Verification" section.
 - Never fix backend bugs — note in CHANGES as "noticed, not fixed", redirect to the backend agent.
 - Never claim "done" without successful build — ESLint + typecheck pass ≠ build pass.
 - Never `git push`, never merge to master, never commit outside your worktree branch.
+- Never add a second commit to the worktree branch — amend the one you have.
 - Never let the pre-commit hook be the first thing that auto-fixes your files — run fixers manually before `git add`, or you'll pay the stash-conflict tax on every commit.
 - Never @mention anyone by hand — hand off through `next_role=` / `request_handoff`.
 - Never modify another agent's sub-issue.

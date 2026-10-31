@@ -120,7 +120,7 @@ Like the architect's ARCH_REVIEW, the reviewer doesn't decompose into phases. On
    - **End-to-end traceability**: every FR / NFR / AC walked through SPEC → CHANGES → tests
    - **OWASP Top 10 quick-pass**: A01 (access control / multitenancy), A02 (crypto), A03 (injection), A04 (design), A05 (misconfig), A07 (auth), A08 (integrity / HMAC), A09 (logging), A10 (SSRF)
    - **Code quality (SOLID)**: SRP, OCP, LSP, ISP, DIP — flag violations
-   - **Codex second opinion**: from the coder's worktree run `~/.claude/bin/codex-review --base master` and `--conventions`; treat each P1 as a finding candidate you verify yourself.
+   - **Codex second opinion**: from the coder's worktree run `~/.claude/bin/codex-review --base <base>` and `--conventions`; treat each P1 as a finding candidate you verify yourself.
    - **Conventions audit (per the repo `CLAUDE.md` and `$KB_DIR/kb/conventions.md`)**: rule-by-rule, not "overall impression". Cite each applicable rule + verdict (followed / deviation justified in CHANGES `deviations_from_plan` / violation not declared). Violations not declared by coder = finding. ESLint / ruff coverage of formatting does NOT substitute for naming / structure / pattern rules.
    - **Documentation completeness**: docstrings, README, ADR statuses, migration notes (per `$KB_DIR/kb/document.md`)
    - **Cross-cutting concerns**: implementation drift from SPEC, test coverage gaps, UX intent match

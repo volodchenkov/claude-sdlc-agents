@@ -135,7 +135,7 @@ Every plan lives on one of four tiers. **Tier determines who can apply and how.*
 | Tier | Scope | Who applies | How |
 |---|---|---|---|
 | **T0 Bootstrap** | `bootstrap/` — folder, KMS, state bucket, YDB lock, IAM federation | Human only, laptop | Once per tenant. Never in CI. |
-| **T1 Prod-destructive** | k8s cluster delete, DB delete, `on_delete` change on tenant FK, KMS key rotation, IAM role removal, bucket lifecycle change on prod bucket | Human only, protected env | Manual GitLab job on `main`, per-command confirmation in MR. Two reviewers. |
+| **T1 Prod-destructive** | k8s cluster delete, DB delete, `on_delete` change on tenant FK, KMS key rotation, IAM role removal, bucket lifecycle change on prod bucket | Human only, protected env | Manual GitLab job on `master`, per-command confirmation in MR. Two reviewers. |
 | **T2 Prod-safe** | non-destructive changes on prod stack — new module, added output, larger node group, new secret | GitLab CI manual job | Protected env, one reviewer, manual trigger. |
 | **T3 Non-prod** | any change on dev/stage | GitLab CI auto-apply on merge | Merged MR → CI `tofu apply` runs on-push. |
 
@@ -173,7 +173,7 @@ Stages:
 
 **MR cannot merge without:** clean plan, security = zero high-severity, human approval matching the blast tier.
 
-### 2. Infra deploy pipeline (on merge to `main`)
+### 2. Infra deploy pipeline (on merge to `master`)
 
 - **T3 (dev/stage):** auto-apply
 - **T2/T1 (prod):** manual jobs on protected environment. `apply` job downloads the plan artifact from the MR pipeline (same plan file, no re-plan → guarantees «what was reviewed is what applies»).
@@ -244,7 +244,7 @@ For a fresh YC tenant (e.g. new client bootstrap):
 4. Locally: `cd bootstrap && tofu init && tofu apply`. Answer prompts. Store `terraform.tfstate` in Lockbox as `<tenant>-bootstrap-state`.
 5. Commit `bootstrap/outputs.json` (public data) to git.
 6. Enable GitLab OIDC federation with the outputs from step 4.
-7. Push to `main`; CI runs plan for `stacks/platform/` (empty deploy on first run, but proves auth works).
+7. Push to `master`; CI runs plan for `stacks/platform/` (empty deploy on first run, but proves auth works).
 8. Fill in `stacks/platform/components/` (VPC → k8s → PG → Redis → buckets). One MR per component, tier T3 auto-applies to dev.
 9. Bootstrap Argo CD: `kubectl apply -f argocd/bootstrap/root-app.yaml`, wait for cluster-bootstrap apps to converge.
 10. First app deploy via Argo CD ApplicationSet. Never a manual `helm install`.

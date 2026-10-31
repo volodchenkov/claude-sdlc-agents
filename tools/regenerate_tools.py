@@ -21,6 +21,7 @@ frontmatter (we strip the workspace prefix and re-emit per workspace), so
 adding a new workspace is a pure expansion. To add or remove an op for an
 agent, edit the agent's frontmatter directly and re-run this script.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -49,7 +50,9 @@ def read_slugs_from_conductor(conductor_dir: Path) -> list[str]:
             text = yaml_path.read_text()
         except OSError:
             continue
-        m = re.search(r"^workspace_slug:\s*([a-z0-9][a-z0-9-]*)\s*$", text, re.MULTILINE)
+        m = re.search(
+            r"^workspace_slug:\s*([a-z0-9][a-z0-9-]*)\s*$", text, re.MULTILINE
+        )
         if m:
             slugs.add(m.group(1))
     return sorted(slugs)
@@ -74,7 +77,9 @@ def parse_tools(tools_line: str) -> tuple[list[str], list[str]]:
     return non_plane, sorted(plane_ops)
 
 
-def render_tools(non_plane: list[str], plane_ops: list[str], workspaces: list[str]) -> str:
+def render_tools(
+    non_plane: list[str], plane_ops: list[str], workspaces: list[str]
+) -> str:
     parts = list(non_plane)
     for op in plane_ops:
         for slug in workspaces:
@@ -93,7 +98,7 @@ def regenerate_agent(path: Path, workspaces: list[str]) -> bool:
     if not plane_ops:
         return False
     new_line = "tools: " + render_tools(non_plane, plane_ops, workspaces)
-    new_text = text[: m.start()] + new_line + text[m.end():]
+    new_text = text[: m.start()] + new_line + text[m.end() :]
     if new_text == text:
         return False
     path.write_text(new_text)

@@ -355,19 +355,23 @@ The initiator reads digests, not full artifacts. Post one comment, ≤40 lines, 
 
 ### 9.5 Coder run — worktree, whole PLAN, self-review
 
+`<base>` below is the repo's main line: `master`, or `dev` in a pre-prod repo that has no `master` yet (vineo). Never base a task on `dev` when `master` exists — there `dev` is a verification stand. Every command below uses `<base>`, never a literal branch name.
+
 1. **Start** only with `SPEC_APPROVED` on the SPEC sub-issue.
 2. **Worktree.** Code only in your own git worktree, never in the main checkout:
-   `git -C <repo> worktree add .claude/worktrees/<IDENT>-<N>-<role> -b <IDENT>-<N>-<role> master`
+   `git -C <repo> worktree add .claude/worktrees/<IDENT>-<N>-<role> -b <IDENT>-<N>-<role> <base>`
    Set it up per the repo `CLAUDE.md` worktree section (`.worktreeinclude` files, venv link). Re-entry reuses the existing worktree.
 3. **PLAN** goes into your sub-issue description as a checklist — no approval wait. (Doc-only mode, `pipeline:doc-only`: worktree yes, PLAN not required.) Execute **all** of it in this run, ticking boxes as you go; a crash resumes from the first unticked box.
 4. **Exemplars.** Every new element follows the exemplar the SPEC names. No exemplar fits → that is a new pattern: list it in the implementation summary with the reason.
 5. **Before handing off**, in the worktree:
    - full test suite and linters — commands from the repo `CLAUDE.md` only;
    - live smoke of the changed behaviour (request / task / page) with the observed result;
-   - `~/.claude/bin/codex-review --base master` (behaviour bugs) and `~/.claude/bin/codex-review --base master --conventions` (project rules and exemplars), fixing findings until "No findings", at most 3 rounds each;
-   - commit to the worktree branch. Never push, never merge to master.
+   - `~/.claude/bin/codex-review --base <base>` (behaviour bugs) and `~/.claude/bin/codex-review --base <base> --conventions` (project rules and exemplars), fixing findings until "No findings", at most 3 rounds each;
+   - **one commit per task**: the branch carries exactly one commit over `<base>`, in `plane-api.md` §11 format. Commit once, when the run is ready to hand off; every later change (rework, minor fixes) goes into that commit with `git commit --amend`; a rebase conflict (yours, or handed back by Tron after his `git rebase --abort` — then start it again with `git rebase <base>`) is resolved, `git add`-ed and finished with `git rebase --continue` — the branch is never pushed, so amending is safe. Amend only when that commit exists (`git rev-list --count <base>..HEAD` = 1); at 0 a plain `git commit` — an `--amend` there rewrites the last commit of `<base>`. A hook failure creates no commit: fix the cause, re-run the same command. Never push, never merge to `<base>`.
+     ❌ `feat: model` → `feat: serializer` → `fix: review findings` — three commits for COINEX-177.
+     ✅ one `feat(limits): per-entity limit (COINEX-177)`, amended through every round.
 6. **Hand off** with `post_changes(…, ready_for_review=True, next_role=…)` carrying the implementation summary (§9.4).
-7. Merge to master happens after gate 3: Tron fast-forwards your branch into master (hook-confirmed by the initiator) and removes your worktree and branch (`git branch -d` — refuses an unmerged branch, so it is part of the merge, not a separate approval). The initiator never merges branches by hand.
+7. Merge to `<base>` happens after gate 3: Tron rebases the branch onto `<base>` (conflict → `git rebase --abort`, post the conflict to your sub-issue, `request_handoff` to you, stop), then checks it is one commit over `<base>` (`git rev-list --count <base>..HEAD` = 1; more → `git reset --soft $(git merge-base <base> HEAD)` and one commit with the coder's message; the commit fails → stop and report; re-check the count is 1), runs the full test suite (red → back to you, no merge), fast-forwards it into `<base>` (hook-confirmed by the initiator) and removes your worktree and branch (`git branch -d` — refuses an unmerged branch, so it is part of the merge, not a separate approval). The initiator never merges branches by hand.
 
 ### 9.6 Stand — where testers run the code
 
