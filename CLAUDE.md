@@ -35,7 +35,7 @@ Hooks: whitespace / EOF / JSON / YAML, `ruff` on `tools/*.py` only (it would rew
 - Never `--no-verify` / `--no-gpg-sign` unless the user explicitly asked.
 - `git commit` / `git push` require explicit user OK before each batch — don't chain pushes from one "yes".
 - `--amend` is normal while you work on your task branch.
-- If a hook fails, the commit was not made: fix the cause and re-run the same command.
+- A failed pre-commit hook makes no commit: fix the cause, re-run the same command. A failed pre-push hook leaves the commit in place: fix, amend, push again.
 
 ## Memory hygiene
 
