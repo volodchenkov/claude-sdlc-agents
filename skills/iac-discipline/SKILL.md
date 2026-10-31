@@ -135,7 +135,7 @@ Every plan lives on one of four tiers. **Tier determines who can apply and how.*
 | Tier | Scope | Who applies | How |
 |---|---|---|---|
 | **T0 Bootstrap** | `bootstrap/` — folder, KMS, state bucket, YDB lock, IAM federation | Human only, laptop | Once per tenant. Never in CI. |
-| **T1 Prod-destructive** | k8s cluster delete, DB delete, `on_delete` change on tenant FK, KMS key rotation, IAM role removal, bucket lifecycle change on prod bucket | Human only, protected env | Manual GitLab job on `main`, per-command confirmation in MR. Two reviewers. |
+| **T1 Prod-destructive** | k8s cluster delete, DB delete, `on_delete` change on tenant FK, KMS key rotation, IAM role removal, bucket lifecycle change on prod bucket | Human only, protected env | Manual GitLab job on `master`, per-command confirmation in MR. Two reviewers. |
 | **T2 Prod-safe** | non-destructive changes on prod stack — new module, added output, larger node group, new secret | GitLab CI manual job | Protected env, one reviewer, manual trigger. |
 | **T3 Non-prod** | any change on dev/stage | GitLab CI auto-apply on merge | Merged MR → CI `tofu apply` runs on-push. |
 

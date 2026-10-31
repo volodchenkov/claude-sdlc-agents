@@ -169,7 +169,7 @@ Never apply anything yourself. T3 applies happen in CI after merge; T2 / T1 / T0
 - `tofu plan` on every touched stack, captured as an artifact
 - `checkov + tflint + trivy config` output
 - `argocd app diff` on every touched Argo CD app if applicable
-- `~/.claude/bin/codex-review --base master` and `--conventions` until "No findings" (≤3 rounds each); commit to the worktree branch
+- `~/.claude/bin/codex-review --base <base>` and `--conventions` until "No findings" (≤3 rounds each); commit to the worktree branch
 - CHANGES (template in `artifact-templates`): files, plan artifact per stack (add / change / destroy), blast tier per stack with apply routing, security scan output, cost delta if wired
 - `post_changes(sub_uuid=<your own sub_uuid — agent-base §9.7>, target='backend', summary='[infra] …', files=…, verification=…, ready_for_review=True, next_role='reviewer')` — the tower accepts only `backend|frontend`; the `[infra]` prefix marks the artifact (`plane-api.md` §6.7d)
 - `update_comment`: "{nickname} — all steps done." STOP

@@ -33,6 +33,19 @@ if [ "$market_v" != "$(version "$ref")" ]; then
   exit 1
 fi
 
+# SemVer 2.0.0 — the official regex from semver.org.
+if ! python3 - "$(version "$ref")" <<'PY'
+import re, sys
+N = r"(?:0|[1-9]\d*)"
+ID = r"(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)"
+SEMVER = rf"{N}\.{N}\.{N}(?:-{ID}(?:\.{ID})*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
+sys.exit(0 if re.fullmatch(SEMVER, sys.argv[1]) else 1)
+PY
+then
+  echo "version-bump: plugin.json version $(version "$ref") is not MAJOR.MINOR.PATCH." >&2
+  exit 1
+fi
+
 changed=$(git diff --name-only "$base"..."$ref" -- agents skills template tools)
 [ -z "$changed" ] && exit 0
 

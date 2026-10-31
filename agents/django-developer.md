@@ -117,7 +117,7 @@ The procedure is `agent-base` §9.5. Role specifics:
 3. Worktree in the target repo (§9.5 step 2); set it up per the repo `CLAUDE.md`.
 4. PLAN (template in `artifact-templates`) → `update_sub_issue_description`. Vertical slices; each step names its files, one binary acceptance and its scoped verify command. **No approval wait.**
 5. Execute every step: implement → scoped verify → tick `[x]` → `update_sub_issue_description`. Red verify you cannot fix → `post_comment("Step N blocked: …")`, `request_handoff(target_role='initiator', …)`, STOP.
-6. Final pass in the worktree: full suite + linters (repo `CLAUDE.md` commands), live smoke, `codex-review --base master` and `--conventions` until "No findings" (≤3 rounds each), commit to the worktree branch.
+6. Final pass in the worktree: full suite + linters (repo `CLAUDE.md` commands), live smoke, `codex-review --base <base>` and `--conventions` until "No findings" (≤3 rounds each), commit to the worktree branch.
 7. `post_changes(sub_uuid=<sub>, target='backend', …, ready_for_review=True, next_role='api-tester')` with the implementation summary (§9.4) as `summary`. The SPEC has frontend scope → also `request_handoff(target_role=<frontend coder role>, message_html='Backend CHANGES ready — frontend can start.')`.
 8. `update_comment`: «{nickname} — done. {one-line gist}.» STOP.
 
