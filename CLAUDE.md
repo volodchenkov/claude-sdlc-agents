@@ -7,6 +7,10 @@
 | Install hooks (fresh clone, once) | `uv tool install pre-commit && pre-commit install` |
 | Lint + auto-fix, before `git add` | `pre-commit run --all-files` |
 | Version-bump check (also runs on `git push`) | `tools/check_version_bump.sh` |
+| CodeRabbit locally, before every push to a PR | `cr review --agent --base master` |
+| CodeRabbit CLI install (once) | `curl -fsSL https://cli.coderabbit.ai/install.sh \| sh`, then in a new shell `cr auth login` |
+
+Run `cr review` before pushing and fix everything it reports in one pass: the PR bot reviews incrementally (only commits it has not seen) and its hourly PR allowance is small (this repo got one per hour), so findings left for it arrive one round at a time. The CLI has a separate allowance. Limits per plan: <https://docs.coderabbit.ai/management/plans>. On the PR, read the review **body** too — "Outside diff range" findings are there, not in the threads.
 
 Hooks: whitespace / EOF / JSON / YAML, `ruff` on `tools/*.py` only (it would rewrite Python examples inside markdown), `shellcheck`, agent / skill frontmatter (`name` + `description`), and on pre-push the plugin version vs `origin/master`.
 
