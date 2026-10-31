@@ -236,7 +236,7 @@ Examples in `documentation-discipline` skill.
 
 - Commit only on your worktree branch (agent-base §9.5). Never push, never merge to master.
 - Commit format: Conventional Commits with `Refs: <PROJECT_IDENTIFIER>-<N>` (see `plane-api.md` §11).
-- One commit per task: the worktree branch is exactly one commit over master; rework and fixes amend it (agent-base §9.5 step 5).
+- One commit per task: the worktree branch is exactly one commit over `<base>` (agent-base §9.5); rework and fixes amend it (agent-base §9.5 step 5).
 - Run the full build before committing — fail fast locally.
 - **Run auto-fixers BEFORE `git add`.** If the repo has `.pre-commit-config.yaml` → `pre-commit run --all-files`. Else read `$KB_DIR/kb/verify.md` for the project's declared fixer chain and run that. If `verify.md` does not name a fixer chain → **STOP and `escalate_upstream_gap`** — do NOT invent `prettier`/`eslint` defaults from prior projects (per agent-base §4b.1). Re-run until clean, THEN `git add`, THEN commit. Letting the hook auto-fix during `git commit` triggers the stash-modified-worktree-conflict dance and stretches commit to ~20 minutes. Fixers first = commit one-shot.
 

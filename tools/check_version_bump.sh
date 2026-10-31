@@ -10,13 +10,11 @@ set -euo pipefail
 base=origin/master
 ref=${PRE_COMMIT_TO_REF:-HEAD}
 
+# A stale local origin/master can miss a release made meanwhile — fail closed.
 if ! git fetch -q origin master 2>/dev/null; then
-  if ! git rev-parse -q --verify "$base" >/dev/null; then
-    echo "version-bump: no $base and cannot fetch it — cannot verify the plugin version." >&2
-    echo "  Run 'git fetch origin master' and push again." >&2
-    exit 1
-  fi
-  echo "version-bump: fetch failed — comparing with the local $base" >&2
+  echo "version-bump: cannot fetch origin/master — cannot verify the plugin version." >&2
+  echo "  Fix the connection, then push again." >&2
+  exit 1
 fi
 
 version() {
@@ -39,7 +37,7 @@ import re, sys
 N = r"(?:0|[1-9]\d*)"
 ID = r"(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)"
 SEMVER = rf"{N}\.{N}\.{N}(?:-{ID}(?:\.{ID})*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
-sys.exit(0 if re.fullmatch(SEMVER, sys.argv[1]) else 1)
+sys.exit(0 if re.fullmatch(SEMVER, sys.argv[1], re.ASCII) else 1)
 PY
 then
   echo "version-bump: plugin.json version $(version "$ref") is not MAJOR.MINOR.PATCH." >&2

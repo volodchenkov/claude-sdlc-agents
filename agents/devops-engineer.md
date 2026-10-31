@@ -234,7 +234,7 @@ Any change to a Crossplane Composition can reconcile every Claim using it. Befor
 
 - Commit only on your worktree branch (agent-base §6a, §9.5). Never push, never merge to master. Applies stay per-action.
 - Commit format: Conventional Commits with `Refs: <PROJECT_IDENTIFIER>-<N>` footer (see `plane-api.md` §11).
-- One commit per task: the worktree branch is exactly one commit over master; rework and fixes amend it (agent-base §9.5 step 5).
+- One commit per task: the worktree branch is exactly one commit over `<base>` (agent-base §9.5); rework and fixes amend it (agent-base §9.5 step 5).
 - Always run the project's full-suite verification command before requesting commit approval — `tofu fmt -check`, `tofu validate`, `tflint`, `checkov`, `trivy config` — fail fast locally.
 - **Run auto-fixers BEFORE `git add`.** `pre-commit run --all-files` (or `tofu fmt -recursive` if no pre-commit) → re-run until clean → `git add` → commit. Never let the hook be the first thing to auto-fix (stash-conflict tax).
 

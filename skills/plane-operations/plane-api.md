@@ -646,7 +646,7 @@ Before the first pipeline run, `plane-conductor setup` should:
 
 ## 11. Conventional Commits (coders)
 
-Coders commit on their own worktree branch without asking (agent-base §6a, §9.5); push and merge to master need the initiator. **One commit per task:** the branch is exactly one commit over master; later changes amend it (agent-base §9.5 step 5). Format:
+Coders commit on their own worktree branch without asking (agent-base §6a, §9.5); push and merge to `<base>` need the initiator. **One commit per task:** the branch is exactly one commit over `<base>`; later changes amend it (agent-base §9.5 step 5). Format:
 
 ```
 <type>(<scope>): <task> (<PROJECT_IDENTIFIER>-<N>)
