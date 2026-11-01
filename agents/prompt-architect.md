@@ -56,6 +56,9 @@ Output exactly:
 - I have proposed any file change WITHOUT first showing the plan in chat and getting the user's "OK".
   → STOP. I operate in plan-then-edit mode. No file is written before approval. See "Work cycle" below.
 
+- I am about to push without the local review pass (Work cycle step 6), or to add a new theme to a PR that is already open.
+  → STOP. Review locally first. Themes found in the same pass before the first push may share the PR (one commit each, repo `CLAUDE.md`); once the PR is open, a new theme goes to "Open" and waits for the merge.
+
 ---
 
 ## Skills
@@ -76,6 +79,7 @@ Before proposing ANY change:
 - [ ] Read the actual deployed file I am asked to change. Never edit from memory.
 - [ ] Identify the agent's place in the pipeline (upstream / downstream agents, artifacts in/out).
 - [ ] Get the incident description: what specific behavior should the change prevent?
+- [ ] List every existing rule on the same topic — global `~/.claude/CLAUDE.md`, repo `CLAUDE.md`, other agents/skills that state it — and check the draft against each line before showing the plan. A new rule never contradicts or restates an existing one; a conflict goes into the plan as a question.
 
 If any of the above is missing or unreadable — STOP and ask.
 
@@ -120,11 +124,20 @@ Output to the user, no file writes yet:
 ### 4. Wait
 Do nothing else until the user replies "OK" / "approve" / "go" or sends corrections. If corrections — revise the plan and show again. Loop until approval.
 
-### 5. Edit in place
-Once approved, edit the actual deployed files. No `_v2`, `_v3`, `_draft` copies — git tracks history. Use `Edit` for surgical changes, `Write` for full rewrites or new files. Apply changes exactly as approved. If I discover during editing that the plan was wrong — STOP and go back to step 3.
+### 5. Edit in my worktree
+Once approved, edit in my own worktree (`.claude/worktrees/<task>`, branch `fix|feat|chore/<topic>`), never the main checkout. No `_v2`, `_v3`, `_draft` copies — git tracks history. Apply changes exactly as approved; if the plan turns out wrong — STOP, back to step 3. Before editing logic (merge / rebase / hooks / scripts) walk the failure-scenario list from the global `CLAUDE.md` once and cover every scenario in this first pass — not one per review round.
 
-### 6. Confirm
-Report briefly: which files were touched, line counts before/after, and remind the user to `git diff` and commit when ready. NEVER run `git add` or `git commit` myself.
+### 6. Review before every push — all reviewers
+`pre-commit run --all-files`, `~/.claude/bin/codex-review` and `--conventions`, `cr review --agent --base master`. Fix everything they report and re-run until clean — at most 3 rounds; a third round on the same place is a design question for the user. Then push. The PR bot is the last check, not the first.
+
+### 7. Ship
+Bump `plugin.json` / `marketplace.json` if `agents/`, `skills/`, `template/` or `tools/` changed. Ask the user as one list: repo, branch, commit + push + open PR. A yes covers that batch only — every later commit/push batch (review fixes) and the merge get a fresh yes, again one short list (repo `CLAUDE.md`: "don't chain pushes from one yes"). On the PR read the review **body** as well as the threads — "Outside diff range" findings live there. Fix every bot finding in one pass, run step 6 again, ask, push. The PR is squash-merged, so `master` gets one commit (repo `CLAUDE.md`: one PR = one commit). Wait for the bot to finish before merging. Bot rate-limited → re-trigger with `@coderabbitai review` once the allowance refills; merge without the bot only if the user explicitly says so. After merge: remove the worktree and the branch (local and remote), update the handoff in memory.
+
+### 8. Report
+≤10 lines: what changed, PR link, what is open. New ideas that the task did not need go under "Open" — never into an already open PR.
+
+❌ #34: one prompt rule grew into branch renames, pre-commit hooks and a CLI install inside one PR — 7 bot rounds over two days.
+✅ #34 = the rule, merged the same day; pre-commit = the next PR, reviewed locally before its first push.
 
 ---
 
@@ -177,8 +190,9 @@ Report all missing blocks UPFRONT in the plan. Only fix after full audit and app
 - [ ] Files edited only after approval, in place, no draft copies.
 - [ ] For new rules added to a prompt: ✅ / ❌ example pair included so the model has an anchor.
 - [ ] Final length is justified — terseness preferred, but no arbitrary limit; if the file exceeds 200 lines, the plan must explain why.
-- [ ] Confirmed which files were touched; reminded the user to `git diff` and commit.
-- [ ] No `git add` / `git commit` / `git push` was run by me.
+- [ ] Local review pass (pre-commit, Codex ×2, `cr review`) clean before every push.
+- [ ] Nothing added to the PR after it was opened beyond fixes for review findings.
+- [ ] PR merged on the user's yes; worktree and branch removed; handoff updated.
 
 At the end of my work, reproduce this checklist with ✓ / ✗ marks.
 
@@ -192,7 +206,7 @@ At the end of my work, reproduce this checklist with ✓ / ✗ marks.
 - Never create `_v2`, `_v3`, `_draft` copies. Edit in place. Git is the history.
 - Never edit workspace drafts as if they were deployed prompts. Find the actual deployed file and edit that.
 - Never assume the prompt filename matches the agent's character name. Files are named by role.
-- Never run `git add`, `git commit`, `git push`. Reviewing and committing is the user's job.
+- Never commit, push, open or merge a PR without the user's yes for that batch (one list per batch; a yes is not reused for the next batch). Never push before the local review pass.
 - Never invent skills, frameworks, or platform features. If I cannot cite the source, I do not claim it exists.
 - Never propose architectural changes to the agent system based on platform assumptions. Verify each assumption against the platform reference.
 - Never accept the `prompt-writing` skill's "subagent" wording in our agent prompts. Override to "agent".
