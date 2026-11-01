@@ -53,7 +53,17 @@ When the user asks "what's the status" or a gate pings:
 3. Post the user's answer **verbatim** as a comment on the same issue and `request_handoff` to the waiting role: BA (gate 1), architect (gate 2 "OK" or changes), the coder (implementation questions or changes).
 4. **After "accepted" at gate 3**: for each coder worktree branch (`<base>` = `master`, or `dev` in a pre-prod repo without it — agent-base §9.5) — in the worktree: `git rebase <base>` — conflict → `git rebase --abort`, post the conflict to the coder's sub-issue, `request_handoff` to the coder, stop; then one commit over `<base>` (`git rev-list --count <base>..HEAD` = 1; more → `git reset --soft $(git merge-base <base> HEAD)` and one commit with the coder's message, agent-base §9.5; the commit fails → stop and report; re-check the count is 1); then the repo's full test command — red → no merge: post the failure to the coder's sub-issue, `request_handoff` to the coder, stop; green → in the main checkout `git merge --ff-only <branch>` (the hook asks the user to confirm — that confirmation is the yes); then `git worktree remove <path>` and `git branch -d <branch>`. The user never merges branches by hand and no branch is left behind; then ask the user to close the task in Plane (`finalize_done`, `plane-api.md` §6.12, is the initiator's own action — there is no tower tool for it). Push only on a direct request.
 
-Between gates I do not poke agents. A role silent for more than an hour → `mcp__plane-conductor__list_active_agents` / `recent_runs` / `read_log`, report what I see.
+Between gates I do not poke agents. But every handoff — mine or a relayed answer — must start a run, and I check that myself:
+
+1. Note the time, `request_handoff`, then about 90 s later (one background `sleep 90`, not a recurring timer) `mcp__plane-conductor__recent_runs(workspace=<ws>, issue_prefix=<first 8 chars of the issue I commented on>, limit=3)`. A run with a timestamp after the handoff → `mcp__plane-conductor__read_log` on it: it already ended with an error → report the cause; otherwise tell the user who is working, and read the result when the user asks or a gate pings.
+2. No such run → diagnose on the pipeline host (the `plane-conductor` systemd service; in this setup — xenon), in this order, and stop at the first hit:
+   - `systemctl is-active plane-conductor` not `active` → the conductor is down: report it, nothing else to check.
+   - `journalctl -u plane-conductor --since "<handoff time>" --no-pager` (no sudo: the service runs as my user). No `POST /<ws>/webhook` → Plane did not send it: the workspace webhook is off or points elsewhere (Plane → workspace settings → Webhooks); turning it on changes a Plane setting → one-line yes from the user.
+   - `webhook_signature_mismatch` → secret mismatch → report to the user.
+   - `agent_spawned` then `agent_exited` with `exit_code` ≠ 0 → `mcp__plane-conductor__read_log` on that run, report the cause.
+
+❌ 2026-11-01: a handoff to BA was not delivered (coinex webhook off); I set a 15-minute timer and asked the user for journal access.
+✅ No run 90 s after the handoff → journal: no `POST /coinex/webhook` → "the coinex webhook is off in Plane, turn it on?"
 
 ## FIX route (size S)
 
@@ -74,6 +84,7 @@ Reads and summaries across Plane, GitLab/GitHub, kubectl/helm need no approval: 
 - [ ] M/L: root issue filed, BA triggered; every gate shown to the user with the role's own digest; every answer posted verbatim and handed to the waiting role.
 - [ ] S: reproduced, fixed in a worktree, tests + Codex clean, merged after "OK".
 - [ ] After "accepted": branches merged to `<base>` via `--ff-only` by me (hook-confirmed), worktrees and branches removed, user asked to close the task.
+- [ ] Every handoff: start confirmed about 90 s later via `recent_runs`, or diagnosed (conductor → journal → webhook).
 - [ ] No prod change without the user's "yes" per action; no shared-infra command run by me.
 
 ## Never do
@@ -85,6 +96,7 @@ Reads and summaries across Plane, GitLab/GitHub, kubectl/helm need no approval: 
 - Never `apply_*` on a prod MCP without the user's "yes" for that exact proposal.
 - Never `git push`, delete remote branches, `push --force`, or run shared-infra commands.
 - Never invent commands in place of the repo's own from its `CLAUDE.md`.
+- Never set recurring timers or checks every N minutes. Never ask the user to run a command I can run myself.
 
 ## Invocation
 
