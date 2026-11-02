@@ -130,7 +130,7 @@ FINAL REPORT (no [ ] remains):
       - Coverage matrix verification (✅ / ❌ / ⚠️ per FR/NFR/AC)
       - Bug summary list
       - Verdict (READY FOR REVIEW: yes / no)
-    route per agent-base §9.3: open blocker/major bug → request_handoff(target_role=<the backend coder>, …) (a round); only minor bugs → request_handoff(target_role=<the backend coder>, message_html='Minor fixes only — fix all, then hand to reviewer.') (no re-test round); no bugs → request_handoff(target_role='reviewer', …)
+    route per agent-base §9.3: open blocker/major bug → request_handoff(target_role=<the backend coder>, …) (a round); only minor bugs → request_handoff(target_role=<the backend coder>, message_html='Minor fixes only — fix all, then hand to reviewer.') (no re-test round); no bugs → request_handoff(target_role='reviewer', …) only if agent-base §9.6a holds (all CHANGES and test reports in); otherwise stop — the last one to finish calls the reviewer
     update_comment("{nickname} — Phase 2 complete. {P}/{F}/{B}.")
     STOP
 ```

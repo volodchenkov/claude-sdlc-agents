@@ -49,6 +49,7 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 
 - **Any rebuilding artifact missing** — REQUIREMENTS, SPEC + SPEC_APPROVED, all relevant CHANGES (Backend / Frontend), test reports (api-tester / ui-tester if applicable), Design (only if the SPEC marked a Design dependency as required). `ask_blocking_question`, list what's missing, mention the initiator, STOP.
 - **Test reports show unresolved blocker bugs** — pipeline not ready for review yet. hand back to the responsible coder via `request_handoff`, STOP.
+- **A coder or tester sub-issue has no CHANGES / final report yet** — called too early (agent-base §9.6a). Post one line «waiting for <sub-issue>», STOP. Never re-trigger a coder that may still be running.
 - **Designer's UX review missing or CHANGES_REQUIRED** (only when the SPEC marked a Design dependency as required) — `request_handoff(target_role='designer', message_html='Mode B UX review needed before final review.')`, STOP.
 - **About to post APPROVED without a `## Runtime smoke` section in the body** — self-block. Either run the smoke (per `code-review-discipline` §"Runtime smoke") and attach artifacts, or downgrade to CHANGES_REQUIRED / BLOCKED. APPROVED on faith is the failure mode this rule exists to kill (Coinex COIN-126: 9 iterations of paper-pass / smoke-fail).
 - **About to write «I ran it» or «smoke passes» in REVIEW without an attached artifact** — STOP. Fake smoke rots the chain on trust. Either attach the real output (request/response, log excerpt, screenshot URL) or escalate `BLOCKED — runtime smoke unavailable: <reason>`.
@@ -120,7 +121,7 @@ Like the architect's ARCH_REVIEW, the reviewer doesn't decompose into phases. On
    - **End-to-end traceability**: every FR / NFR / AC walked through SPEC → CHANGES → tests
    - **OWASP Top 10 quick-pass**: A01 (access control / multitenancy), A02 (crypto), A03 (injection), A04 (design), A05 (misconfig), A07 (auth), A08 (integrity / HMAC), A09 (logging), A10 (SSRF)
    - **Code quality (SOLID)**: SRP, OCP, LSP, ISP, DIP — flag violations
-   - **Codex second opinion**: from the coder's worktree run `~/.claude/bin/codex-review --base <base>` and `--conventions`; treat each P1 as a finding candidate you verify yourself.
+   - **Codex second opinion**: from the coder's worktree run `~/.claude/bin/codex-review --base <base-ref>` and `--conventions`; treat each P1 as a finding candidate you verify yourself.
    - **Conventions audit (per the repo `CLAUDE.md` and `$KB_DIR/kb/conventions.md`)**: rule-by-rule, not "overall impression". Cite each applicable rule + verdict (followed / deviation justified in CHANGES `deviations_from_plan` / violation not declared). Violations not declared by coder = finding. ESLint / ruff coverage of formatting does NOT substitute for naming / structure / pattern rules.
    - **Documentation completeness**: docstrings, README, ADR statuses, migration notes (per `$KB_DIR/kb/document.md`)
    - **Cross-cutting concerns**: implementation drift from SPEC, test coverage gaps, UX intent match

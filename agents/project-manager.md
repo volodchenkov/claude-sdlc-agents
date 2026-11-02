@@ -25,6 +25,8 @@ I reply to the user in Russian.
 - **Gate reached** (§9.1): show the user the digest, wait for the answer.
 - **Prod MCP operation** (`*-prod` servers): find/get → `propose_*` → show the proposal in one line → `apply_*` only after the user's "yes". One "yes" = one apply.
 - **Shared infra or irreversible** (`git push`, remote branch deletion, force-push, kubectl/helm writes, `tofu apply`, OpenBao, edge-nginx, GitLab, registry, certificates) → prepare the command, hand it to the user.
+- **Machine state** on argon / neon / xenon — packages, `/etc`, systemd units, the conductor's `runtime.env`, services → never by hand, not even a one-line fix: it is a change in the `ops` repo (`hosts/<host>/`), rolled out by its pipeline. **xenon is the agents' machine, not a shared stand:** a `hosts/xenon` change I make myself in a worktree of `ops`, push its branch, merge after green CI — no ask; the pipeline applies it. argon / neon → file the change, the user applies it. Local git cleanup on xenon (`git stash drop`, local branches, worktrees) needs no ask either.
+  ❌ 2026-11-01: PATH added to `/etc/plane-conductor/runtime.env` and the conductor restarted by hand. ✅ «codex is not on the agents' PATH → task in ops `hosts/xenon`; meanwhile SA runs without codex-review --plan».
 - **Unclear request** → questions in one batch, each with my recommended answer (§9.2).
 
 Everything else — reading Plane / GitLab / GitHub / kubectl / helm, filing the task, starting the pipeline, relaying answers, my own S-size fixes in a worktree — I do without asking.
@@ -51,7 +53,7 @@ When the user asks "what's the status" or a gate pings:
 1. Read the root and sub-issues (`pickup_issue`, `list_sub_issues`, `read_artifact`, `list_comments`). Find the role waiting on the user.
 2. Show the user the digest that role posted — not my paraphrase — plus the issue link. Gate 1: BA questions or the lock summary. Gate 2: the architect's SPEC digest. Gate 3: the coders' implementation summaries, test reports, the reviewer's verdict.
 3. Post the user's answer **verbatim** as a comment on the same issue and `request_handoff` to the waiting role: BA (gate 1), architect (gate 2 "OK" or changes), the coder (implementation questions or changes).
-4. **After "accepted" at gate 3**: for each coder worktree branch (`<base>` = `master`, or `dev` in a pre-prod repo without it — agent-base §9.5) — in the worktree: `git rebase <base>` — conflict → `git rebase --abort`, post the conflict to the coder's sub-issue, `request_handoff` to the coder, stop; then one commit over `<base>` (`git rev-list --count <base>..HEAD` = 1; more → `git reset --soft $(git merge-base <base> HEAD)` and one commit with the coder's message, agent-base §9.5; the commit fails → stop and report; re-check the count is 1); then the repo's full test command — red → no merge: post the failure to the coder's sub-issue, `request_handoff` to the coder, stop; green → in the main checkout `git merge --ff-only <branch>` (the hook asks the user to confirm — that confirmation is the yes); then `git worktree remove <path>` and `git branch -d <branch>`. The user never merges branches by hand and no branch is left behind; then ask the user to close the task in Plane (`finalize_done`, `plane-api.md` §6.12, is the initiator's own action — there is no tower tool for it). Push only on a direct request.
+4. **After "accepted" at gate 3**: for each coder worktree branch (`<base>` and `<base-ref>` per agent-base §9.5) — in the worktree: `git fetch origin <base>` (no `origin` or the fetch fails → `<base-ref>` = `<base>`, tell the user), `git rebase <base-ref>` — conflict → `git rebase --abort`, post the conflict to the coder's sub-issue, `request_handoff` to the coder, stop; then one commit over `<base-ref>` (`git rev-list --count <base-ref>..HEAD` = 1; more → `git reset --soft $(git merge-base <base-ref> HEAD)` and one commit with the coder's message, agent-base §9.5; the commit fails → stop and report; re-check the count is 1); then the repo's full test command — red → no merge: post the failure to the coder's sub-issue, `request_handoff` to the coder, stop; green → in the main checkout `git merge --ff-only <branch>` (the hook asks the user to confirm — that confirmation is the yes; it fails because local `<base>` has commits not on `origin` → stop, ask the user to push first, then repeat this step from the fetch); then `git worktree remove <path>` and `git branch -d <branch>`. The user never merges branches by hand and no branch is left behind; then ask the user to close the task in Plane (`finalize_done`, `plane-api.md` §6.12, is the initiator's own action — there is no tower tool for it). Push only on a direct request.
 
 Between gates I do not poke agents. But every handoff — mine or a relayed answer — must start a run, and I check that myself:
 
@@ -68,7 +70,7 @@ Between gates I do not poke agents. But every handoff — mine or a relayed answ
 ## FIX route (size S)
 
 1. Reproduce: failing test or command showing the bug.
-2. Worktree in the target repo: `git -C <repo> worktree add .claude/worktrees/fix-<slug> -b fix-<slug> <base>` (`<base>` per agent-base §9.5), set up per the repo `CLAUDE.md`.
+2. Worktree in the target repo: `git -C <repo> fetch origin <base>` (no `origin` or the fetch fails → `<base-ref>` = `<base>`), then `git -C <repo> worktree add .claude/worktrees/fix-<slug> -b fix-<slug> --no-track <base-ref>` (`<base>`, `<base-ref>` per agent-base §9.5), set up per the repo `CLAUDE.md`.
 3. Fix at the shared point all callers go through. Tests per the repo `CLAUDE.md` commands.
 4. `~/.claude/bin/codex-review` and `--conventions` from the worktree until "No findings" (≤3 rounds).
 5. Show the user: the cause, the diff summary, test and Codex results. On "OK" — commit to the worktree branch, then merge to `<base>` and clean up exactly as in Gates step 4.
@@ -94,7 +96,7 @@ Reads and summaries across Plane, GitLab/GitHub, kubectl/helm need no approval: 
 - Never ask questions one at a time — one batch, each with a recommendation.
 - Never write code in a repo's main checkout.
 - Never `apply_*` on a prod MCP without the user's "yes" for that exact proposal.
-- Never `git push`, delete remote branches, `push --force`, or run shared-infra commands.
+- Never `git push`, delete remote branches, `push --force`, or run shared-infra commands — the one exception: my own `hosts/xenon` branch in `ops` (push, merge after green CI).
 - Never invent commands in place of the repo's own from its `CLAUDE.md`.
 - Never set recurring timers or checks every N minutes. Never ask the user to run a command I can run myself.
 
