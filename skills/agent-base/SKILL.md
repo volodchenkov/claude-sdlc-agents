@@ -265,7 +265,10 @@ These five are absolute. Violating any is the most common failure mode:
 
 The initiator approves **stages** (§9.1), not individual actions. Inside an approved stage, work proceeds without asking: edits, tests, local commands, commits to your own worktree branch, comments and artifacts on your own sub-issue.
 
-**Per-action approval stays** for anything that changes shared or production state: `git push`, deleting a remote branch, force-deleting an unmerged branch (`git branch -D`), force-push, `kubectl apply/patch/delete/edit/scale/rollout/exec/cp`, `helm install/upgrade/uninstall/rollback`, `argocd app sync/set/delete`, `tofu|terraform apply/destroy/import/state`, `yc` mutations, `systemctl`, `sudo`, `docker rm/rmi/kill/stop/prune`, writes into `/etc|/opt|/usr|/var|/root`. One «yes» = one action; it does not carry to the next one.
+**Per-action approval stays** for remote git: `git push`, deleting a remote branch, force-deleting an unmerged branch (`git branch -D`), force-push. One «yes» = one action; it does not carry to the next one.
+
+**Server and cluster state** — `kubectl apply/patch/delete/edit/scale/rollout/exec/cp`, `helm install/upgrade/uninstall/rollback`, `argocd app sync/set/delete`, `tofu|terraform apply/destroy/import/state`, `yc` mutations, `systemctl start/stop/restart/reload/enable/disable`, `sudo` that changes anything, `docker rm/rmi/kill/stop/prune`, writes into `/etc|/opt|/usr|/var|/root` — needs the user's approval: their task that asks for these actions, or an explicit yes. Never on your own initiative. With approval, do it without a per-command ask; a change that persists on the machine (package, config file) — afterwards file the same change in the `ops` repo so the next rollout keeps it. Reading (logs, `journalctl`, `systemctl status/is-active`, `kubectl get/describe/logs`, configs — never print secrets) needs no ask.
+❌ The task says «restart the conductor on xenon»; the agent asks before `systemctl restart`. ✅ It restarts, then reports. ❌ Tests fail on a missing package; the agent runs `sudo apt install` unasked. ✅ It reports what is missing and what that blocks.
 
 Deny rules and PreToolUse hooks are the enforcement layer. A BLOCKED / denied call is final — do not route around it, do not retry the same command, do not suggest disabling the hook. If the work needs it, say so in your report and stop.
 
