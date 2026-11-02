@@ -122,7 +122,7 @@ Run every batch in this invocation, ticking each as it finishes; a crash resumes
 
 FINAL REPORT (no [ ] remains):
     post final test report (template in `artifact-templates`)
-    route per agent-base §9.3: open blocker/major bug → request_handoff(target_role=<the frontend coder>, …) (a round); only minor bugs → request_handoff(target_role=<the frontend coder>, message_html='Minor fixes only — fix all, then hand to reviewer.') (no re-test round); no bugs → request_handoff(target_role='reviewer', …)
+    route per agent-base §9.3: open blocker/major bug → request_handoff(target_role=<the frontend coder>, …) (a round); only minor bugs → request_handoff(target_role=<the frontend coder>, message_html='Minor fixes only — fix all, then hand to reviewer.') (no re-test round); no bugs → request_handoff(target_role='reviewer', …) only if agent-base §9.6a holds (all CHANGES and test reports in); otherwise stop — the last one to finish calls the reviewer
     update_comment("{nickname} — Phase 2 complete. {P}/{F}/{B}. Screenshots attached.")
     STOP
 ```

@@ -331,9 +331,11 @@ The initiator may ask questions at any gate. Answer from the artifact or the cod
 
 - All open questions for one artifact go in **one comment**, numbered, each with your recommended answer and a one-line reason:
   > 1. Count the limit per legal entity or per customer? Recommend per legal entity — that is how `limits/services.py:131` works.
-- Answer from code, docs and existing artifacts first; ask only what they cannot answer.
+- Answer from code, docs and existing artifacts first; ask only what they cannot answer. **Every recommendation cites its source** — `file:line`, a doc section, or an earlier answer of the initiator. No source → read until you have one; never offer a number or a rule you made up, never write «if X…» about something the code can tell you.
+- **Access you will need goes in the first batch.** A fact you cannot check from here (server, vendor console, CLI not installed, a doc behind a login) → a numbered question in round 1: «allow a read-only check of X on Y? Recommend yes — needed for §…». Never discover it mid-review and ask separately.
 - At most **two rounds** per artifact. After that, decide with the recommended answer and list the decision as an explicit assumption in the digest the initiator sees at the next gate.
 - ❌ five phase-by-phase rounds of 3 questions each. ✅ one list of 11, the initiator answers "all as recommended, except 4 — no".
+- ❌ COINEX-178: «min 20 results» with no source → «откуда это число?»; QSALE-41: CLI flags unverified, the spike permission asked at review iteration 3. ✅ «debounce 300 ms, as `Autocomplete.tsx:123`»; «allow `claude --help` on xenon?» in round 1.
 
 ### 9.3 Review rounds — converge, don't drip
 
@@ -357,25 +359,31 @@ The initiator reads digests, not full artifacts. Post one comment, ≤40 lines, 
 
 `<base>` below is the repo's main line: `master`, or `dev` in a pre-prod repo that has no `master` yet (vineo). Never base a task on `dev` when `master` exists — there `dev` is a verification stand. Every command below uses `<base>`, never a literal branch name.
 
+`<base-ref>` is what you branch from and compare against: `origin/<base>` right after `git -C <repo> fetch origin <base>` — run it at step 2, before step 5 and before any rebase, so a stale local `<base>` never becomes your starting point. No `origin` remote, or the fetch fails → `<base-ref>` = `<base>`, and the implementation summary says «base not refreshed: <reason>».
+
 1. **Start** only with `SPEC_APPROVED` on the SPEC sub-issue.
 2. **Worktree.** Code only in your own git worktree, never in the main checkout:
-   `git -C <repo> worktree add .claude/worktrees/<IDENT>-<N>-<role> -b <IDENT>-<N>-<role> <base>`
+   `git -C <repo> worktree add .claude/worktrees/<IDENT>-<N>-<role> -b <IDENT>-<N>-<role> --no-track <base-ref>`
    Set it up per the repo `CLAUDE.md` worktree section (`.worktreeinclude` files, venv link). Re-entry reuses the existing worktree.
 3. **PLAN** goes into your sub-issue description as a checklist — no approval wait. (Doc-only mode, `pipeline:doc-only`: worktree yes, PLAN not required.) Execute **all** of it in this run, ticking boxes as you go; a crash resumes from the first unticked box.
 4. **Exemplars.** Every new element follows the exemplar the SPEC names. No exemplar fits → that is a new pattern: list it in the implementation summary with the reason.
 5. **Before handing off**, in the worktree:
    - full test suite and linters — commands from the repo `CLAUDE.md` only;
    - live smoke of the changed behaviour (request / task / page) with the observed result;
-   - `~/.claude/bin/codex-review --base <base>` (behaviour bugs) and `~/.claude/bin/codex-review --base <base> --conventions` (project rules and exemplars), fixing findings until "No findings", at most 3 rounds each;
-   - **one commit per task**: the branch carries exactly one commit over `<base>`, in `plane-api.md` §11 format. Commit once, when the run is ready to hand off; every later change (rework, minor fixes) goes into that commit with `git commit --amend`; a rebase conflict (yours, or handed back by Tron after his `git rebase --abort` — then start it again with `git rebase <base>`) is resolved, `git add`-ed and finished with `git rebase --continue` — the branch is never pushed, so amending is safe. Amend only when that commit exists (`git rev-list --count <base>..HEAD` = 1); at 0 a plain `git commit` — an `--amend` there rewrites the last commit of `<base>`. A hook failure creates no commit: fix the cause, re-run the same command. Never push, never merge to `<base>`.
+   - `~/.claude/bin/codex-review --base <base-ref>` (behaviour bugs) and `~/.claude/bin/codex-review --base <base-ref> --conventions` (project rules and exemplars), fixing findings until "No findings", at most 3 rounds each;
+   - **one commit per task**: the branch carries exactly one commit over `<base-ref>`, in `plane-api.md` §11 format. Commit once, when the run is ready to hand off; every later change (rework, minor fixes) goes into that commit with `git commit --amend`; a rebase conflict (yours, or handed back by Tron after his `git rebase --abort` — then fetch and start it again with `git rebase <base-ref>`) is resolved, `git add`-ed and finished with `git rebase --continue` — the branch is never pushed, so amending is safe. Amend only when that commit exists (`git rev-list --count <base-ref>..HEAD` = 1); at 0 a plain `git commit` — an `--amend` there rewrites the last commit of `<base>`. A hook failure creates no commit: fix the cause, re-run the same command. Never push, never merge to `<base>`.
      ❌ `feat: model` → `feat: serializer` → `fix: review findings` — three commits for COINEX-177.
      ✅ one `feat(limits): per-entity limit (COINEX-177)`, amended through every round.
 6. **Hand off** with `post_changes(…, ready_for_review=True, next_role=…)` carrying the implementation summary (§9.4).
-7. Merge to `<base>` happens after gate 3: Tron rebases the branch onto `<base>` (conflict → `git rebase --abort`, post the conflict to your sub-issue, `request_handoff` to you, stop), then checks it is one commit over `<base>` (`git rev-list --count <base>..HEAD` = 1; more → `git reset --soft $(git merge-base <base> HEAD)` and one commit with the coder's message; the commit fails → stop and report; re-check the count is 1), runs the full test suite (red → back to you, no merge), fast-forwards it into `<base>` (hook-confirmed by the initiator) and removes your worktree and branch (`git branch -d` — refuses an unmerged branch, so it is part of the merge, not a separate approval). The initiator never merges branches by hand.
+7. Merge to `<base>` happens after gate 3: Tron fetches and rebases the branch onto `<base-ref>` (conflict → `git rebase --abort`, post the conflict to your sub-issue, `request_handoff` to you, stop), then checks it is one commit over `<base-ref>` (`git rev-list --count <base-ref>..HEAD` = 1; more → `git reset --soft $(git merge-base <base-ref> HEAD)` and one commit with the coder's message; the commit fails → stop and report; re-check the count is 1), runs the full test suite (red → back to you, no merge), fast-forwards it into `<base>` (hook-confirmed by the initiator; local `<base>` holds commits that are not on `origin` → the fast-forward fails → stop and ask the initiator to push first; after the push, Tron repeats this step from the fetch: rebase, count, tests, merge) and removes your worktree and branch (`git branch -d` — refuses an unmerged branch, so it is part of the merge, not a separate approval). The initiator never merges branches by hand.
 
 ### 9.6 Stand — where testers run the code
 
-API and browser tests run against a stand built from the coder's worktree. Commands come from the **«Stand»** section of the repo `CLAUDE.md`. No such section → `escalate_upstream_gap` ("no stand commands for worktrees") and stop. Never improvise a stand with ad-hoc docker / ssh / kubectl commands.
+API and browser tests run against a stand built from the coder's worktree. Commands come from the **«Stand»** section of the repo `CLAUDE.md`. No such section → `escalate_upstream_gap` ("no stand commands for worktrees") and stop. Never improvise a stand with ad-hoc docker / ssh / kubectl commands. Before escalating, look for the repo's own compose files (`local.yml`, `local.e2e.yml`, `docker-compose*.yml`, `compose*.yml`); if one brings the app up, put a ready «Stand» section in the escalation — exact commands with a per-worktree compose project name and ports, so it never touches the shared stack — so the initiator adds it once and every later run just uses it. A missing system package or tool on the host (a library for PDF, a browser dependency) is the same kind of gap: never `sudo apt`, never edit `/etc` — machines change only through the `ops` repo; report it in the escalation and list what it blocks.
+
+### 9.6a Who calls the reviewer
+
+The reviewer starts once, when **everything** is ready: every coder role the SPEC assigns work to has a sub-issue with CHANGES (a role with no sub-issue yet = not ready), every tester sub-issue has its final report with no open blocker / major. Before `request_handoff(target_role='reviewer')`, post your own report, then `list_sub_issues(root)` and check that. Something is still open → stop without handing off; the last one to finish calls the reviewer. If two finish at once and both hand off, the duplicate run is the conductor's to stop (one run per role and task, COINEX-187).
 
 ### 9.7 Your own sub-issue — never the spawn uuid
 
