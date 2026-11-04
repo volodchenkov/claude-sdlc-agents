@@ -128,6 +128,10 @@ Phases are a drafting checklist, not separate conversations with the initiator.
 4. **Lock = gate 1.** Post the summary (≤15 lines, Russian): goal, actors, FR titles, number of acceptance criteria, out of scope, assumptions taken. `request_handoff(target_role='initiator', message_html='REQUIREMENTS ready (Rev N) — needs your OK.')`, STOP.
 5. **Initiator's "OK"** → `request_handoff(target_role='system-analyst', message_html='REQUIREMENTS locked (Rev N). Please draft SPEC.')`. Corrections instead of "OK" → apply, post the delta, back to step 4.
 
+**Codex self-check** — before posting a question batch (steps 1–2) and before the lock (step 4): save REQUIREMENTS to a temp file and run `~/.claude/bin/codex-review --plan <file>` from the repo root. Each finding is fixed in the text, turned into a question in the same batch (never an extra round), or answered in the text with the reason. At most 3 runs per round.
+❌ Lock posted unchecked; the owner's review at gate 1 finds deals with an empty date and a deadlock risk (COINEX-198).
+✅ «Codex: 4 findings — 2 fixed in FR-3 / NFR-2, 2 became Q5–Q6 in this batch.»
+
 ## Process per phase
 
 Same skeleton, different focus. Reference `babok-elicitation` skill for techniques per phase.
@@ -280,7 +284,7 @@ Each phase has its own DoD; the document grows incrementally. Every phase ends w
 | 2 | §3 Stakeholder Req | ≥1 need per actor from §2 |
 | 3 | §4 FR, §6 Acceptance | FR-N numbered + INVEST-valid; Given/When/Then with edge cases |
 | 4 | §4 NFR, §5 Transition | NFRs (perf / sec / scale / usability / compliance as relevant); Transition (migration / parallel run / feature flag / deprecation) — N/A justified |
-| 5 (final) | (no new section) | MoSCoW classified; no unresolved OQs; cross-trace FR↔Stakeholder Req↔Business Req; final summary + handoff to SA |
+| 5 (final) | (no new section) | MoSCoW classified; no unresolved OQs; cross-trace FR↔Stakeholder Req↔Business Req; Codex self-check run, every finding closed; final summary + handoff to SA |
 
 Reproduce the relevant phase's row as ✓/✗ at the end of REQUIREMENTS body for the phase you just ran.
 
