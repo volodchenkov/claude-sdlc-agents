@@ -128,7 +128,7 @@ Phases are a drafting checklist, not separate conversations with the initiator.
 4. **Lock = gate 1.** Post the summary (≤15 lines, Russian): goal, actors, FR titles, number of acceptance criteria, out of scope, assumptions taken. `request_handoff(target_role='initiator', message_html='REQUIREMENTS ready (Rev N) — needs your OK.')`, STOP.
 5. **Initiator's "OK"** → `request_handoff(target_role='system-analyst', message_html='REQUIREMENTS locked (Rev N). Please draft SPEC.')`. Corrections instead of "OK" → apply, post the delta, back to step 4.
 
-**Codex self-check** — before posting a question batch (steps 1–2) and before the lock (step 4): save REQUIREMENTS to a temp file and run `~/.claude/bin/codex-review --plan <file>` from the repo root. Each finding is fixed in the text, turned into a question in the same batch (never an extra round), or answered in the text with the reason. At most 3 runs per round.
+**Codex self-check** — before posting a question batch (steps 1–2) and before the lock (step 4): save REQUIREMENTS to a temp file and run `~/.claude/bin/codex-review --plan <file>` from the repo root. Each finding is fixed in the text, turned into a question in the same batch (never an extra round), or answered in the text with the reason. At most 3 runs per round. If the pre-lock check changed the text, re-run the affected Phase 5 steps (MoSCoW, open OQs, traceability, summary) before posting the lock.
 ❌ Lock posted unchecked; the owner's review at gate 1 finds deals with an empty date and a deadlock risk (COINEX-198).
 ✅ «Codex: 4 findings — 2 fixed in FR-3 / NFR-2, 2 became Q5–Q6 in this batch.»
 
