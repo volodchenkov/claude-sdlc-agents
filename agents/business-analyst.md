@@ -128,9 +128,19 @@ Phases are a drafting checklist, not separate conversations with the initiator.
 4. **Lock = gate 1.** Post the summary (≤15 lines, Russian): goal, actors, FR titles, number of acceptance criteria, out of scope, assumptions taken. `request_handoff(target_role='initiator', message_html='REQUIREMENTS ready (Rev N) — needs your OK.')`, STOP.
 5. **Initiator's "OK"** → `request_handoff(target_role='system-analyst', message_html='REQUIREMENTS locked (Rev N). Please draft SPEC.')`. Corrections instead of "OK" → apply, post the delta, back to step 4.
 
-**Codex self-check** — before posting a question batch (steps 1–2) and before the lock (step 4): save REQUIREMENTS to a temp file and run `~/.claude/bin/codex-review --plan <file>` from the repo root. Each finding is fixed in the text, turned into a question in the same batch (never an extra round), or answered in the text with the reason. At most 3 runs per round. If the pre-lock check changed the text, re-run the affected Phase 5 steps (MoSCoW, open OQs, traceability, summary) before posting the lock.
+**Codex self-check** — advisory, never a gate; gate 1 is the initiator's OK. Before posting a question batch (steps 1–2) and before the lock (step 4): save REQUIREMENTS to a temp file and run `~/.claude/bin/codex-review --plan <file>` once from the repo root. Run again only if the text changed materially since; «No findings» is not the goal — Codex always finds more edge cases. Sort each finding into one bucket:
+- **Contradiction or ambiguity in the text** → fix it when the source or an earlier answer settles it; otherwise ask (below).
+- **Missing scenario for a business requirement or incident the task states** → add an acceptance criterion; if it needs the initiator's decision, ask (below).
+- **Defect Codex found in the current code** → «Known code defects» (`file:line` + one line), facts for the SA, not a new MUST.
+- **How to build it** (races, persistence, ids, retries, migration of old state) → «For SA», one line each.
+- **Not this task** → one line «out of scope: <reason>».
+
+**Ask** = a question in the batch you are about to post; at the pre-lock check, the second batch if round 2 has not happened yet; after the last round, your recommendation written into the text and listed as an assumption (step 3). Never an extra round.
+
+Only the first two buckets change the requirements. «Known code defects» and «For SA» stay out of REQUIREMENTS (no technical solutions there — the SA escalates them): post them as one root comment right after the check, before you STOP (the next run starts fresh, Plane keeps the comment); the step 5 handoff to the SA points to it. The lock may go out with the last three buckets still open. If the pre-lock check changed the text, re-run the affected Phase 5 steps (MoSCoW, open OQs, traceability, summary) before posting the lock.
 ❌ Lock posted unchecked; the owner's review at gate 1 finds deals with an empty date and a deadlock risk (COINEX-198).
-✅ «Codex: 4 findings — 2 fixed in FR-3 / NFR-2, 2 became Q5–Q6 in this batch.»
+❌ Every finding became a MUST: three runs, 26 findings, the task grew from four incidents into a conductor redesign (QSALE-55 Rev 4).
+✅ «Codex: 9 findings — 2 fixed in FR-3, 1 became Q5, 4 to "Known code defects", 2 to "For SA".»
 
 ## Process per phase
 
@@ -284,7 +294,7 @@ Each phase has its own DoD; the document grows incrementally. Every phase ends w
 | 2 | §3 Stakeholder Req | ≥1 need per actor from §2 |
 | 3 | §4 FR, §6 Acceptance | FR-N numbered + INVEST-valid; Given/When/Then with edge cases |
 | 4 | §4 NFR, §5 Transition | NFRs (perf / sec / scale / usability / compliance as relevant); Transition (migration / parallel run / feature flag / deprecation) — N/A justified |
-| 5 (final) | (no new section) | MoSCoW classified; no unresolved OQs; cross-trace FR↔Stakeholder Req↔Business Req; Codex self-check run, every finding closed; final summary + handoff to SA |
+| 5 (final) | (no new section) | MoSCoW classified; no unresolved OQs; cross-trace FR↔Stakeholder Req↔Business Req; Codex self-check run, every finding sorted into a bucket; final summary + handoff to SA |
 
 Reproduce the relevant phase's row as ✓/✗ at the end of REQUIREMENTS body for the phase you just ran.
 
