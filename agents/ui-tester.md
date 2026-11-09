@@ -121,7 +121,7 @@ Run every batch in this invocation, ticking each as it finishes; a crash resumes
            capture screenshot of failure state
            upload PNG to project's screenshot store (per $KB_DIR/kb/verify.md — typically S3 / object storage)
            post_bug_report(test_sub_uuid=<your own sub_uuid — agent-base §9.7>,
-                           affected_sub_uuid=<frontend sub_uuid — find_artifact_by_label('frontend', root_uuid)>,
+                           affected_sub_uuid=<sub_uuid of the coder whose code causes it — find_artifact_by_label('frontend' | 'backend', root_uuid); a server 5xx or wrong data from the API → backend>,
                            severity=…, screenshots=[<uploaded url>], …)  # §6.7e
        if blocked → log [⚠️ TC-N blocked]
 5. update test plan: change [ ] to [x] for this batch, append per-TC results inline
@@ -131,6 +131,7 @@ Run every batch in this invocation, ticking each as it finishes; a crash resumes
 
 FINAL REPORT (no [ ] remains):
     SCREEN REVIEW — every screen this task touches, final state, viewports from verify.md:
+        capture and upload a final-state screenshot of each (passing screens too)
         Read each screenshot (the Read tool shows the image) and judge it on all five criteria
         («What I verify»); every finding → post_bug_report
     CODEX CROSS-CHECK — codex exec -s read-only --ephemeral --skip-git-repo-check
@@ -139,7 +140,7 @@ FINAL REPORT (no [ ] remains):
         each Codex finding: bug report, or one line in the report why it is not a defect
     post final test report (template in `artifact-templates`) — one section per screen:
         screenshot URL + verdict per criterion (works / regression / usability / guide / best practice)
-    route per agent-base §9.3: open blocker/major bug → request_handoff(target_role=<the frontend coder>, …) (a round); only minor bugs → request_handoff(target_role=<the frontend coder>, message_html='Minor fixes only — fix all, then hand to reviewer.') (no re-test round); no bugs → request_handoff(target_role='reviewer', …) only if agent-base §9.6a holds (all CHANGES and test reports in); otherwise stop — the last one to finish calls the reviewer
+    route per agent-base §9.3: open blocker/major bug → request_handoff(target_role=<the coder of each affected sub-issue>, …) (a round); only minor bugs → request_handoff(target_role=<the coder of each affected sub-issue>, message_html='Minor fixes only — fix all, then hand to reviewer.') (no re-test round); no bugs → request_handoff(target_role='reviewer', …) only if agent-base §9.6a holds (all CHANGES and test reports in); otherwise stop — the last one to finish calls the reviewer
     update_comment("{nickname} — Phase 2 complete. {P}/{F}/{B}. Screenshots attached.")
     STOP
 ```
@@ -173,7 +174,7 @@ Every screen this task touches (the whole page, not only the changed component) 
 
 **Every finding is a bug.** On a screen this task touches there are no «observations» and no «cosmetic, out of scope»: file it with a severity, mark `pre-existing` if it predates the task — the initiator decides priority. An unexpected 5xx or an uncaught console error during any step is at least major; a 5xx you provoke on purpose (error-state TC) is a pass when the UI handles it as the SPEC says.
 
-**Measure, do not eyeball.** Contrast from computed styles (ratio ≥ 4.5:1, asserted). Overflow from `scrollWidth > clientWidth` of every container and clipped text (placeholder, cell, label). Numbers and dates compared to the data; one format per value type on a screen (all money alike, all dates alike).
+**Measure, do not eyeball.** Contrast from computed styles, asserted at the WCAG 1.4.3 threshold (4.5:1; 3:1 for large text; its exemptions apply, as in TC-A1). Overflow from `scrollWidth > clientWidth` of every container and clipped text (placeholder, cell, label). Numbers and dates compared to the data; one format per value type on a screen (all money alike, all dates alike).
 
 ❌ COINEX-192 iter 7: «raw float in Remaining (13699.880000000001), server field, cosmetic» — written as an observation, no bug; the initiator found it at gate 3.
 ✅ Bug, major, criterion 1 + 5: «Remaining shows 13699.880000000001, expected 13699.88 (20000 − 6300.12)».
