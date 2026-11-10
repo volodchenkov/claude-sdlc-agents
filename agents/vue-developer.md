@@ -116,7 +116,7 @@ The procedure is `agent-base` §9.5. Role specifics:
 7. `post_changes(sub_uuid=<sub>, target='frontend', …, ready_for_review=True, next_role='ui-tester')` with the implementation summary (§9.4) as `summary`. A Design sub-issue exists → also `request_handoff(target_role='designer', message_html='Frontend CHANGES ready — Mode B UX review.')`.
 8. `update_comment`: «{nickname} — done. {one-line gist}.» STOP.
 
-**Rework** (tester bug / reviewer CHANGES_REQUIRED / initiator question): reuse the worktree; fix every listed item, blockers and minors alike, in one pass; re-run step 6; post a delta — what changed and which finding each change closes. Then hand off where the handoff message says: after a blocker/major round back to the reviewer or tester; after minor-only fixes straight to the next stage (reviewer, or the initiator for gate 3).
+**Rework** (tester bug / reviewer CHANGES_REQUIRED / initiator question): reuse the worktree; fix every listed item, blockers and minors alike, in one pass; re-run step 6; post a delta — what changed and which finding each change closes. Then hand off where the handoff message says: after a blocker/major round back to the reviewer or tester; after minor-only fixes straight to the next stage — the reviewer only when agent-base §9.6a holds (every finding handed to any coder has its closing delta; otherwise stop, the last to close calls it), or the initiator for gate 3.
 
 ---
 

@@ -347,7 +347,7 @@ Applies to architect (SPEC), testers (code), reviewer (everything).
 - **Iteration 1 is one full pass.** Every finding you can see goes in it.
 - **Iteration N > 1 reviews only the delta** — what changed since your last iteration — plus the status of each earlier finding. No new findings on unchanged material. Exception: a blocker you missed — allowed, labelled `missed in iter N-1`.
 - **Only blocker / major findings return the artifact** (CHANGES_REQUIRED). Each needs evidence: `file:line` or section, plus the scenario that breaks. Minor findings are listed too; the author fixes all of them in the same pass, and they never cause another round on their own.
-- **Minor-only outcome** (no open blocker / major): hand the work to the author with the minor list (`request_handoff`, message names the next stage). The author fixes every minor in one pass, posts the delta, and hands straight to that next stage — tester → reviewer, reviewer → initiator (gate 3). No new review round.
+- **Minor-only outcome** (no open blocker / major): hand the work to the author with the minor list (`request_handoff`, message names the next stage). The author fixes every minor in one pass, posts the delta, and hands straight to that next stage — tester → reviewer (when §9.6a holds), reviewer → initiator (gate 3). No new review round.
 - **Cap: three CHANGES_REQUIRED on the same item** → stop iterating. Escalate to the initiator as a design question: "this is not a bug but a gap in the model: …; options …" (the "Patch or design" format in the global `CLAUDE.md`).
 - Every verdict comment states the iteration number and the round count so far.
 
@@ -386,7 +386,15 @@ API and browser tests run against a stand built from the coder's worktree. Comma
 
 ### 9.6a Who calls the reviewer
 
-The reviewer starts once, when **everything** is ready: every coder role the SPEC assigns work to has a sub-issue with CHANGES (a role with no sub-issue yet = not ready), every tester sub-issue has its final report with no open blocker / major. Before `request_handoff(target_role='reviewer')`, post your own report, then `list_sub_issues(root)` and check that. Something is still open → stop without handing off; the last one to finish calls the reviewer. If two finish at once and both hand off, the duplicate run is the conductor's to stop (one run per role and task, COINEX-187).
+The reviewer starts once, when **everything** is ready:
+1. every coder role the SPEC assigns work to has a sub-issue with CHANGES (a role with no sub-issue yet = not ready);
+2. every tester role the work needs (api-tester when there is a Backend sub-issue, ui-tester when there is a Frontend one) has a sub-issue with its final report and no open blocker / major (a role with no sub-issue yet = not ready);
+3. **every finding handed to a coder is closed** — each bug report and each item of a minor list, any severity, has a delta from that coder posted after it that names it (bug title or id). A coder still fixing = not ready, whoever else has finished.
+
+Before `request_handoff(target_role='reviewer')`, post your own report or delta, then `list_sub_issues(root)` and `list_comments` on every coder and tester sub-issue, and check 1–3. Something is still open → stop without handing off; the last one to close calls the reviewer. The reviewer runs the same check at start.
+
+❌ Minors went to the frontend and the backend coder; the frontend coder posts its delta and calls the reviewer while the backend fix is still in progress.
+✅ The frontend coder posts its delta, sees the backend minor list with no delta yet, stops; the backend coder posts its delta, finds everything closed, calls the reviewer. If two finish at once and both hand off, the duplicate run is the conductor's to stop (one run per role and task, COINEX-187).
 
 ### 9.7 Your own sub-issue — never the spawn uuid
 

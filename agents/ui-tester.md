@@ -143,7 +143,7 @@ FINAL REPORT (no [ ] remains):
     post final test report (template in `artifact-templates`) — one section per screen:
         screenshot URL + verdict per criterion (works / regression / usability / guide / best practice)
     unowned bugs (affected_sub_uuid=None): blocker/major → escalate_upstream_gap to the initiator to assign an owner, STOP; minor → listed for the initiator in the final report, not counted in the routing below
-    route per agent-base §9.3: open blocker/major bug → request_handoff(target_role=<the coder of each affected sub-issue>, …) (a round); only minor bugs → request_handoff(target_role=<the coder of each affected sub-issue>, message_html='Minor fixes only — fix all, post your delta; when minors went to several coders, the last one to post hands to the reviewer.') (no re-test round); no bugs → request_handoff(target_role='reviewer', …) only if agent-base §9.6a holds (all CHANGES and test reports in); otherwise stop — the last one to finish calls the reviewer
+    route per agent-base §9.3: open blocker/major bug → request_handoff(target_role=<the coder of each affected sub-issue>, …) (a round); only minor bugs → request_handoff(target_role=<the coder of each affected sub-issue>, message_html='Minor fixes only — fix all, post a delta naming each finding; hand to the reviewer only when agent-base §9.6a holds.') (no re-test round); no bugs → request_handoff(target_role='reviewer', …) only if agent-base §9.6a holds (all CHANGES and test reports in); otherwise stop — the last one to finish calls the reviewer
     update_comment("{nickname} — Phase 2 complete. {P}/{F}/{B}. Screenshots attached.")
     STOP
 ```
