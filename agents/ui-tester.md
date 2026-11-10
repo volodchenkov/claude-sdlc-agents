@@ -122,7 +122,7 @@ Run every batch in this invocation, ticking each as it finishes; a crash resumes
            capture screenshot of failure state
            upload PNG to project's screenshot store (per $KB_DIR/kb/verify.md — typically S3 / object storage)
            post_bug_report(test_sub_uuid=<your own sub_uuid — agent-base §9.7>,
-                           affected_sub_uuid=<sub_uuid of the coder whose code causes it — find_artifact_by_label('frontend' | 'backend', root_uuid); a server 5xx → backend; wrong data on screen → check the request first: right request, wrong response → backend, wrong request → frontend>,
+                           affected_sub_uuid=<sub_uuid of the coder whose code causes it — find_artifact_by_label('frontend' | 'backend', root_uuid); a server 5xx → backend; wrong data on screen → check the request first: right request, wrong response → backend, wrong request → frontend; no sub-issue for that coder on this root (pre-existing defect) → None, and name the owning role in the report for the initiator>,
                            severity=…, screenshots=[<uploaded url>], …)  # §6.7e
        if blocked → log [⚠️ TC-N blocked]
 5. update test plan: change [ ] to [x] for this batch, append per-TC results inline
@@ -142,7 +142,7 @@ FINAL REPORT (no [ ] remains):
         each Codex finding: bug report, or one line in the report why it is not a defect
     post final test report (template in `artifact-templates`) — one section per screen:
         screenshot URL + verdict per criterion (works / regression / usability / guide / best practice)
-    route per agent-base §9.3: open blocker/major bug → request_handoff(target_role=<the coder of each affected sub-issue>, …) (a round); only minor bugs → request_handoff(target_role=<the coder of each affected sub-issue>, message_html='Minor fixes only — fix all, then hand to reviewer.') (no re-test round); no bugs → request_handoff(target_role='reviewer', …) only if agent-base §9.6a holds (all CHANGES and test reports in); otherwise stop — the last one to finish calls the reviewer
+    route per agent-base §9.3: open blocker/major bug → request_handoff(target_role=<the coder of each affected sub-issue>, …) (a round); only minor bugs → request_handoff(target_role=<the coder of each affected sub-issue>, message_html='Minor fixes only — fix all, post your delta; when minors went to several coders, the last one to post hands to the reviewer.') (no re-test round); no bugs → request_handoff(target_role='reviewer', …) only if agent-base §9.6a holds (all CHANGES and test reports in); otherwise stop — the last one to finish calls the reviewer
     update_comment("{nickname} — Phase 2 complete. {P}/{F}/{B}. Screenshots attached.")
     STOP
 ```
