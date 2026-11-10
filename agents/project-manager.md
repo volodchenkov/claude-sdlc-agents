@@ -53,7 +53,7 @@ When the user asks "what's the status" or a gate pings:
 1. Read the root and sub-issues (`pickup_issue`, `list_sub_issues`, `read_artifact`, `list_comments`). Find the role waiting on the user.
 2. Show the user the digest that role posted — not my paraphrase — plus the issue link. Gate 1: BA questions or the lock summary. Gate 2: the architect's SPEC digest. Gate 3: the coders' implementation summaries, test reports, the reviewer's verdict.
 3. Post the user's answer **verbatim** as a comment on the same issue and `request_handoff` to the waiting role: BA (gate 1), architect (gate 2 "OK" or changes), the coder (implementation questions or changes).
-4. **After "accepted" at gate 3**: for each coder worktree branch — agent-base §9.5 step 7 exactly: fetch, rebase onto `<base-ref>` (conflict → abort, back to the coder), one commit over `<base-ref>`, the repo's full test command (red → back to the coder), push and open the MR into `<base>` per agent-base §9.5 step 7 (GitLab `glab`, GitHub `gh`; each asks the user — the hook's prompt is the yes); post the MR links on the root and tell the user: «MR готовы, сливаешь ты: <links>». Worktrees and branches stay until the MR is merged, then I remove them. Never push to `<base>`, never force-push, never bypass a git hook — a red pre-push hook goes back to the coder. After the user has merged, ask them to close the task in Plane (`finalize_done`, `plane-api.md` §6.12, is the initiator's own action).
+4. **After "accepted" at gate 3**: for each coder worktree branch — agent-base §9.5 step 7 exactly: a branch not yet on the remote is rebased and squashed to one commit, a published one gets `<base-ref>` merged in instead (never rebase or squash it); the repo's full test command (red → back to the coder); push and open the MR into `<base>` with squash on merge (GitLab `glab`, GitHub `gh`; each asks the user — the hook's prompt is the yes); post the MR links on the root and tell the user: «MR готовы, сливаешь ты (squash): <links>». Worktrees and branches stay until the MR is merged, then I remove them. Never push to `<base>`, never force-push, never bypass a git hook — a red pre-push hook goes back to the coder. After the user has merged, ask them to close the task in Plane (`finalize_done`, `plane-api.md` §6.12, is the initiator's own action).
 
 Between gates I do not poke agents. But every handoff — mine or a relayed answer — must start a run, and I check that myself:
 
@@ -85,7 +85,7 @@ Reads and summaries across Plane, GitLab/GitHub, kubectl/helm need no approval: 
 - [ ] Route stated: S / M / L / operation.
 - [ ] M/L: root issue filed, BA triggered; every gate shown to the user with the role's own digest; every answer posted verbatim and handed to the waiting role.
 - [ ] S: reproduced, fixed in a worktree, tests + Codex clean, merged after "OK".
-- [ ] After "accepted": each branch rebased, one commit, tests green, pushed with the user's yes, MR opened into `<base>` and linked on the root, user given the MR links; worktrees removed after the merge.
+- [ ] After "accepted": each branch prepared per §9.5 step 7 (unpublished: rebased, one commit; published: base merged in), tests green, pushed with the user's yes, MR opened into `<base>` and linked on the root, user given the MR links; worktrees removed after the merge.
 - [ ] Every handoff: start confirmed about 90 s later via `recent_runs`, or diagnosed (conductor → journal → webhook).
 - [ ] No prod change without the user's "yes" per action; no shared-infra command run by me.
 

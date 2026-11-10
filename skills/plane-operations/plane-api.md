@@ -646,7 +646,7 @@ Before the first pipeline run, `plane-conductor setup` should:
 
 ## 11. Conventional Commits (coders)
 
-Coders commit on their own worktree branch without asking (agent-base §6a, §9.5); after gate 3 Tron pushes the task branch and opens the MR, the initiator merges it (agent-base §9.5 step 7); nobody pushes to `<base>`. **One commit per task:** the branch is exactly one commit over `<base>`; later changes amend it (agent-base §9.5 step 5). Format:
+Coders commit on their own worktree branch without asking (agent-base §6a, §9.5); after gate 3 Tron pushes the task branch and opens the MR, the initiator merges it (agent-base §9.5 step 7); nobody pushes to `<base>`. **One commit per task:** until the branch is pushed it is exactly one commit over `<base>` and later changes amend it; once pushed (MR open) rework goes as new commits and the MR is squash-merged (agent-base §9.5 steps 5, 7). Format:
 
 ```
 <type>(<scope>): <task> (<PROJECT_IDENTIFIER>-<N>)
