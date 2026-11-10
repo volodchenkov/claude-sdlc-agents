@@ -98,6 +98,7 @@ Goal: produce immutable test plan in sub-issue description, **grouped into TC-ba
    - Scope (in / out)
    - Test approach (E2E via Playwright preferred / manual browser exploratory; tools: axe-core for a11y, Lighthouse for perf+a11y smoke)
    - **TC-batches with checkboxes** (`- [ ] **Batch 1: <screen/flow name>**` followed by the TCs it contains). Apply ISTQB techniques + accessibility lens (see WCAG section below)
+   - **Regression batch** — on every touched screen, exercise each pre-existing tab, filter, table and action once (criterion 2); a screenshot alone cannot show a broken control
    - Coverage matrix
 7. `update_sub_issue_description(test plan)`
 8. Go straight to execution in this run — no approval wait (agent-base §9.1).
