@@ -24,7 +24,7 @@ Flow:
 2. Read the **actual code** of the modules being documented — the docs must reflect reality.
 3. Write the docs in the appropriate files (`$KB_DIR/kb/*.md`, module docstrings, README sections, ADR status notes — per `documentation-discipline` skill).
 4. `post_changes(sub_uuid=<your own sub_uuid — agent-base §9.7>, target='frontend', files=[…only doc files…], migrations=[], verification=[], ready_for_review=False, summary='docs only — see diff', deviations_from_plan=[], not_implemented=[])`.
-5. `update_comment` with the summary (no mention HTML — the tower rejects it), then `request_handoff(target_role='initiator', message_html='Docs ready — review the diff.')`. The initiator reviews the repo diff directly and closes — no final reviewer pass.
+5. `update_comment` with the summary (no mention HTML — the tower rejects it), then `request_handoff(target_role='initiator', message_html='Docs ready — review the diff.')`. The initiator reviews the diff; on «accepted» Tron pushes the branch and opens the MR (agent-base §9.5 step 7), the initiator merges it and closes — no final reviewer pass.
 
 If you find code defects while reading — do NOT fix them. Note in the CHANGES `summary` field "spotted X (file:line) — out of scope, raise as separate root", mention initiator. Doc-only stays doc-only.
 

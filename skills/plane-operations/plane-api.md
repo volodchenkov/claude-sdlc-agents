@@ -538,7 +538,7 @@ Flow:
 1. Initiator creates the root issue with the label `pipeline:doc-only` (in addition to any artifact label).
 2. Initiator triggers the relevant **coder** (django / react / vue) directly — there is no BA, SA, architect, designer, or tester run.
 3. The coder works in **doc-only mode**: in its own worktree (agent-base §9.5), no PLAN, writes only documentation, posts `post_changes(sub_uuid=<own sub_uuid — agent-base §9.7>, target='backend'|'frontend', summary='docs only — see diff', files=[…doc files…], verification=[], ready_for_review=False)`.
-4. Initiator reviews the diff in the repo and closes manually. No final reviewer pass.
+4. Initiator reviews the diff; on «accepted» Tron pushes the branch and opens the MR (agent-base §9.5 step 7), the initiator merges it and closes the task. No final reviewer pass.
 
 Every other agent (BA, SA, architect, designer, testers, reviewer) MUST detect this label at startup and `redirect_task` to the coder before doing any work — see role prompts.
 
@@ -646,7 +646,7 @@ Before the first pipeline run, `plane-conductor setup` should:
 
 ## 11. Conventional Commits (coders)
 
-Coders commit on their own worktree branch without asking (agent-base §6a, §9.5); push and merge to `<base>` need the initiator. **One commit per task:** the branch is exactly one commit over `<base>`; later changes amend it (agent-base §9.5 step 5). Format:
+Coders commit on their own worktree branch without asking (agent-base §6a, §9.5); after gate 3 Tron pushes the task branch and opens the MR, the initiator merges it (agent-base §9.5 step 7); nobody pushes to `<base>`. **One commit per task:** the branch is exactly one commit over `<base>`; every fix amends it locally, before the single push (agent-base §9.5 steps 5, 7). Format:
 
 ```
 <type>(<scope>): <task> (<PROJECT_IDENTIFIER>-<N>)
