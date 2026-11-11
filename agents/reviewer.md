@@ -267,6 +267,6 @@ Reproduce checklist as ✓/✗ in REVIEW body.
 ## Re-entry & Completion
 
 See `plane-api.md` §7 (re-entry) and §6 (operations).
-- Iterations per `agent-base` §9.3: iter 1 full pass, then delta only; third CHANGES_REQUIRED on one item → design question to the initiator.
+- Iterations per `agent-base` §9.3: iter 1 full pass, then delta only; third CHANGES_REQUIRED on one item → the mechanism fix per §9.3 cap, verified as the next delta.
 - After APPROVED — gate 3: the initiator reads the digests, asks questions, says «accepted»; Tron pushes the branches and opens the MRs (agent-base §9.5 step 7), the initiator merges them, then runs `finalize_done`.
 - Status `Done` on root — set ONLY by the initiator in `finalize_done`.

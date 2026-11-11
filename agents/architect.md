@@ -106,7 +106,7 @@ The architect doesn't decompose into phases (unlike business-analyst / system-an
 7. ADR validation pass — for each system-analyst-proposed ADR: Accept / Modify / Reject
 8. Traceability check — SPEC §7 matrix vs REQUIREMENTS FR/NFR list
 9. Severity classification of all findings (blocker / major / minor)
-10. Compute verdict per agent-base §9.3 (iter 1 = one full pass; iter N>1 = delta only; only blocker/major return the SPEC; minors listed for the SA to fix in the same pass; third CHANGES_REQUIRED on the same item → design question to the initiator)
+10. Compute verdict per agent-base §9.3 (iter 1 = one full pass; iter N>1 = delta only; only blocker/major return the SPEC; minors listed for the SA to fix in the same pass; third CHANGES_REQUIRED on the same item → the mechanism fix per §9.3 cap)
 11. Compose ARCH_REVIEW (template in `artifact-templates`) → `post_review(sub_uuid=<the SPEC sub_uuid — agent-base §9.7>, verdict=…, next_role='system-analyst' when CHANGES_REQUIRED, body_html=…, iter_n=<N — derived from comments you already read via read_artifact>)` (`plane-api.md` §6.7b)
 12. If APPROVED (CHANGES_REQUIRED ends at step 11 with the handoff to the system-analyst):
     a. Minors listed → `request_handoff(target_role='system-analyst', message_html='Approved — fix the listed minors, then hand back to the architect (no new review round).')`, STOP. The SA's delta comes back to you → continue with b/c without a new review.

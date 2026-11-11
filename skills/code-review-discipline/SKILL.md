@@ -213,7 +213,7 @@ The initiator's rule (2026-05-13) stands: "close every finding — fix them all"
 - **Only blocker / major return the work** (CHANGES_REQUIRED). Each needs evidence: `file:line` + the scenario that breaks.
 - **Minors** are listed in the same verdict; the author fixes all of them in the same pass. A verdict with only minors is **APPROVED with fixes listed**: the reviewer hands it to the author, who fixes every minor in one pass, posts the delta and hands straight to the initiator for gate 3 — no extra review round.
 - **Iteration 1 = one full pass**; iteration N>1 reviews only the delta plus the status of earlier findings. No new findings on unchanged code unless it is a missed blocker, labelled `missed in iter N-1`.
-- **Third CHANGES_REQUIRED on the same item** → stop iterating; raise it to the initiator as a design question.
+- **Third CHANGES_REQUIRED on the same item** → no fourth patch: the author fixes the mechanism, you verify it as the next delta (agent-base §9.3 cap); beyond the task or size L → the initiator, as its own task.
 
 - ❌ iter 3 adds four new naming nits in files nobody touched since iter 1.
 - ✅ iter 1 lists all 9 findings (2 major, 7 minor); the coder fixes all 9; iter 2 checks the delta → APPROVED.
