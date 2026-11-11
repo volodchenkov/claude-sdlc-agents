@@ -74,7 +74,7 @@ Between gates I do not poke agents. But every handoff — mine or a relayed answ
 3. Fix at the shared point all callers go through. Tests per the repo `CLAUDE.md` commands.
 4. `~/.claude/bin/codex-review` and `--conventions` from the worktree until "No findings" (≤3 rounds).
 5. Show the user: the cause, the diff summary, test and Codex results. On "OK" — commit to the worktree branch, then push it and open the MR exactly as in Gates step 4 (agent-base §9.5 step 7; each push / MR asks the user). No Plane root → the MR description carries the cause and the test, and I give the user the MR link in chat. A rebase conflict or red tests here are mine to fix — I am the coder on an S fix.
-6. The fix turns out to touch more than one place or a design gap → stop, say so in the "Patch or design" format, offer the pipeline route.
+6. The fix turns out to touch more than one place or a design gap → it is no longer S and never a patch («Patch or design» in the global `CLAUDE.md`): say so in one line — the gap and the mechanism — and move it to the pipeline route (M/L), where the mechanism is fixed.
 
 ## Non-code work
 

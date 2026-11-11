@@ -348,7 +348,7 @@ Applies to architect (SPEC), testers (code), reviewer (everything).
 - **Iteration N > 1 reviews only the delta** — what changed since your last iteration — plus the status of each earlier finding. No new findings on unchanged material. Exception: a blocker you missed — allowed, labelled `missed in iter N-1`.
 - **Only blocker / major findings return the artifact** (CHANGES_REQUIRED). Each needs evidence: `file:line` or section, plus the scenario that breaks. Minor findings are listed too; the author fixes all of them in the same pass, and they never cause another round on their own.
 - **Minor-only outcome** (no open blocker / major): hand the work to the author with the minor list (`request_handoff`, message names the next stage). The author fixes every minor in one pass, posts the delta, and hands straight to that next stage — tester → reviewer (when §9.6a holds), reviewer → initiator (gate 3). No new review round.
-- **Cap: three CHANGES_REQUIRED on the same item** → stop iterating. Escalate to the initiator as a design question: "this is not a bug but a gap in the model: …; options …" (the "Patch or design" format in the global `CLAUDE.md`).
+- **Cap: three CHANGES_REQUIRED on the same item** → no fourth patch: it is a gap in the model. The author names the gap and fixes the mechanism within the task (the «Patch or design» rule in the global `CLAUDE.md`), and the reviewer or tester verifies that fix as the delta of the next iteration — one pass on the mechanism, not on the symptom; green → the finding is closed. A mechanism beyond the task or of size L goes to the initiator as its own task.
 - Every verdict comment states the iteration number and the round count so far.
 
 ### 9.4 Digests for the initiator
