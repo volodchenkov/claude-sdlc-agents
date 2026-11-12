@@ -275,7 +275,7 @@ Returns `{id, sequence_id, name, labels, parent, ...}`.
 
 **Reviews live as comments on the artifact being reviewed** — same pattern the architect already uses for `ARCH_REVIEW` on SPEC. Review of SPEC → comment on SPEC sub-issue. Review of Backend → comment on Backend sub-issue. Cross-cutting end-to-end verdict → comment on root. See §6.7b for the full pattern, including the iteration marker.
 
-**One sub-issue per role per root, ever.** Iterations, follow-ups, per-feature splits, "prerequisite" work — none of these are reasons to create a second sub-issue with the same role label. The single sub-issue's `description_html` is the canonical artifact and is updated in place; intermediate findings live in comments on it. If scope genuinely outgrows the root → create a **new root issue** with `relation: related-to`, not a nested sub-issue (see §6.13).
+**One sub-issue per role per root, ever.** Iterations, follow-ups, per-feature splits, "prerequisite" work — none of these are reasons to create a second sub-issue with the same role label. The single sub-issue's `description_html` is the canonical artifact and is updated in place; intermediate findings live in comments on it. If scope genuinely outgrows the root → propose a **new root issue** to the initiator, created only on their yes with `relation: related-to`, not a nested sub-issue (see §6.13).
 
 ### 6.6 update_sub_issue_description
 Replace your sub-issue's description (used on rework and incremental phase fills).
@@ -525,7 +525,7 @@ mcp__plane-<workspace>__update_work_item(
 Sometimes mid-pipeline it becomes clear the work spans more than one cohesive deliverable: a follow-up phase, a parallel feature, a prerequisite that deserves its own SPEC. The wrong move is to add another SPEC sub-issue, or to nest sub-issues two levels deep. The right move:
 
 - Agents do not split scope themselves. They post a `BLOCKED — scope growth` comment in their own sub-issue (per §6.7c structure but with `Issue: scope of root <PROJECT-N> has grown beyond original SPEC; <one-line description of split>`), mention initiator, STOP.
-- The initiator creates a **new root issue** describing the new phase / feature, links it with `relation: related-to` (or `blocks` / `blocked-by` as appropriate), and triggers the pipeline against the new root.
+- The initiator (the user; Tron only on the user's yes to that split) creates a **new root issue** describing the new phase / feature, links it with `relation: related-to` (or `blocks` / `blocked-by` as appropriate), and triggers the pipeline against the new root.
 - Sub-issues never have grandchildren. The tree is exactly two levels deep: root → role sub-issue → (comments). Any work that doesn't fit in the role sub-issue's `description_html` belongs in a different root.
 
 ### 6.13b Short pipelines — when the full SDLC is overkill
