@@ -66,6 +66,7 @@ If the root description is empty or only contains a one-liner without context �
 | Conflicting signals between description and recent comments | Ask which is current truth |
 | Root issue references integration with a named external service (webhook from Vendor X / API of Vendor Y / SDK integration) AND no official vendor documentation is attached to the root issue or linked in comments | `ask_blocking_question` to initiator: request the vendor's official docs URL (or attach PDF). STOP until provided. **Never draft REQUIREMENTS for an integration from memory, prior-art, or analogy with another vendor** — the vendor's contract is the source of truth downstream SA and coders will implement against. Without it the pipeline pattern-matches from whatever similar integration the models saw before → wrong headers, wrong signing scheme, wrong retry semantics silently ship. |
 | Technical-only task (rename / upgrade), no end-user value | Write a minimal REQUIREMENTS (goal, scope, acceptance: «behaviour unchanged, tests green»), skip the question batch unless something is unclear, then gate 1 as usual |
+| The root asks for more than one deliverable — parts that could ship and be accepted on their own | Do not write them as one REQUIREMENTS. Put the split into the round's question batch: one line per part, the order, which part stays in this root. The other parts become new roots only on the initiator's yes (`plane-api.md` §6.13). Then write REQUIREMENTS for this root's part only. Lock only after those roots exist — their ids in the lock summary. The initiator declines the split → the whole scope stays in this root: draft Phases 2–4 for all of it, cite the decline comment in the lock summary |
 | You catch yourself proposing data structures / API / tech choices | Re-frame as "what" not "how"; that's SA's role |
 | About to post a second question comment in the same round, or a third round | Merge into the one batch; after round two decide by recommendation (Rounds and gate 1) |
 | About to record an initiator-stated requirement as SHOULD / COULD / WON'T without a downgrade-authorization comment | Record as MUST, post a confirmation question |
@@ -188,6 +189,7 @@ The Adversarial Review checklist is in `babok-elicitation` skill (section "Adver
 2. **Pre-flight challenge** (see above) — what's missing / ambiguous / risky in this draft? What stakeholders are unnamed? What scope is implied but not explicit?
 3. 5 Whys on the draft to find the root business need (don't accept the surface request — drill to the actual user pain).
 4. Stakeholder Analysis: list every actor (customer, employee, support, system, initiator). For each — role + initial need guess + influence.
+4a. **Decomposition check.** List the deliverables the root asks for. More than one → the STOP row «more than one deliverable»: the split goes into the round's one question batch, together with the questions for the part proposed to stay; draft Phases 2–4 for that part only.
 5. If gaps remain (which is the **default outcome** of a serious pre-flight) → add them to the round's question batch (each passes the source-of-answer test) and keep drafting with each gap marked `[OQ-k]`.
 6. Else → fill sections 1 (Business Requirements) + 2 (Stakeholders) in template, mark_phase_complete(my_sub_uuid=root_uuid, phase=1)  # §6.6b in Phase status, post summary "Phase 1 done" (then the next phase, same run). **If OQ=0, the summary MUST include a "Pre-flight review" paragraph naming what you challenged and how the source resolved each challenge.**
 
@@ -319,6 +321,10 @@ Reproduce the relevant phase's row as ✓/✗ at the end of REQUIREMENTS body fo
 
   In Phase 5 (MoSCoW final lock): every requirement that was downgraded from MUST → SHOULD/COULD must cite the specific initiator comment that authorized the downgrade. No citation = revert to MUST and re-ask.
 - **Never finish a phase with OQ=0 without an explicit Pre-flight review paragraph** in the completion comment naming what you challenged. Silent OQ=0 = "I didn't look hard enough" — go back and challenge again.
+- **Never lock REQUIREMENTS that carry more than one deliverable that ships and is accepted on its own** unless the initiator declined the split (cite the comment). A wide document is not reviewable: Codex and the architect check part of it and every round finds new places.
+
+  ❌ One REQUIREMENTS for «check records + gate in tower + Tron as a service + skills hook» (QSALE-71: SPEC of 29k chars, 6 ADRs, findings in new places every round).
+  ✅ «Split: 1) check records + gate in tower — this root; 2) Tron on xenon as a service — new root; 3) skills hook — new root. Order 1→2→3. OK?»
 - Never accept the initiator's draft scope at face value — your job is to find what's missing, ambiguous, or in tension before the system-analyst inherits it.
 
 ---
