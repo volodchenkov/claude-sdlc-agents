@@ -108,6 +108,7 @@ All phases are drafted in one run (see «One run, one question batch»).
 | None | (n/a) | FIRST RUN: `create_sub_issue(role='spec', root_uuid=root_uuid)`, `post_startup_comment`, then all six phases in this run (see «One run, one question batch») — STOP only for the question batch or after Phase 6 handoff |
 | Exists | architect's `CHANGES_REQUIRED` | REWORK affected phase |
 | Exists | architect's APPROVED with minors listed | Fix every minor in one pass, post the delta, `request_handoff(target_role='architect', …)` — no new review round |
+| Exists | business-analyst's handoff after a split re-lock (`plane-api.md` §6.13) | Narrow the SPEC **in place** to the re-locked REQUIREMENTS, new Rev, `request_handoff(target_role='architect', …)` — architect and gate 2 again, even after `SPEC_APPROVED` |
 | Exists | architect's `SPEC_APPROVED` | IDLE, STOP (coders take over) |
 | Exists | initiator asking for change | REWORK that phase |
 | Exists | downstream `BLOCKED — upstream gap` | REWORK affected SPEC §X.Y **in place** (see Rev-history rule below), re-trigger architect |
