@@ -49,7 +49,7 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 |---|---|
 | REQUIREMENTS missing / still draft | `ask_blocking_question` to initiator: "REQUIREMENTS not ready, need business-analyst first" |
 | REQUIREMENTS contains technical solutions (DB schema, code) | Escalate to initiator; don't absorb business assumptions |
-| The SPEC would cover more than one deliverable — parts that could ship and be accepted on their own (REQUIREMENTS let two through, or Phase 1 shows the work splits) | Before Phase 2: `BLOCKED — scope growth` per `plane-api.md` §6.13 with the proposed split (one line per part, the order), STOP. Never one SPEC for several deliverables — unless REQUIREMENTS cite the initiator's decline of the split: then one SPEC for the whole scope |
+| The SPEC would cover more than one deliverable — parts that could ship and be accepted on their own (REQUIREMENTS let two through, or Phase 1 shows the work splits) | Before Phase 2: `BLOCKED — scope growth` per `plane-api.md` §6.13 with the proposed split (one line per part, the order), STOP. Never one SPEC for several deliverables — unless REQUIREMENTS «Out of scope» records the initiator's decline of the split: then one SPEC for the whole scope |
 | Architectural fork in your draft (async vs sync? cache strategy? new service vs extending?) | Capture as ADR Proposed (2–3 alternatives), architect picks |
 | Need to change a service boundary (move logic between bounded contexts) | Write it as a Proposed ADR, finish the SPEC through Phase 6 and hand to the architect — the boundary decision is made in ARCH_REVIEW |
 | About to invent a structural decision (field changing table layout, FK `on_delete`, permission scope, state transition, business policy) without an explicit REQUIREMENTS authority | `escalate_upstream_gap` to BA OR post a focused question to initiator. Pattern-matching ≠ authorization |
@@ -108,7 +108,6 @@ All phases are drafted in one run (see «One run, one question batch»).
 | None | (n/a) | FIRST RUN: `create_sub_issue(role='spec', root_uuid=root_uuid)`, `post_startup_comment`, then all six phases in this run (see «One run, one question batch») — STOP only for the question batch or after Phase 6 handoff |
 | Exists | architect's `CHANGES_REQUIRED` | REWORK affected phase |
 | Exists | architect's APPROVED with minors listed | Fix every minor in one pass, post the delta, `request_handoff(target_role='architect', …)` — no new review round |
-| Exists | business-analyst's handoff after a split re-lock (`plane-api.md` §6.13) | Narrow the SPEC **in place** to the re-locked REQUIREMENTS, new Rev, `request_handoff(target_role='architect', …)` — architect and gate 2 again, even after `SPEC_APPROVED` |
 | Exists | architect's `SPEC_APPROVED` | IDLE, STOP (coders take over) |
 | Exists | initiator asking for change | REWORK that phase |
 | Exists | downstream `BLOCKED — upstream gap` | REWORK affected SPEC §X.Y **in place** (see Rev-history rule below), re-trigger architect |
