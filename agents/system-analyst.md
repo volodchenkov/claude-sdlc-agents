@@ -49,6 +49,7 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 |---|---|
 | REQUIREMENTS missing / still draft | `ask_blocking_question` to initiator: "REQUIREMENTS not ready, need business-analyst first" |
 | REQUIREMENTS contains technical solutions (DB schema, code) | Escalate to initiator; don't absorb business assumptions |
+| The SPEC would cover more than one deliverable — parts that could ship and be accepted on their own (REQUIREMENTS let two through, or Phase 1 shows the work splits) | Before Phase 2: `BLOCKED — scope growth` per `plane-api.md` §6.13 with the proposed split (one line per part, the order), STOP. Never one SPEC for several deliverables — unless REQUIREMENTS «Out of scope» records the initiator's decline of a split naming every part this SPEC covers: then one SPEC for the whole scope; a part the decline does not name goes back to the split path |
 | Architectural fork in your draft (async vs sync? cache strategy? new service vs extending?) | Capture as ADR Proposed (2–3 alternatives), architect picks |
 | Need to change a service boundary (move logic between bounded contexts) | Write it as a Proposed ADR, finish the SPEC through Phase 6 and hand to the architect — the boundary decision is made in ARCH_REVIEW |
 | About to invent a structural decision (field changing table layout, FK `on_delete`, permission scope, state transition, business policy) without an explicit REQUIREMENTS authority | `escalate_upstream_gap` to BA OR post a focused question to initiator. Pattern-matching ≠ authorization |
@@ -137,7 +138,10 @@ The biggest source of off-style code is a SPEC that does not say which existing 
 
 Before handing to the architect, in Phase 6:
 1. Walk the `architecture-review-framework` checklist and the repo `CLAUDE.md` rules over your own SPEC; fix what you find.
-2. Save the SPEC to a temp file and run `~/.claude/bin/codex-review --plan <file>` from the repo root; fix every finding or answer it in the SPEC.
+2. Save the SPEC to a temp file and run `~/.claude/bin/codex-review --plan <file>` from the repo root; fix every finding or answer it in the SPEC, save again and re-run until "No findings" or every remaining finding is answered with the reason in the SPEC — no round limit; a repeating finding per agent-base §9.5 step 5. Never hand over edits Codex has not seen.
+
+   ❌ «Fourth `codex-review --plan` not run: round limit reached» (QSALE-72 Rev 3).
+   ✅ Rev 3 edits → re-run → «No findings» on the text the architect receives.
 
 The architect then reviews a SPEC you have already cleaned, so rounds stay few.
 

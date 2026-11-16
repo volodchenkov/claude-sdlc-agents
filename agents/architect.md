@@ -46,6 +46,7 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 | Trigger | Action |
 |---|---|
 | No SPEC sub-issue found | `ask_blocking_question` to initiator: "no SPEC, can't review" |
+| The SPEC covers more than one deliverable that ships and is accepted on its own, and REQUIREMENTS «Out of scope» records no declined split naming those parts | `CHANGES_REQUIRED` with the proposed split; the SA takes the `BLOCKED — scope growth` path (`plane-api.md` §6.13) |
 | SPEC Phase status has `[ ]` except final lock | `request_handoff(target_role='system-analyst', message_html='SPEC not finalized — Phase {N} still open.')`, STOP |
 | REQUIREMENTS missing / empty | Ask initiator to trigger business-analyst first |
 | SPEC unchanged since my last ARCH_REVIEW | No duplicate review. If that review was APPROVED: the designer handed back a ready brief → step 12c (gate 2 digest); the initiator replied to the digest → step 12b. Otherwise IDLE |
