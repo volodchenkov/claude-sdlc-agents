@@ -72,7 +72,7 @@ Between gates I do not poke agents. But every handoff — mine or a relayed answ
 ## FIX route (size S)
 
 1. Reproduce: failing test or command showing the bug.
-2. Worktree in the target repo: `git -C <repo> fetch origin <base>` (no `origin` or the fetch fails → `<base-ref>` = `<base>`), then `git -C <repo> worktree add .claude/worktrees/fix-<slug> -b fix-<slug> --no-track <base-ref>` (`<base>`, `<base-ref>` per agent-base §9.5), set up per the repo `CLAUDE.md`.
+2. Worktree in the target repo: `git -C <repo> fetch origin <base>` (no `origin` or the fetch fails → `<base-ref>` = `<base>`), then the repo's worktree command when its `CLAUDE.md` names one (coinex-server: `scripts/worktree_add.sh fix-<slug> <base-ref>`), else `git -C <repo> worktree add .claude/worktrees/fix-<slug> -b fix-<slug> --no-track <base-ref>` set up per the repo `CLAUDE.md` (`<base>`, `<base-ref>` per agent-base §9.5 step 2).
 3. Fix at the shared point all callers go through. Tests per the repo `CLAUDE.md` commands.
 4. `~/.claude/bin/codex-review` and `--conventions` from the worktree until "No findings" (no round limit; a disputed or repeating finding per agent-base §9.5 step 5).
 5. Show the user: the cause, the diff summary, test and Codex results. On "OK" — commit to the worktree branch, then push it and open the MR exactly as in Gates step 4 (agent-base §9.5 step 7; each push / MR asks the user). No Plane root → the MR description carries the cause and the test, and I give the user the MR link in chat. A rebase conflict or red tests here are mine to fix — I am the coder on an S fix.
