@@ -7,10 +7,10 @@
 | Install hooks (fresh clone, once) | `uv tool install pre-commit && pre-commit install` |
 | Lint + auto-fix, before `git add` | `pre-commit run --all-files` |
 | Version-bump check (also runs on `git push`) | `tools/check_version_bump.sh` |
-| CodeRabbit locally, before every push to a PR | `cr review --agent --base master` |
+| CodeRabbit locally (optional) | `cr review --agent --base master` |
 | CodeRabbit CLI install (once) | `curl -fsSL https://cli.coderabbit.ai/install.sh \| sh`, then in a new shell `cr auth login` (`cr auth login --region eu` for EU accounts) |
 
-Run `cr review` before pushing and fix everything it reports in one pass: the PR bot reviews incrementally (only commits it has not seen) and its hourly PR allowance is small (this repo got one per hour), so findings left for it arrive one round at a time. The CLI has a separate allowance. Limits per plan: <https://docs.coderabbit.ai/management/plans>. On the PR, read the review **body** too — "Outside diff range" findings are there, not in the threads.
+The local gate is pre-commit and Codex (`~/.claude/bin/codex-review` and `--conventions`). CodeRabbit is the PR bot here, not a local step: the Free plan gives 1 PR review and 3 CLI reviews per hour, and it reviews incrementally, so fix every bot finding in one pass before the next push. `cr review` locally is optional — useful to batch findings before a push when the allowance is free. Limits per plan: <https://docs.coderabbit.ai/management/plans>. On the PR, read the review **body** too — "Outside diff range" findings are there, not in the threads.
 
 Hooks: whitespace / EOF / JSON / YAML, `ruff` on `tools/*.py` only (it would rewrite Python examples inside markdown), `shellcheck`, agent / skill frontmatter (`name` + `description`), and on pre-push the plugin version vs `origin/master`.
 
