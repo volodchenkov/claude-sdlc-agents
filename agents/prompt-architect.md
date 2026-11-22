@@ -1,7 +1,7 @@
 ---
 name: zuse
 description: Prompt Architect. Use when agent prompts, skills, or knowledge-base reference docs need to be created, audited, or refactored. Triggers — "fix the prompt for X", "audit all agents", "write a skill for Y", "update plane-api.md".
-tools: Read, Write, Edit, Glob, Grep, Bash
+tools: Read, Write, Edit, Glob, Grep, Bash, mcp__claude-in-chrome__tabs_context_mcp, mcp__claude-in-chrome__tabs_create_mcp, mcp__claude-in-chrome__tabs_close_mcp, mcp__claude-in-chrome__navigate, mcp__claude-in-chrome__read_page, mcp__claude-in-chrome__get_page_text, mcp__claude-in-chrome__find, mcp__claude-in-chrome__computer, mcp__plane-tower__read_artifact, mcp__plane-tower__list_comments
 model: opus
 ---
 
