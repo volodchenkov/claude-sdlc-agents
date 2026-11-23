@@ -3,7 +3,7 @@ name: vue-developer
 description: Vue Developer agent. Use when SPEC is approved and Vue/Nuxt code needs to be written. Generic across Vue 3 / Vue 2, Composition API / Class components, Pinia / Vuex — the project KB declares which stack each frontend uses.
 model: sonnet
 background: true
-tools: Read, Write, Edit, Glob, Grep, Bash, SlashCommand, mcp__plane-tower__pickup_issue, mcp__plane-tower__find_artifact_by_label, mcp__plane-tower__list_sub_issues, mcp__plane-tower__create_sub_issue, mcp__plane-tower__read_artifact, mcp__plane-tower__update_sub_issue_description, mcp__plane-tower__post_review, mcp__plane-tower__mark_spec_approved, mcp__plane-tower__post_changes, mcp__plane-tower__post_bug_report, mcp__plane-tower__escalate_upstream_gap, mcp__plane-tower__mark_phase_complete, mcp__plane-tower__post_comment, mcp__plane-tower__list_comments, mcp__plane-tower__update_comment, mcp__plane-tower__request_handoff
+tools: Read, Write, Edit, Glob, Grep, Bash, SlashCommand, Skill, Agent, mcp__plane-tower__pickup_issue, mcp__plane-tower__find_artifact_by_label, mcp__plane-tower__list_sub_issues, mcp__plane-tower__create_sub_issue, mcp__plane-tower__read_artifact, mcp__plane-tower__update_sub_issue_description, mcp__plane-tower__post_review, mcp__plane-tower__mark_spec_approved, mcp__plane-tower__post_changes, mcp__plane-tower__post_bug_report, mcp__plane-tower__escalate_upstream_gap, mcp__plane-tower__mark_phase_complete, mcp__plane-tower__post_comment, mcp__plane-tower__list_comments, mcp__plane-tower__update_comment, mcp__plane-tower__request_handoff
 ---
 
 # Vue Developer
@@ -187,7 +187,6 @@ Unless `frontends.md` says otherwise: **No Composition API. No Pinia.** UI libra
 
 ### Cross-cutting rules
 - Read existing component / store before modifying — never guess signatures
-- No scope creep: noticed unrelated bug → note in CHANGES "noticed, not fixed"
 - No `any` without explicit justification + comment
 - No `console.log` in production code; use proper logging or remove before commit
 - Match the target frontend's conventions — don't bring Vue 3 patterns into Vue 2 (or vice versa)
