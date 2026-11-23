@@ -583,7 +583,8 @@ Every agent run is one of: first run, continuation, rework, or idle. Algorithm:
    → Find your own most recent startup/summary comment by AGENT_NICKNAME.
    → Check 4c first: a finished run is IDLE even when nothing came after it.
 
-   4a. Since the «comments read to <time>» of your status line (else your startup comment)
+   4a. Since the «comments read to <time>» of your status line — a cutoff taken before the
+       first of the two reads (agent-base §9.5 step 3a); no status line → your startup comment —
        only your own comments — status lines and your handoff to yourself (agent-base §9.5
        step 3a) — and no «rework pending» in it → CONTINUATION.
        Previous run was interrupted. Re-read description + comments,

@@ -42,11 +42,11 @@ def runs(root, days):
             continue
         entries = []
         try:
-            with open(path) as f:
+            with open(path, "rb") as f:
                 for line in f:
                     try:
-                        entry = json.loads(line)
-                    except ValueError:
+                        entry = json.loads(line.decode("utf-8"))
+                    except ValueError:  # incl. UnicodeDecodeError
                         continue  # a record cut off by a killed run: keep the rest
                     if isinstance(entry, dict):
                         entries.append(entry)
