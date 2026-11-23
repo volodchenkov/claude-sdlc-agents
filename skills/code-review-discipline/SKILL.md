@@ -173,6 +173,22 @@ If `kb/conventions.md` is missing or stale, raise it as a `BLOCKED — upstream 
 
 ---
 
+## Scope audit — the diff against the PLAN
+
+The coder's own `/simplify`, `/code-review` and Codex runs (`agent-base` §9.5) judge the code inside the diff; nobody but the reviewer checks the diff's edges. From the coder's worktree run `git diff --stat <base-ref>...HEAD` — the coder's one commit against its merge base, so a `<base>` that moved on adds nothing — and match every file against the PLAN's Files list:
+
+| File | Verdict |
+|---|---|
+| In the PLAN's Files | ✓ |
+| Not in the PLAN, declared in CHANGES `deviations_from_plan` with a reason that holds | ⚠ |
+| Not in the PLAN, not declared | ✗ **major** — cleanup belongs in the `-cleanup` branch (`agent-base` §9.5 step 4a), anything else in a new task |
+
+Doc-only task (`pipeline:doc-only`, no PLAN): every file must be documentation; a code file is a major finding.
+
+Code that need not exist — the repo, the standard library or an installed dependency already does it — is a **major** finding too: name what to reuse.
+
+---
+
 ## Code review patterns (from Google Engineering Practices)
 
 ### What to look for
