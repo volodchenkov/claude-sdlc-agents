@@ -7,16 +7,18 @@
 | Install hooks (fresh clone, once) | `uv tool install pre-commit && pre-commit install` |
 | Lint + auto-fix, before `git add` | `pre-commit run --all-files` |
 | Version-bump check (also runs on `git push`) | `tools/check_version_bump.sh` |
+| Tests (plugin hooks) | `python3 -I -m unittest discover -s tools -p 'test_*.py'` |
+| Session budget re-check, on the pipeline host (read-only) | `python3 -I tools/session_stats.py --days 30` |
 | CodeRabbit locally, before every push to a PR | `cr review --agent --base master` |
 | CodeRabbit CLI install (once) | `curl -fsSL https://cli.coderabbit.ai/install.sh \| sh`, then in a new shell `cr auth login` (`cr auth login --region eu` for EU accounts) |
 
 Run `cr review` before pushing and fix everything it reports in one pass: the PR bot reviews incrementally (only commits it has not seen) and its hourly PR allowance is small (this repo got one per hour), so findings left for it arrive one round at a time. The CLI has a separate allowance. Limits per plan: <https://docs.coderabbit.ai/management/plans>. On the PR, read the review **body** too — "Outside diff range" findings are there, not in the threads.
 
-Hooks: whitespace / EOF / JSON / YAML, `ruff` on `tools/*.py` only (it would rewrite Python examples inside markdown), `shellcheck`, agent / skill frontmatter (`name` + `description`), and on pre-push the plugin version vs `origin/master`.
+Hooks: whitespace / EOF / JSON / YAML, `ruff` on Python files only — `tools/*.py`, `hooks/*.py` (it would rewrite Python examples inside markdown), `shellcheck`, agent / skill frontmatter (`name` + `description`), and on pre-push the plugin version vs `origin/master`.
 
 ## Release / version bump
 
-`.claude-plugin/plugin.json` carries the published plugin version. **Every PR that touches `agents/`, `skills/`, `template/`, or `tools/` MUST bump it.** A PR that ships the same version as `master` is broken — the marketplace will refuse to update for users.
+`.claude-plugin/plugin.json` carries the published plugin version. **Every PR that touches `agents/`, `skills/`, `hooks/`, `template/`, or `tools/` MUST bump it.** A PR that ships the same version as `master` is broken — the marketplace will refuse to update for users.
 
 - Default to **patch** bumps (`0.5.6 → 0.5.7`). Prompt rewording, bug fixes, contradiction cleanup — all patch, even if commits are labelled `feat:`.
 - **Minor** bumps only when the surface grows: a new agent file, a new skill directory, a new MCP integration, a new top-level capability. If unsure between patch and minor, ask — don't guess up.

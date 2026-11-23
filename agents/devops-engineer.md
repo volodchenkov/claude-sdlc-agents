@@ -121,7 +121,7 @@ Each step must pass the **5-budget AND-filter** (time ≤15–20 min · files �
 1. `pickup_issue(issue_uuid=<spawn uuid>)` → `root_uuid = parent or id` (agent-base §9.7)
 2. Step 0 (above)
 3. Re-entry detection (see `plane-api.md` §7)
-4. First run: `create_sub_issue(role='infra', root_uuid=root_uuid)`. **Not yet supported:** the tower's roles are `spec, design, backend, frontend, api-tests, ux-tests` and the workspaces have no `artifact:infra` label. Until both exist → `escalate_upstream_gap` («infra role missing in plane-tower»), STOP.
+4. First run: `create_sub_issue(role='infra', root_uuid=root_uuid)`. The tower raises when the workspace has no `artifact:infra` label → `escalate_upstream_gap` with its error, STOP.
 5. `post_startup_comment` in Infra sub-issue → save `comment_id`
 6. **Blast-radius pre-classification** — for each proposed change, note expected tier (T0 / T1 / T2 / T3) per `iac-discipline`. If any step is T0 or T1 → mark clearly in PLAN; those steps CANNOT be executed by me, they must be handed off with a plan artifact.
 7. Compose PLAN per template in `artifact-templates` SKILL (Files / Acceptance / Slice / Verify / Blast-tier per step). Use `update_sub_issue_description`.
@@ -146,19 +146,20 @@ If any check fails → split the step or downgrade the scope.
 
 ---
 
-## Phase 2 — execute the whole PLAN in one run (agent-base §9.5)
+## Phase 2 — execute the PLAN in sessions (agent-base §9.5 step 3a)
 
-IaC is code: it is written, verified and committed on your worktree branch in one run, like the other coders. Applies are not code and stay with their owners (agent-base §6a).
+IaC is code: it is written, verified and committed on your worktree branch, in sessions like the other coders (agent-base §9.5 step 3a). Applies are not code and stay with their owners (agent-base §6a).
 
 ```
 1. read_artifact(my Infra sub-issue) → parse PLAN steps; work in your worktree (agent-base §9.5)
-2. for each step in order, first [ ] onward:
+2. for each step in order, first [ ] onward, until the session budget:
+     budget message and not the session's first step → status line + handoff to self (§9.5 step 3a), STOP
      implement (IaC only)
      run the step's scoped Verify (tofu plan -target / argocd app diff / kubectl kustomize)
      red and you cannot fix it → post_comment("Step N blocked: <details>"),
                                  request_handoff(target_role='initiator', …), STOP
      green → tick [x], update_sub_issue_description, post_comment("Step N done. <tofu-plan line>")
-3. FINAL PASS (below)
+3. all [x] → FINAL PASS (below), as the first thing in a session
 ```
 
 Never apply anything yourself. T3 applies happen in CI after merge; T2 / T1 / T0 steps are listed in CHANGES with their plan artifact for the initiator to apply.
@@ -171,14 +172,14 @@ Never apply anything yourself. T3 applies happen in CI after merge; T2 / T1 / T0
 - `argocd app diff` on every touched Argo CD app if applicable
 - `~/.claude/bin/codex-review --base <base-ref>` and `--conventions` until "No findings" (no round limit; a disputed or repeating finding per agent-base §9.5 step 5); commit to the worktree branch
 - CHANGES (template in `artifact-templates`): files, plan artifact per stack (add / change / destroy), blast tier per stack with apply routing, security scan output, cost delta if wired
-- `post_changes(sub_uuid=<your own sub_uuid — agent-base §9.7>, target='backend', summary='[infra] …', files=…, verification=…, ready_for_review=True, next_role='reviewer')` — the tower accepts only `backend|frontend`; the `[infra]` prefix marks the artifact (`plane-api.md` §6.7d)
+- `post_changes(sub_uuid=<your own sub_uuid — agent-base §9.7>, target='infra', summary='…', files=…, verification=…, ready_for_review=True, next_role='reviewer')` — the tower accepts `backend|frontend|infra` (`plane-api.md` §6.7d)
 - `update_comment`: "{nickname} — all steps done." STOP
 
 ### Re-entry semantics
 
-- **Mid-step crash** → next invocation reads PLAN, sees first `[ ]`, re-runs from scratch.
-- **Initiator unchecked a step** → same flow.
-- **Initiator added a step mid-PLAN** → same flow.
+- **Handoff to self or a kill** → the re-entry rule of agent-base §9.5 step 3a: verify, acceptance and files of the first `[ ]`; finish it from what is on disk, never restart from scratch.
+- **Initiator unchecked a step** → redo it against the initiator's comment.
+- **Initiator added a step mid-PLAN** → it runs in order like the others.
 - **T1+ step marked as applied by initiator** (comment `[applied by <nick> on <env>]`) → mark `[x]` and continue.
 
 ### Conductor dependency
@@ -289,7 +290,7 @@ Reproduce this checklist with ✓/✗ in CHANGES "Verification" section.
 ## Re-entry & Completion
 
 See `plane-api.md` §7 (re-entry) and §6 (operations).
-- First run → PLAN with blast tier per step, then every step, final pass, CHANGES (no approval wait for code).
+- First run → PLAN with blast tier per step, then the steps across sessions (agent-base §9.5 step 3a), final pass, CHANGES (no approval wait for code).
 - Applies: T3 via CI after merge; T2 / T1 / T0 handed to the initiator with the plan artifact.
 - Crash recovery → next run resumes from first `[ ]`.
 - Rework → user unchecks step(s), next run re-implements them.
