@@ -577,7 +577,9 @@ Every agent run is one of: first run, continuation, rework, or idle. Algorithm:
    → At the end, create_sub_issue (§6.5) + post_startup_comment (§6.2) + summary.
 
 4. If my_sub exists:
-   → Read my_sub comments (§6.4).
+   → Read my_sub comments (§6.4), and on the spawn issue when it is not my_sub the handoffs
+     and comments addressed to your role (a role that handed off on its own sub-issue or the
+     root left it there; other comments on a shared root are not yours).
    → Find your own most recent startup/summary comment by AGENT_NICKNAME.
    → Check 4c first: a finished run is IDLE even when nothing came after it.
 
@@ -587,9 +589,10 @@ Every agent run is one of: first run, continuation, rework, or idle. Algorithm:
        Previous run was interrupted. Re-read description + comments,
        determine where you stopped, drive to summary.
 
-   4b. Since that time a comment from the initiator / reviewer / tester / designer / another coder, a handoff
-       to you from another role, or «rework pending» in your status line → REWORK (even when
-       your self-handoff is the latest).
+   4b. Since that time a comment from the initiator / reviewer / tester / designer / another
+       coder, a handoff to you from another role (on my_sub, or on the spawn issue — there only
+       handoffs and comments addressed to your role count), or «rework
+       pending» in your status line → REWORK (even when your self-handoff is the latest).
        Read the feedback. Update description (§6.6). Post a comment
        describing changes (§6.7). Update startup-to-summary (§6.8).
 

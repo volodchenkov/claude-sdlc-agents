@@ -79,6 +79,7 @@ def main():
     peaks = []
     calls = collections.Counter()
     errors = collections.Counter()
+    unresolved = collections.Counter()
     for role, entries in runs(args.root, args.days):
         roles[role] += 1
         ctx = peak = 0
@@ -101,6 +102,8 @@ def main():
                         b = bin_of(pending.pop(part["tool_use_id"]) // 1000)
                         calls[b] += 1
                         errors[b] += bool(part.get("is_error"))
+        for left in pending.values():
+            unresolved[bin_of(left // 1000)] += 1
         peaks.append(peak)
 
     print(f"pipeline runs: {sum(roles.values())} (last {args.days} days)")
@@ -115,13 +118,16 @@ def main():
         print(
             f"peak context per run, k: p25 {q(0.25)}  p50 {q(0.5)}  p75 {q(0.75)}  p90 {q(0.9)}  max {q(1)}"
         )
-    print(f"{'context k':<10} {'calls':>7} {'errors':>7} {'runs >=':>8}")
+    # «done» = calls with a result; «no result» = the run ended first (killed).
+    print(
+        f"{'context k':<10} {'done':>7} {'errors':>7} {'no result':>10} {'runs >=':>8}"
+    )
     for i in range(len(BINS) - 1):
         hi = BINS[i + 1] if BINS[i + 1] < 10**9 else "+"
         n = calls[i]
         reach = sum(1 for p in peaks if p >= BINS[i] * 1000)
         print(
-            f"{f'{BINS[i]}-{hi}':<10} {n:>7} {100 * errors[i] / (n or 1):>6.1f}% {reach:>8}"
+            f"{f'{BINS[i]}-{hi}':<10} {n:>7} {100 * errors[i] / (n or 1):>6.1f}% {unresolved[i]:>10} {reach:>8}"
         )
 
 
