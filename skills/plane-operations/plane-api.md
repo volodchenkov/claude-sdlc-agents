@@ -577,7 +577,10 @@ Every agent run is one of: first run, continuation, rework, or idle. Algorithm:
    → At the end, create_sub_issue (§6.5) + post_startup_comment (§6.2) + summary.
 
 4. If my_sub exists:
-   → Read my_sub comments (§6.4), and on the spawn issue when it is not my_sub the handoffs
+   → Read my_sub comments with `list_comments(limit=200)` (newest first; one call, so no page
+     shifts under new comments; only past 200 `offset` back) until your status line or startup
+     comment is in view — every comment newer than its cutoff is read,
+     and on the spawn issue when it is not my_sub the handoffs
      and comments addressed to your role (a role that handed off on its own sub-issue or the
      root left it there; other comments on a shared root are not yours).
    → Find your own most recent startup/summary comment by AGENT_NICKNAME.
