@@ -40,10 +40,17 @@ def runs(root, days):
     for path in glob.glob(os.path.join(os.path.expanduser(root), "*", "*.jsonl")):
         if os.path.getmtime(path) < cut:
             continue
+        entries = []
         try:
             with open(path) as f:
-                entries = [json.loads(line) for line in f if line.strip()]
-        except (OSError, ValueError):
+                for line in f:
+                    try:
+                        entry = json.loads(line)
+                    except ValueError:
+                        continue  # a record cut off by a killed run: keep the rest
+                    if isinstance(entry, dict):
+                        entries.append(entry)
+        except OSError:
             continue
         first = next((e for e in entries if e.get("type") == "user"), None)
         if not first:
