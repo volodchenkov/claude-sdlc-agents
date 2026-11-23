@@ -386,7 +386,7 @@ The coders' final CHANGES summary on a Backend / Frontend sub-issue. Wraps the `
 ```python
 post_changes(
     sub_uuid=<your own sub_uuid>,   # agent-base §9.7 — not the spawn uuid
-    target='backend',               # 'backend' or 'frontend' — display label + OpenAPI defense
+    target='backend',               # 'backend' | 'frontend' | 'infra' — display label + OpenAPI defense
     summary='<implementation summary, agent-base §9.4>',
     files=[                          # changed files with one-line summaries
         ["apps/orders/models.py", "Add `Order.tracking_number`"],
@@ -579,12 +579,17 @@ Every agent run is one of: first run, continuation, rework, or idle. Algorithm:
 4. If my_sub exists:
    → Read my_sub comments (§6.4).
    → Find your own most recent startup/summary comment by AGENT_NICKNAME.
+   → Check 4c first: a finished run is IDLE even when nothing came after it.
 
-   4a. Latest comment is YOURS, no later signal → CONTINUATION.
+   4a. Since the «comments read to <time>» of your status line (else your startup comment)
+       only your own comments — status lines and your handoff to yourself (agent-base §9.5
+       step 3a) — and no «rework pending» in it → CONTINUATION.
        Previous run was interrupted. Re-read description + comments,
        determine where you stopped, drive to summary.
 
-   4b. After your comment there's an initiator / reviewer / tester / designer comment or a handoff to you → REWORK.
+   4b. Since that time a comment from the initiator / reviewer / tester / designer / another coder, a handoff
+       to you from another role, or «rework pending» in your status line → REWORK (even when
+       your self-handoff is the latest).
        Read the feedback. Update description (§6.6). Post a comment
        describing changes (§6.7). Update startup-to-summary (§6.8).
 

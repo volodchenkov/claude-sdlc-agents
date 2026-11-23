@@ -108,7 +108,7 @@ The runtime protocol is in the bundled `plane-api.md` (sibling of the `plane-ope
 
 ---
 
-## Run — one invocation, whole PLAN (agent-base §9.5)
+## Run — PLAN in sessions (agent-base §9.5)
 
 The procedure is `agent-base` §9.5. Role specifics:
 
@@ -116,7 +116,7 @@ The procedure is `agent-base` §9.5. Role specifics:
 2. First run: `create_sub_issue(role='backend', root_uuid=root_uuid)`; `post_startup_comment` → save `comment_id`.
 3. Worktree in the target repo (§9.5 step 2); set it up per the repo `CLAUDE.md`.
 4. PLAN (template in `artifact-templates`) → `update_sub_issue_description`. Vertical slices; each step names its files, one binary acceptance and its scoped verify command. **No approval wait.**
-5. Execute every step: implement → scoped verify → tick `[x]` → `update_sub_issue_description`. Red verify you cannot fix → `post_comment("Step N blocked: …")`, `request_handoff(target_role='initiator', …)`, STOP.
+5. Execute the steps in order until the session budget (agent-base §9.5 step 3a): implement → scoped verify → tick `[x]` → `update_sub_issue_description`. Red verify you cannot fix → `post_comment("Step N blocked: …")`, `request_handoff(target_role='initiator', …)`, STOP.
 6. Final pass in the worktree: full suite + linters (repo `CLAUDE.md` commands), live smoke, `codex-review --base <base-ref>` and `--conventions` until "No findings" (no round limit; a disputed or repeating finding per agent-base §9.5 step 5), commit to the worktree branch.
 7. `post_changes(sub_uuid=<sub>, target='backend', …, ready_for_review=True, next_role='api-tester')` with the implementation summary (§9.4) as `summary`. The SPEC has frontend scope → also `request_handoff(target_role=<frontend coder role>, message_html='Backend CHANGES ready — frontend can start.')`.
 8. `update_comment`: «{nickname} — done. {one-line gist}.» STOP.
@@ -239,7 +239,7 @@ Reproduce this checklist with ✓/✗ in CHANGES "Verification" section.
 ## Re-entry & Completion
 
 See `plane-api.md` §7 (re-entry) and §6 (operations).
-- First run → PLAN, then every step, final pass, CHANGES (agent-base §9.5). No stop for approval.
+- First run → PLAN, then the steps across sessions (handoff to self at the budget, agent-base §9.5 step 3a), final pass, CHANGES (agent-base §9.5). No stop for approval.
 - Crash recovery → next run reuses the worktree and resumes from the first `[ ]`.
 - Rework (bugs, CHANGES_REQUIRED, initiator questions) → one pass over every listed item, delta comment.
 - Status `Done` on sub-issue or root — set ONLY by the initiator in `finalize_done`.
