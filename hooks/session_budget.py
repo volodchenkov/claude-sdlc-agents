@@ -9,12 +9,17 @@ only coder roles (CODERS), the ones that follow agent-base §9.5 step 3a:
     SESSION BUDGET REACHED (...). agent-base §9.5 step 3a: ...
 
 Context = input + cache_read + cache_creation tokens of the last assistant
-message that carries `usage` in the transcript. Time = now minus the timestamp
-of the first transcript entry that has one.
+message that carries `usage` in the transcript. The context budget counts the
+growth since the baseline: the context at the session's first successful PLAN
+write (BASELINE_TOOL — the coder writes or ticks its PLAN there). Entering a
+task (prompt, agent-base, the task, the KB) costs 100-170k by itself, so an
+absolute threshold fired before the first step had started. No PLAN write yet
+-> no context message; the time budget still applies. Time = now minus the
+timestamp of the first transcript entry that has one.
 
-Budgets: SDLC_CONTEXT_BUDGET_K (default 100) and SDLC_TIME_BUDGET_MIN
-(default 30). Interactive sessions (no WORKSPACE_SLUG) are left alone.
-Thresholds come from the transcript analysis in tools/session_stats.py.
+Budgets: SDLC_CONTEXT_GROWTH_K (default 60, about two PLAN steps) and
+SDLC_TIME_BUDGET_MIN (default 30). Interactive sessions (no WORKSPACE_SLUG)
+are left alone. Re-check them with tools/session_stats.py.
 
 Fails open: any error -> exit 0, no output. It never blocks a tool.
 """
@@ -32,6 +37,7 @@ CHUNK = 256 * 1024
 CODERS = ("django-developer", "react-developer", "vue-developer", "devops-engineer")
 REMIND_K = 25
 REMIND_MIN = 10
+BASELINE_TOOL = "mcp__plane-tower__update_sub_issue_description"
 
 
 def _int_env(name, default):
@@ -125,33 +131,52 @@ def _save_state(path, state):
     os.replace(tmp, path)
 
 
-def decide(transcript, session_id, now=None, emit=None):
+def decide(transcript, session_id, now=None, emit=None, tool_name=None):
     """Find the message to add; hand it to `emit` before the state is saved.
 
     The state file is read, changed and written under an exclusive lock, so
     hooks running at the same time never both fire or overwrite each other.
     It is written after `emit`, so a hook killed before its output is out
-    fires again on the next call instead of going quiet.
+    fires again on the next call instead of going quiet. `tool_name` is the
+    tool of a successful call (None for a failed one); BASELINE_TOOL sets the
+    baseline once.
     """
     started, agent = head_info(transcript)
     if not agent or agent.split(":")[-1] not in CODERS:
         return None
-    budget_k = _int_env("SDLC_CONTEXT_BUDGET_K", 100)
+    growth_k = _int_env("SDLC_CONTEXT_GROWTH_K", 60)
     budget_min = _int_env("SDLC_TIME_BUDGET_MIN", 30)
     ctx = context_tokens(transcript)
     now = time.time() if now is None else now
     ctx_k = ctx // 1000 if ctx else None
     minutes = int((now - started) // 60) if started else None
-
-    over_ctx = ctx_k is not None and ctx_k >= budget_k
     over_time = minutes is not None and minutes >= budget_min
-    if not (over_ctx or over_time):
-        return None
+    marker = tool_name == BASELINE_TOOL and ctx_k is not None
 
     path = _state_path(session_id)
+    state = _load_state(path)  # unlocked peek: most calls change nothing
+    base_k = state.get("base_k")
+    over_ctx = (
+        isinstance(base_k, int) and ctx_k is not None and ctx_k >= base_k + growth_k
+    )
+    if not (over_ctx or over_time or (marker and not isinstance(base_k, int))):
+        return None
+
     with open(path + ".lock", "a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         state = _load_state(path)
+        base_k = state.get("base_k")
+        if not isinstance(base_k, int):
+            if not marker:
+                base_k = None
+            else:
+                base_k = state["base_k"] = ctx_k
+                _save_state(path, state)
+        over_ctx = (
+            base_k is not None and ctx_k is not None and ctx_k >= base_k + growth_k
+        )
+        if not (over_ctx or over_time):
+            return None
         last_k = state.get("last_k")
         last_min = state.get("last_min")
         fire = False
@@ -165,17 +190,19 @@ def decide(transcript, session_id, now=None, emit=None):
             fire = True
         if not fire:
             return None
-        message = _message(ctx_k, budget_k, minutes, budget_min)
+        message = _message(ctx_k, base_k, growth_k, minutes, budget_min)
         if emit:
             emit(message)
         _save_state(path, state)
         return message
 
 
-def _message(ctx_k, budget_k, minutes, budget_min):
+def _message(ctx_k, base_k, growth_k, minutes, budget_min):
     parts = []
-    if ctx_k is not None:
-        parts.append(f"context {ctx_k}k / {budget_k}k")
+    if ctx_k is not None and base_k is not None:
+        parts.append(
+            f"context +{ctx_k - base_k}k / +{growth_k}k since the first PLAN write"
+        )
     if minutes is not None:
         parts.append(f"{minutes} min / {budget_min} min")
     return (
@@ -196,7 +223,13 @@ def main():
         transcript = data.get("transcript_path")
         if not transcript or not os.path.isfile(transcript):
             return
-        decide(transcript, str(data.get("session_id") or "unknown"), emit=_emit)
+        tool = data.get("tool_name") if _event() == "PostToolUse" else None
+        decide(
+            transcript,
+            str(data.get("session_id") or "unknown"),
+            emit=_emit,
+            tool_name=tool,
+        )
     except Exception:  # noqa: BLE001 — fail open, never block a tool
         return
 
