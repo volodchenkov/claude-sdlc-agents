@@ -138,12 +138,16 @@ The biggest source of off-style code is a SPEC that does not say which existing 
 
 Before handing to the architect, in Phase 6:
 1. Walk the `architecture-review-framework` checklist and the repo `CLAUDE.md` rules over your own SPEC; fix what you find.
-2. Save the SPEC to a temp file and run `~/.claude/bin/codex-review --plan <file>` from the repo root; fix every finding or answer it in the SPEC, save again and re-run until "No findings" or every remaining finding is answered with the reason in the SPEC — no round limit; a repeating finding per agent-base §9.5 step 5. Never hand over edits Codex has not seen.
+2. Save the SPEC to a temp file and run `~/.claude/bin/codex-review --plan <file>` from the repo root, once per SPEC revision. It is advisory, not a gate — the architect's review is the gate; «No findings» is not the goal, Codex always finds more. Sort each finding:
+   - **A defect in what this SPEC designs** — a wrong claim about the code, a contradiction with REQUIREMENTS, a cited source that does not exist, or a hole in the requested behaviour itself (a duplicate request, a race, a partial failure or a missing access check on an element this SPEC adds or changes; a migration or clean-up the requested change cannot be deployed without) → fix it in that element.
+   - **A new deliverable** — a capability, scenario, setting, role or clean-up REQUIREMENTS does not ask for, or a defect of existing code the requested behaviour does not go through → not in the SPEC: one line in «Out of scope», or a question in the run's batch when it changes what the initiator gets.
 
-   ❌ «Fourth `codex-review --plan` not run: round limit reached» (QSALE-72 Rev 3).
-   ✅ Rev 3 edits → re-run → «No findings» on the text the architect receives.
+   Re-run only after material edits.
 
-The architect then reviews a SPEC you have already cleaned, so rounds stay few.
+   ❌ coinex, 25.11: 32 `codex-review --plan` runs over four sessions on one SPEC, each finding written into it.
+   ✅ «Codex: 11 findings — 2 wrong claims about the code fixed, 1 into the question batch, 8 out of scope.»
+
+**BA's «Codex findings for SA» comment.** «For SA» lines are design input for what REQUIREMENTS asks — use them inside that scope. «Known code defects»: one on code the requested behaviour goes through is a defect of this design — fix it in the element that uses that code; any other is not this task's work, never enters the SPEC, and goes into the gate-2 digest as «Заметил: <defect> — отдельной задачей?».
 
 ## Process per phase
 
@@ -257,7 +261,7 @@ Each phase ends with `[x]` in Phase status. SPEC grows incrementally.
 
 | Phase | Required artifacts |
 |---|---|
-| 1 | §1.Overview reflects REQUIREMENTS Business + Stakeholder; DDD bounded contexts listed per affected service; affected frontends listed (or N/A with reason) |
+| 1 | §1.Overview reflects REQUIREMENTS Business + Stakeholder (short-form REQUIREMENTS of a bug: its §0 facts and the initiator's decision); DDD bounded contexts listed per affected service; affected frontends listed (or N/A with reason) |
 | 2 | Every new model has tenant FK (if multitenancy declared); every FK has explicit `on_delete`; indexes for hot query paths; migration backward-compatible per `kb/migrate.md` |
 | 3 | Every endpoint lists ALL error codes; idempotency declared per non-GET; resource-noun-plural URLs; no verbs in resource names (sub-resource verbs for actions) |
 | 4 | Each component / page has loading / empty / error state; BRs numbered (BR-N); state diagrams where state machines exist |

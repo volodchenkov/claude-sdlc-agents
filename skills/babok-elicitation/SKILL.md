@@ -259,7 +259,7 @@ For the current phase's scope, list in your working notes:
 - B3. What about the existing system this touches? (Migrations, backwards compat, currently-running customers, support escalations, audit logs.)
 
 **C. What could quietly grow** (scope-creep risk)
-- C1. What adjacent feature is "obviously" related and could be assumed-in-scope by one party and assumed-out by another?
+- C1. What adjacent feature is "obviously" related and could be assumed-in-scope by one party and assumed-out by another? (The business-analyst settles it as out of scope by default — `business-analyst.md` Pre-flight item 3 — not as a question, unless the asked outcome cannot be delivered or accepted without it, or the asked outcome's own boundary is unclear; the «Out of scope» line is its answer under the resolution rule below.)
 - C2. What dependency does this issue have on another not-yet-built thing?
 - C3. What's the cheapest possible MVP version of this — and what's the most expensive interpretation? Is the gap between them explicit?
 

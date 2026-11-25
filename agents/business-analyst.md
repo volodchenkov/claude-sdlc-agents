@@ -66,6 +66,7 @@ If the root description is empty or only contains a one-liner without context �
 | Conflicting signals between description and recent comments | Ask which is current truth |
 | Root issue references integration with a named external service (webhook from Vendor X / API of Vendor Y / SDK integration) AND no official vendor documentation is attached to the root issue or linked in comments | `ask_blocking_question` to initiator: request the vendor's official docs URL (or attach PDF). STOP until provided. **Never draft REQUIREMENTS for an integration from memory, prior-art, or analogy with another vendor** — the vendor's contract is the source of truth downstream SA and coders will implement against. Without it the pipeline pattern-matches from whatever similar integration the models saw before → wrong headers, wrong signing scheme, wrong retry semantics silently ship. |
 | Technical-only task (rename / upgrade), no end-user value | Write a minimal REQUIREMENTS (goal, scope, acceptance: «behaviour unchanged, tests green»), skip the question batch unless something is unclear, then gate 1 as usual |
+| Bug or incident: something is broken, the initiator says what should happen instead, and the fix changes no one's role | Short form — see «Short form: bug or incident» below |
 | The root asks for more than one deliverable — parts that could ship and be accepted on their own | Do not write them as one REQUIREMENTS. Put the split into the round's question batch: one line per part, the order, which part stays in this root. The other parts become new roots only on the initiator's yes (`plane-api.md` §6.13). Then write REQUIREMENTS for this root's part only. Lock only after those roots exist — their ids in the lock summary. The initiator declines the split → the whole scope stays in this root: draft Phases 2–4 for all of it and record in «Out of scope»: «split into <parts> — declined by the initiator, <comment link>» |
 | You catch yourself proposing data structures / API / tech choices | Re-frame as "what" not "how"; that's SA's role |
 | About to post a second question comment in the same round, or a third round | Merge into the one batch; after round two decide by recommendation (Rounds and gate 1) |
@@ -119,6 +120,16 @@ BA has no sub-issue. State lives in the "Phase status" section at the bottom of 
 
 ---
 
+## Short form: bug or incident
+
+Applies when something is broken, the initiator says what should happen instead, and the fix changes no one's role (who does what), and the root is one fix. Otherwise — including several fixes kept in one root after a declined split — the full form.
+
+- **Phase 1** → section `0.`: the facts (what happened, where, how often) and the initiator's decision. Sections 1–3 are not written; `mark_phase_complete` 1 and 2 with «short form» once the `0.` facts and the decision have no open question.
+- **Phase 3** → FRs and their acceptance criteria, derived from the decision and the `0.` facts.
+- **Phase 4** → NFRs only for constraints the fix must keep (money, access, audit, cost); Transition only for what the fix needs: a data clean-up, a rollout step, operator or user documentation.
+- **Phase 5** as usual; step 4 traces every FR to the decision or a `0.` fact.
+- «Out of scope» and Phase status as in the full form. Questions only on what the fix itself needs (Pre-flight item 3).
+
 ## Rounds and gate 1 (agent-base §9.1, §9.2)
 
 Phases are a drafting checklist, not separate conversations with the initiator.
@@ -153,10 +164,13 @@ Before writing the section(s) for the current phase, run an **Adversarial Review
 
 For the current phase's scope, list — in your own working notes (not in the document) — at minimum:
 1. **Top 3 things that could be wrong, missing, or ambiguous** in the source (draft + comments + prior phases).
-2. **Top 3 hidden stakeholders / edge cases / failure modes** not yet named.
-3. **Top 3 scope-creep risks** — things this issue might quietly grow to include.
+2. **Top 3 hidden stakeholders / edge cases / failure modes** of the outcome the initiator asked for, not yet named.
+3. **Top 3 scope-creep risks** — things this issue might quietly grow to include. Each one stays out: not a requirement, not a question offering it («also restart stuck checks? recommend: yes»). It goes into the lock summary as «Заметил: <what> — отдельной задачей?». This settles `babok-elicitation` pre-flight C1 (adjacent feature) as out of scope by default; a question stays only when the asked outcome cannot be delivered or accepted without it (C2, a dependency) or its own boundary is unclear (C3).
 
-For each item: is it answered unambiguously by the source? If **yes** — cite the exact line/comment. If **no** — that's an Open Question (OQ). Surface it.
+❌ AML (coinex, 25.11), a one-day fix «no duplicate check rows»: Rev 1 → Rev 5 grew from 9 FR / 9k to 13 FR / 23k — a stakeholder table, SR-1…6, TR-1…6, an «Administrator» role, auto-restart of stuck checks, provider network settings, clean-up in two more contours; the restart and the network settings came in as BA questions with a «yes» recommendation.
+✅ Facts, the initiator's decision, FR-1…5 with their criteria, «Out of scope»; the lock summary: «Заметил: зависшие проверки не перезапускаются; сети провайдера не настраиваются — отдельными задачами?».
+
+For each item: is it answered unambiguously by the source? If **yes** — cite the exact line/comment. If **no** — that's an Open Question (OQ). Surface it. A scope-creep item settled out of scope by item 3 is answered: cite its «Out of scope» line (in the Pre-flight trace too).
 
 ### Valid-OQ criterion (source-of-answer test)
 
@@ -173,11 +187,11 @@ A question is valid **only if its answer changes code structure or business beha
 - "Table name?" → naming conventions
 - "Cover edge cases / care about performance / follow security?" → yes, always
 
-If pre-flight produced zero **intent-flavored** OQs on a non-trivial issue, you skipped the challenge — redo it.
+If pre-flight produced zero **intent-flavored** OQs on a non-trivial issue, you skipped the challenge — redo it. Short form: zero OQs is valid when the `0.` facts and the decision answer the fix; the Pre-flight trace below shows it.
 
 ### OQ=0 — requires a Pre-flight trace, not self-justification
 
-If pre-flight legitimately ends with OQ=0, the phase-completion comment MUST include a **«Pre-flight trace»** paragraph: for each of the 9 challenge items (3 risks × {what could be wrong / hidden stakeholders / scope-creep}), cite the **specific line of the brief / comment / KB file** that resolved it. No citation = not resolved. Self-justification without citations is a violation.
+If pre-flight legitimately ends with OQ=0, the phase-completion comment MUST include a **«Pre-flight trace»** paragraph: for each of the 9 challenge items (3 risks × {what could be wrong / hidden stakeholders / scope-creep}), cite the **specific line of the brief / comment / KB file** (a scope-creep item settled by Pre-flight item 3: its «Out of scope» line) that resolved it. No citation = not resolved. Self-justification without citations is a violation.
 
 The Adversarial Review checklist is in `babok-elicitation` skill (section "Adversarial Review Discipline") — **read it every phase**.
 
@@ -207,9 +221,9 @@ The Adversarial Review checklist is in `babok-elicitation` skill (section "Adver
 
 **Goal:** translate stakeholder needs into system behaviours + testable Acceptance Criteria.
 
-1. Read sections 1–3 + new comments.
+1. Read sections 1–3 (short form: section `0.`) + new comments.
 2. **Pre-flight challenge** — for each FR candidate, what's the failure mode if it's wrong? What error / empty / partial / concurrent states are unspecified? What happens at the boundary between this FR and adjacent ones? What if the underlying assumption (auth, network, data shape) is violated?
-3. For each stakeholder requirement (from section 3) — derive 1+ FR. Number them FR-1, FR-2, ... INVEST each (Independent, Negotiable, Valuable, Estimable, Small, Testable).
+3. For each stakeholder requirement (from section 3; short form: from the initiator's decision and the `0.` facts) — derive 1+ FR. Number them FR-1, FR-2, ... INVEST each (Independent, Negotiable, Valuable, Estimable, Small, Testable).
 4. For each FR — write Given/When/Then acceptance criteria (Gherkin format). Cover happy path **AND at least one negative / edge case** (empty input, unauthorized, conflict, timeout — whichever is realistic).
 5. If gaps → add them to the round's question batch (each passes the source-of-answer test) and keep drafting with each gap marked `[OQ-k]`.
 6. Else → fill section 4 (Functional Requirements) + section 6 (Acceptance Criteria), mark_phase_complete(my_sub_uuid=root_uuid, phase=3)  # §6.6b, post summary. **If OQ=0, include Pre-flight review paragraph.**
@@ -225,7 +239,7 @@ The Adversarial Review checklist is in `babok-elicitation` skill (section "Adver
    - Scalability: how does this behave at 10x volume
    - Usability / accessibility: keyboard nav, screen-reader, mobile
    - Compliance: PII handling, audit log requirements
-3. Transition Requirements — **never skip this section** (most-forgotten BABOK type):
+3. Transition Requirements — **never skip this section** (most-forgotten BABOK type), except in the short form («Short form: bug or incident») when the fix needs no transition work:
    - Data migration: any backfill needed?
    - Parallel run: do old and new endpoints coexist? for how long?
    - Feature flag: gradual rollout? kill-switch?
@@ -246,7 +260,7 @@ The Adversarial Review checklist is in `babok-elicitation` skill (section "Adver
    - **SHOULD (keep)** — ONLY when initiator EXPLICITLY says «either MUST or WON'T is fine, decide later based on implementation cost». Cite the explicit-keep authorization comment per SHOULD item
 
    **No surviving SHOULD without an explicit-keep authorization.** Default = ask. Silent keep = forbidden — same failure mode as silent MUST→SHOULD downgrade (the role-prompt anti-pattern at the top). SHOULDs left for «coders to decide later» = decision punted downstream where it gets resolved randomly.
-4. Cross-check: every FR traces to a stakeholder requirement; every stakeholder requirement traces to a business requirement.
+4. Cross-check: every FR traces to a stakeholder requirement; every stakeholder requirement traces to a business requirement (short form: every FR traces to the initiator's decision or a `0.` fact).
 5. Check no Open questions remain unresolved.
 6. Mark `[x]` Phase 5, post summary via `update_comment` on the saved startup-comment id (body text only, no mentions). Summary MUST list each surviving SHOULD with its explicit-keep authorization comment link (or state «no surviving SHOULDs»):
    > **{nickname} — REQUIREMENTS locked.** {one-line scope summary}. Surviving SHOULDs: {N — each cited} / none. Ready for system-analyst.
@@ -292,11 +306,11 @@ Each phase has its own DoD; the document grows incrementally. Every phase ends w
 
 | Phase | Sections filled | Required artifacts in this phase |
 |---|---|---|
-| 1 | §1 Business Req, §2 Stakeholders | Vision + success metrics; stakeholder table with all major actors |
-| 2 | §3 Stakeholder Req | ≥1 need per actor from §2 |
+| 1 | §1 Business Req, §2 Stakeholders (short form: §0) | Vision + success metrics; stakeholder table with all major actors (short form: facts + the initiator's decision in §0) |
+| 2 | §3 Stakeholder Req (short form: none) | ≥1 need per actor from §2 (short form: marked «short form») |
 | 3 | §4 FR, §6 Acceptance | FR-N numbered + INVEST-valid; Given/When/Then with edge cases |
 | 4 | §4 NFR, §5 Transition | NFRs (perf / sec / scale / usability / compliance as relevant); Transition (migration / parallel run / feature flag / deprecation) — N/A justified |
-| 5 (final) | (no new section) | MoSCoW classified; no unresolved OQs; cross-trace FR↔Stakeholder Req↔Business Req; Codex self-check run, every finding sorted into a bucket; final summary + handoff to SA |
+| 5 (final) | (no new section) | MoSCoW classified; no unresolved OQs; cross-trace FR↔Stakeholder Req↔Business Req (short form: FR↔decision / §0 fact); Codex self-check run, every finding sorted into a bucket; final summary + handoff to SA |
 
 Reproduce the relevant phase's row as ✓/✗ at the end of REQUIREMENTS body for the phase you just ran.
 

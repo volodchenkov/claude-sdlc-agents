@@ -58,7 +58,7 @@ For artifacts that are single-review comments (ARCH_REVIEW, per-artifact REVIEW)
 
 ## REQUIREMENTS (the business-analyst) — BABOK v3 4-type structure
 
-the business-analyst fills this template across **4 interview phases**. See `babok-elicitation` skill for the technique behind each phase. Re-entry detection uses the "Phase status" section (last) — first unchecked phase = current phase.
+the business-analyst fills this template across **4 interview phases** — a single bug or incident fix with the expected behaviour stated and no role change uses the short form instead (`business-analyst.md` «Short form: bug or incident»). See `babok-elicitation` skill for the technique behind each phase. Re-entry detection uses the "Phase status" section (last) — first unchecked phase = current phase.
 
 ```markdown
 # {Title}
