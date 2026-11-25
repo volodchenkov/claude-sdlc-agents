@@ -220,6 +220,16 @@ mcp__plane-tower__read_artifact(
 )
 ```
 
+**What a role reads.** An upstream artifact is its description: `read_artifact(sub_uuid, comments_limit=0)`. REQUIREMENTS, SPEC, the Design brief and a PLAN hold the result; the thread that led there (the BA's interview, review rounds, step notes) is not read downstream. Comments are read only:
+- (a) on your own sub-issue, and on the spawn issue those addressed to your role, newer than your cutoff — re-entry (§7) and the agent-base §9.5 step 3a checkpoint;
+- (b) the structured comments you need from another sub-issue — the latest `SPEC_APPROVED`, `ARCH_REVIEW` or test report; for CHANGES, the CHANGES comment and every delta after it (a delta names only what a rework changed): `list_comments(sub_uuid, limit=20)`, newest first; not found → one call with `limit=200` (one call, so no page shifts under a new comment — as in §7) (match the canonical opening, e.g. `<p><strong>SPEC_APPROVED</strong>`);
+- (c) a review thread your own prompt names (architect: the SPEC review thread — its ARCH_REVIEW comments and the system-analyst's answers to each; reviewer: its own REVIEW comments for the iteration, and the open-findings check of agent-base §9.6a).
+
+❌ xenon, all runs to 26.11: react-developer took in 2.7M characters of artifact descriptions and 6.8M of comments, ui-tester 3.2M and 5.4M — `read_artifact` sends 5 comments by default on every call.
+✅ react-developer: REQUIREMENTS, SPEC and Design brief descriptions with `comments_limit=0`, the `SPEC_APPROVED` comment and the Backend CHANGES with its deltas by (b), its own sub-issue by (a).
+
+**Once per session.** Read each artifact's description once per session. Comments after that → `list_comments` (it does not re-send the description); `comments_limit=0` when you need no comments. Re-read a description only at re-entry, at the agent-base §9.5 step 3a checkpoint, after a comment says it changed, or when you are not sure it is still in your context (after a compaction). Coder runs on xenon (20–25.11): 4.3 calls on 1.9 artifacts per session, the description re-sent each time.
+
 Response shape (all keys present on success):
 
 ```jsonc
@@ -459,7 +469,7 @@ Recipe:
 
 Tower no longer verifies the prior review verdict — the architect just posted it themselves one step earlier, the check was a hang source on long pipelines.
 
-Coders find this marker by listing comments on the SPEC sub-issue and matching the canonical opening `<p><strong>SPEC_APPROVED</strong>`.
+Coders find this marker per §6.4 «What a role reads» (b): `list_comments` on the SPEC sub-issue, newest first, until the canonical opening `<p><strong>SPEC_APPROVED</strong>` — the description is not re-sent.
 
 ### 6.8 update_comment
 At end of run — promote the startup comment (§6.2) into the final summary by editing it. Reuse the saved `comment_id`.
@@ -587,9 +597,10 @@ Every agent run is one of: first run, continuation, rework, or idle. Algorithm:
    → Check 4c first: a finished run is IDLE even when nothing came after it.
 
    4a. Since the «comments read to <time>» of your status line — a cutoff taken before the
-       first of the two reads (agent-base §9.5 step 3a); no status line → your startup comment —
-       only your own comments — status lines and your handoff to yourself (agent-base §9.5
-       step 3a) — and no «rework pending» in it → CONTINUATION.
+       first of the two reads (agent-base §9.5 step 3a checkpoint; runs before plugin 0.6.44
+       also wrote one at a session budget); no status line → your startup comment —
+       only your own comments — step notes («Step N done»), status lines and, from those older
+       runs, a handoff to yourself — and no «rework pending» in it → CONTINUATION.
        Previous run was interrupted. Re-read description + comments,
        determine where you stopped, drive to summary.
 

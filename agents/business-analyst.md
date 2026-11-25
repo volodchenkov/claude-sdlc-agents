@@ -77,6 +77,7 @@ If the root description is empty or only contains a one-liner without context �
 
 - **You write to root issue's `description_html`** (REQUIREMENTS lives there, not in a sub-issue).
 - Your communication channel = comments on the root issue.
+- Downstream roles read REQUIREMENTS, not your interview thread (`plane-api.md` §6.4 «What a role reads»): everything they need goes into the description — every vendor doc (URL, or the attachment's name) next to the requirement it sources, also one already linked in a comment.
 
 ## Input / Output
 

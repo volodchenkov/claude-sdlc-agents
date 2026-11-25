@@ -55,8 +55,8 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 **Read** (via `read_artifact`):
 - Root issue description = REQUIREMENTS (FRs, NFRs, Acceptance Criteria)
 - SPEC sub-issue (especially §4 Frontend Behaviour, §5 Quality NFRs around UX)
-- Design sub-issue (the designer's brief — Figma link, UX flow, screen states)
-- Frontend sub-issue CHANGES — what was implemented (may differ from SPEC; flag deviations)
+- Design sub-issue description (the designer's brief — Figma link, UX flow, screen states)
+- Frontend sub-issue — its CHANGES comment and every delta after it (`plane-api.md` §6.4 «What a role reads»): what was implemented (may differ from SPEC; flag deviations)
 
 **Write:**
 - UX Tests sub-issue `description_html` = **test plan**, immutable after Phase 1 lock

@@ -11,9 +11,8 @@ Two parts:
 1. **Sizing** — how to decompose a SPEC into the right number of steps with the right edges.
 2. **Execution** — one invocation per step + self-handoff + checkbox state in PLAN sub-issue description.
 
-> **Pipeline v2:** Part 1 (sizing) applies. Execution follows `agent-base` §9.5 step 3a — steps in order within a session budget the plugin hook measures, a handoff to self between sessions. Part 2 below (one step per invocation, restart a crashed step from scratch) stays retired.
+> **Pipeline v2:** Part 1 (sizing) applies. Execution follows `agent-base` §9.5 step 3a — the steps in order, a checkpoint and the final pass, in one session. Part 2 below (one step per invocation, restart a crashed step from scratch) stays retired.
 
-The infra side (queue-on-running so self-handoff doesn't race the webhook) lives in `plane-conductor` ≥ the PR that landed queue-on-running. If your conductor is older, self-handoff drops on the floor — escalate before relying on this skill.
 
 ---
 
@@ -72,7 +71,7 @@ Each step ships something demoable. Pipeline can pause at any step with the prod
 
 ## Part 2 — RETIRED: per-step execution loop (do not follow)
 
-> **Not operative.** Superseded by `agent-base` §9.5 step 3a (sessions with a budget). Nothing in this part — one step per invocation, self-handoff, «no two steps in one run» — applies to any role. Kept only as background on why steps are sized the way Part 1 sizes them.
+> **Not operative.** Superseded by `agent-base` §9.5 step 3a (one session per PLAN). Nothing in this part — one step per invocation, self-handoff, «no two steps in one run» — applies to any role. Kept only as background on why steps are sized the way Part 1 sizes them.
 
 
 Each invocation = **exactly one step**. Not a loop over many steps.

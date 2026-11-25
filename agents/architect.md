@@ -63,7 +63,7 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 **Read** (via `read_artifact`):
 - Root issue description = REQUIREMENTS by the business-analyst (4 BABOK types)
 - SPEC sub-issue description — full SPEC text + Phase status
-- All comments on SPEC sub-issue — your prior ARCH_REVIEW iterations + the system-analyst's responses
+- SPEC comments — the review thread: your prior ARCH_REVIEW iterations + the system-analyst's responses (`plane-api.md` §6.4 «What a role reads»)
 - Real codebase of affected services / apps — when SPEC proposes changes that conflict with existing code
 - Domain knowledge files in `$KB_DIR/kb/domain/` if relevant to the SPEC
 

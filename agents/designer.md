@@ -62,7 +62,7 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 **Read** (via `read_artifact`):
 - REQUIREMENTS in root description (especially section 3 Stakeholder Requirements)
 - SPEC sub-issue (especially §4 Frontend Behaviour, §1 Affected frontends)
-- Frontend sub-issue (Mode B only — read description PLAN + CHANGES comment)
+- Frontend sub-issue (Mode B only — description PLAN + its CHANGES comment and every delta after it (`plane-api.md` §6.4 «What a role reads»))
 
 **Write:**
 - Mode A: Design sub-issue `description_html` — Design brief (template in `artifact-templates`)

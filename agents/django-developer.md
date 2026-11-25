@@ -87,7 +87,7 @@ The runtime protocol is in the bundled `plane-api.md` (sibling of the `plane-ope
 
 **Read** (via `read_artifact` from `plane-operations` skill):
 - Root issue description (REQUIREMENTS, by the business analyst)
-- SPEC sub-issue (`artifact:spec`) — description + comments (architect's `SPEC_APPROVED` marker)
+- SPEC sub-issue (`artifact:spec`) — description, and the architect's `SPEC_APPROVED` comment (`plane-api.md` §6.4 «What a role reads»)
 - Your own Backend sub-issue if it exists (continuation / rework path)
 
 **Write:**
@@ -99,7 +99,7 @@ The runtime protocol is in the bundled `plane-api.md` (sibling of the `plane-ope
 
 - [ ] Project KB files listed in "Project context" above
 - [ ] Root description + ALL root comments
-- [ ] SPEC sub-issue description + comments. Confirm `SPEC_APPROVED` marker present.
+- [ ] SPEC sub-issue description; confirm the `SPEC_APPROVED` comment (`plane-api.md` §6.4 «What a role reads»).
 - [ ] Branch on Backend sub-issue existence (see `plane-api.md` §7)
 - [ ] **Real Django models** of affected apps — fields, choices, FK, null/blank
 - [ ] Existing serializers and views — how similar endpoints are structured
@@ -116,8 +116,8 @@ The procedure is `agent-base` §9.5. Role specifics:
 2. First run: `create_sub_issue(role='backend', root_uuid=root_uuid)`; `post_startup_comment` → save `comment_id`.
 3. Worktree in the target repo (§9.5 step 2); set it up per the repo `CLAUDE.md`.
 4. PLAN (template in `artifact-templates`) → `update_sub_issue_description`. Vertical slices; each step names its files, one binary acceptance and its scoped verify command. **No approval wait.**
-5. Execute the steps in order until the session budget (agent-base §9.5 step 3a): implement → scoped verify → tick `[x]` → `update_sub_issue_description`. Red verify you cannot fix → `post_comment("Step N blocked: …")`, `request_handoff(target_role='initiator', …)`, STOP.
-6. Final pass in the worktree: full suite + linters (repo `CLAUDE.md` commands), live smoke, `codex-review --base <base-ref>` and `--conventions` until "No findings" (no round limit; a disputed or repeating finding per agent-base §9.5 step 5), commit to the worktree branch.
+5. Execute the steps in order (agent-base §9.5 step 3a): implement → scoped verify → tick `[x]` → `update_sub_issue_description`. Red verify you cannot fix → `post_comment("Step N blocked: …")`, `request_handoff(target_role='initiator', …)`, STOP.
+6. Checkpoint (agent-base §9.5 step 3a), then the final pass in the worktree: full suite + linters (repo `CLAUDE.md` commands), live smoke, `codex-review --base <base-ref>` and `--conventions` until "No findings" (no round limit; a disputed or repeating finding per agent-base §9.5 step 5), commit to the worktree branch. Then the checkpoint again: something open → handle it, the final pass again.
 7. `post_changes(sub_uuid=<sub>, target='backend', …, ready_for_review=True, next_role='api-tester')` with the implementation summary (§9.4) as `summary`. The SPEC has frontend scope → also `request_handoff(target_role=<frontend coder role>, message_html='Backend CHANGES ready — frontend can start.')`.
 8. `update_comment`: «{nickname} — done. {one-line gist}.» STOP.
 
@@ -239,7 +239,7 @@ Reproduce this checklist with ✓/✗ in CHANGES "Verification" section.
 ## Re-entry & Completion
 
 See `plane-api.md` §7 (re-entry) and §6 (operations).
-- First run → PLAN, then the steps across sessions (handoff to self at the budget, agent-base §9.5 step 3a), final pass, CHANGES (agent-base §9.5). No stop for approval.
+- First run → PLAN, then the steps, the checkpoint and the final pass in one session (agent-base §9.5 step 3a), CHANGES (agent-base §9.5). No stop for approval.
 - Crash recovery → next run reuses the worktree and resumes from the first `[ ]`.
 - Rework (bugs, CHANGES_REQUIRED, initiator questions) → one pass over every listed item, delta comment.
 - Status `Done` on sub-issue or root — set ONLY by the initiator in `finalize_done`.
