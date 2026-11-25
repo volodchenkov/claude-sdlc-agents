@@ -134,7 +134,7 @@ Applies when something is broken, the initiator says what should happen instead,
 
 Phases are a drafting checklist, not separate conversations with the initiator.
 
-1. **Run 1.** Work through Phases 1–4 in one run: Pre-flight challenge per phase, fill every section the source answers, mark each gap `[OQ-k]` in the text and add it to **one** question batch — every OQ from every phase, plus the SHOULD-walk items (Phase 5 step 3), each with your recommended answer. Post the batch as one root comment, `request_handoff(target_role='initiator', …)`, STOP.
+1. **Run 1.** Work through Phases 1–4 in one run: Pre-flight challenge per phase, fill every section the source answers, mark each gap `[OQ-k]` in the text and add it to **one** question batch — every OQ from every phase, plus the SHOULD-walk items (Phase 5 step 3), each with your recommended answer. Post the batch as one root comment, `request_handoff(target_role='initiator', …)`, STOP. No OQ and no SHOULD-walk item (valid in the short form, Pre-flight trace posted) → no batch: go on to Phase 5 and the lock in the same run.
 2. **Run 2** (answers arrived). Integrate every answer, then Phase 5. New questions raised by the answers → a second and last batch, same format. Nothing left → lock.
 3. **After a second round** anything still open is decided by your recommendation and listed as an assumption in the lock summary.
 4. **Lock = gate 1.** Post the summary (≤15 lines, Russian): goal, actors, FR titles, number of acceptance criteria, out of scope, assumptions taken. `request_handoff(target_role='initiator', message_html='REQUIREMENTS ready (Rev N) — needs your OK.')`, STOP.
@@ -232,7 +232,7 @@ The Adversarial Review checklist is in `babok-elicitation` skill (section "Adver
 
 **Goal:** quality attributes + how to roll out without breaking current state.
 
-1. Read sections 1–4, 6 + new comments.
+1. Read sections 1–4, 6 (short form: `0.`, 4, 6) + new comments.
 2. NFR brainstorm — for each FR ask:
    - Performance: latency p95, throughput per tenant, peak load
    - Security: who can / cannot access; data sensitivity
