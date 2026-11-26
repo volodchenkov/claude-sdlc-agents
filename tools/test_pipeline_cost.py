@@ -247,6 +247,61 @@ class Cost(unittest.TestCase):
         b = self.rows()[0]["bill"]
         self.assertEqual((b.get("codex_plan", 0), b.get("codex_diff", 0)), (1, 1))
 
+    def test_codex_counted_as_bash_runs_it(self):
+        # one project per command: a false hit cannot cancel a miss
+        cases = {
+            "echo 'before; codex-review --plan s.md; after'": None,
+            'echo "a && codex-review x"': None,
+            'echo ";" codex-review --plan p': None,
+            "echo hi > codex-review": None,
+            "cat <<EOF > n.md\ncodex-review --plan p\nEOF\ntrue": None,
+            "# codex-review --plan p": None,
+            "# note\n\ncodex-review --plan p": "plan",
+            'env X="a b" codex-review --plan p': "plan",
+            "codex-review \\\n  --plan p": "plan",
+            "cat <<-'E' >x\n\tcodex-review\n\tE\nls": None,
+            "git commit -m \"$(cat <<'EOF'\ncodex-review --plan p\nEOF\n)\"": None,
+            "echo hello#world; codex-review --plan p": "plan",
+            "timeout 10m codex-review --plan s.md": "plan",
+            "timeout -k 5s 1.5h codex-review": "diff",
+            "codex-review --plan p > o.txt 2>&1": "plan",
+            "true\ncodex-review --plan p.md": "plan",
+            "(cd /w; codex-review --plan p)": "plan",
+            "cat <<'X'\nhi\nX\ncodex-review --base m": "diff",
+            "cat <<EOF; codex-review --plan p\nbody\nEOF": "plan",
+            "cat <<'EOF'\n EOF\ncodex-review --plan p\nEOF\n": None,
+            "timeout --signal TERM 600 codex-review --plan p.md": "plan",
+            "nice -n 10 codex-review": "diff",
+            "codex-review --base master; codex-review --plan p.md": "both",
+        }
+        for k, cmd in enumerate(cases):
+            d = os.path.join(self.root, f"p{k}")
+            os.mkdir(d)
+            with open(os.path.join(d, "a.jsonl"), "w") as f:
+                f.writelines(
+                    json.dumps(r) + "\n"
+                    for r in spawn()
+                    + [
+                        assistant(
+                            f"m{k}",
+                            "2026-11-25T10:01:00Z",
+                            cw=1,
+                            tools=[("Bash", {"command": cmd})],
+                        )
+                    ]
+                )
+        got = {}
+        for row in self.rows():
+            b = row["bill"]
+            got[row["project"]] = {
+                (1, 0): "plan",
+                (0, 1): "diff",
+                (1, 1): "both",
+                (0, 0): None,
+            }.get((b.get("codex_plan", 0), b.get("codex_diff", 0)), "many")
+        for k, (cmd, want) in enumerate(cases.items()):
+            self.assertEqual(got.get(f"p{k}"), want, cmd)
+
     def test_unreadable_transcript_warned_on_stderr(self):
         path = self.write(
             "a.jsonl", spawn() + [assistant("m", "2026-11-25T10:01:00Z", cw=1)]

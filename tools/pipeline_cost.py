@@ -26,7 +26,6 @@ import glob
 import json
 import os
 import re
-import shlex
 import sys
 from datetime import UTC, datetime, timedelta
 
@@ -87,29 +86,128 @@ def _text(content):
 
 
 WRAPPERS = {"timeout", "nohup", "env", "time", "nice"}
+DURATION = re.compile(r"^\d+(\.\d+)?[smhd]?$")  # GNU timeout: 10, 1.5, 10m
+OPS = "<>&|;"  # runs of these are one operator; ( ) and newline stand alone
+DQ_ESCAPES = '"\\$`'
 
 
-def codex_mode(cmd):
-    """'plan' / 'diff' when a shell command runs codex-review, else None.
+def _tokens(cmd):
+    """Bash tokens of `cmd`: ("w", word) with quotes removed, or ("op", text).
+
+    Single and double quotes, backslashes (a backslash-newline joins lines),
+    `#` comments at the start of a word, and heredoc bodies (skipped) follow
+    bash. Command substitution inside double quotes stays text.
+    """
+    toks, heredocs, word = [], [], None
+    want_delim = None  # after «<<» / «<<-»: the operator whose delimiter comes next
+    n, i = len(cmd), 0
+
+    def end_word():
+        nonlocal word, want_delim
+        if word is not None:
+            toks.append(("w", "".join(word)))
+            if want_delim:
+                heredocs.append((toks[-1][1], want_delim == "<<-"))
+                want_delim = None
+            word = None
+
+    while i < n:
+        c = cmd[i]
+        if c == "\\":
+            if cmd[i + 1 : i + 2] != "\n":
+                word = (word or []) + [cmd[i + 1 : i + 2]]
+            i += 2
+        elif c == "'":
+            j = cmd.find("'", i + 1)
+            j = n if j < 0 else j
+            word = (word or []) + [cmd[i + 1 : j]]
+            i = j + 1
+        elif c == '"':
+            word = word or []
+            i += 1
+            while i < n and cmd[i] != '"':
+                if cmd[i] == "\\" and cmd[i + 1 : i + 2] in (*DQ_ESCAPES, "\n"):
+                    word.append(cmd[i + 1] if cmd[i + 1] != "\n" else "")
+                    i += 2
+                else:
+                    word.append(cmd[i])
+                    i += 1
+            i += 1
+        elif c in " \t\r":
+            end_word()
+            i += 1
+        elif c == "#" and word is None:
+            j = cmd.find("\n", i)
+            i = n if j < 0 else j
+        elif c == "\n":
+            end_word()
+            toks.append(("op", "\n"))
+            i += 1
+            for delim, tabs in heredocs:  # the body runs to the delimiter line
+                while i < n:
+                    j = cmd.find("\n", i)
+                    line, i = (cmd[i:], n) if j < 0 else (cmd[i:j], j + 1)
+                    if (line.lstrip("\t") if tabs else line) == delim:
+                        break
+            heredocs = []
+        elif c in OPS or c in "()":
+            end_word()
+            j = i + 1
+            while c in OPS and j < n and cmd[j] in OPS:
+                j += 1
+            if cmd[i:j] == "<<":
+                j += cmd[j : j + 1] == "-"
+                want_delim = cmd[i:j]
+            toks.append(("op", cmd[i:j]))
+            i = j
+        else:
+            word = (word or []) + [c]
+            i += 1
+    end_word()
+    return toks
+
+
+def _commands(cmd):
+    """Word lists of the simple commands in `cmd`; a redirect's target is no word."""
+    words, target = [], False
+    for kind, tok in _tokens(cmd):
+        if kind == "op":
+            if "<" in tok or ">" in tok:
+                target = True
+                continue
+            yield words
+            words, target = [], False
+        elif target:
+            target = False
+        else:
+            words.append(tok)
+    yield words
+
+
+# options of timeout / nice / env / time that take the next word as their value
+WRAPPER_ARGS = {"-s", "--signal", "-k", "--kill-after", "-n", "--adjustment"}
+WRAPPER_ARGS |= {"-u", "--unset", "-C", "--chdir", "-f", "--format", "-o", "--output"}
+
+
+def codex_modes(cmd):
+    """'plan' / 'diff' for each codex-review run in a shell command.
 
     Only a command word counts — «echo 'codex-review --plan'» runs nothing.
-    Leading wrappers, their options and VAR=value words are skipped.
+    Leading wrappers, their options (with values) and durations, and
+    VAR=value words are skipped.
     """
-    for seg in re.split(r"&&|\|\||[;|&\n(]", cmd):
-        try:
-            words = shlex.split(seg)
-        except ValueError:
-            continue
+    modes = []
+    for words in _commands(cmd):
         while words and (
             "=" in words[0]
             or words[0] in WRAPPERS
             or words[0].startswith("-")
-            or words[0].replace(".", "").isdigit()
+            or DURATION.match(words[0])
         ):
-            words.pop(0)
+            del words[: 2 if words[0] in WRAPPER_ARGS else 1]
         if words and os.path.basename(words[0]) == "codex-review":
-            return "plan" if "--plan" in words[1:] else "diff"
-    return None
+            modes.append("plan" if "--plan" in words[1:] else "diff")
+    return modes
 
 
 def describe(entries):
@@ -158,10 +256,12 @@ def bill(entries, since, seen, own_role=None):
             seen.add(tid)
             inp = part.get("input") if isinstance(part.get("input"), dict) else {}
             name = str(part.get("name", ""))
-            mode = codex_mode(str(inp.get("command", ""))) if name == "Bash" else None
-            if mode:
+            modes = codex_modes(str(inp.get("command", ""))) if name == "Bash" else []
+            for mode in modes:
                 out["codex_" + mode] += 1
-            elif name.endswith("request_handoff") and own_role:
+            if modes:
+                continue
+            if name.endswith("request_handoff") and own_role:
                 out["self_handoffs"] += inp.get("target_role") == own_role
     return out
 
