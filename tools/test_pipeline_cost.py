@@ -278,6 +278,9 @@ class Cost(unittest.TestCase):
             'opts=(-o "r=$(<f)"); codex-review --plan p': "plan",
             "git commit -m \"$(echo a | sed 's/x/don'\"'\"'t/')\"; codex-review --plan p": "plan",
             'echo "$(codex-review --plan p)"': "plan",
+            'echo "$((codex-review))"': None,
+            'echo "$(( $(codex-review --plan p) + 1 ))"': "plan",
+            "echo \"$(( $(echo '$(codex-review)') + (1) ))\"": None,
             'echo "$(cat <<\'EOF\'\nit\'s "codex-review"\nEOF\n)"; codex-review': "diff",
             "(codex-review --plan spec.md)": "plan",
             "if true; then codex-review --plan spec.md; fi": "plan",
@@ -309,8 +312,9 @@ class Cost(unittest.TestCase):
                 (1, 1): "both",
                 (0, 0): None,
             }.get((b.get("codex_plan", 0), b.get("codex_diff", 0)), "many")
+        self.assertEqual(set(got), {f"p{k}" for k in range(len(cases))})
         for k, (cmd, want) in enumerate(cases.items()):
-            self.assertEqual(got.get(f"p{k}"), want, cmd)
+            self.assertEqual(got[f"p{k}"], want, cmd)
 
     def test_unreadable_transcript_warned_on_stderr(self):
         path = self.write(

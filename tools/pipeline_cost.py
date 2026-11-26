@@ -128,6 +128,27 @@ def _tokens(cmd):
     return _scan(cmd, 0, False)[0]
 
 
+def _arith(cmd, i, _sub=True):
+    """(tokens, index after the closing «))») of the arithmetic «$((» whose
+    second «(» is cmd[i]. Its words are numbers and operators, not commands;
+    each «$( )» inside is scanned by `_scan`, so its quotes nest."""
+    toks, depth, n = [], 0, len(cmd)
+    i += 1
+    while i < n:
+        if cmd[i : i + 2] == "$(":
+            inner, i = (_arith if cmd[i + 2 : i + 3] == "(" else _scan)(
+                cmd, i + 2, True
+            )
+            toks += [("op", "\n"), *inner]
+            continue
+        c = cmd[i]
+        if c == ")" and not depth and cmd[i + 1 : i + 2] == ")":
+            return toks, i + 2
+        depth += (c == "(") - (c == ")")
+        i += 1
+    return toks, n
+
+
 def _scan(cmd, i, sub):
     """(tokens, index after the scan) from cmd[i]; `sub` = inside «$(», which
     ends at its unmatched «)»."""
@@ -160,7 +181,9 @@ def _scan(cmd, i, sub):
             i += 1
             while i < n and cmd[i] != '"':
                 if cmd[i : i + 2] == "$(":
-                    inner, j = _scan(cmd, i + 2, True)
+                    inner, j = (_arith if cmd[i + 2 : i + 3] == "(" else _scan)(
+                        cmd, i + 2, True
+                    )
                     nested += [("op", "\n"), *inner]
                     word.append(cmd[i:j])
                     i = j
