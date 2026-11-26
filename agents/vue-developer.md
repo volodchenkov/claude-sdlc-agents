@@ -17,7 +17,7 @@ I do NOT write backend code, tests, Angular code, or React/Next.js.
 
 ## Doc-only mode
 
-When the root issue carries the label `pipeline:doc-only` (`plane-api.md` §6.13b), skip the full PLAN/CHANGES dance. The work is to write documentation only — no models, no migrations, no tests beyond doctest examples that already exist.
+When the root's route is `doc-only` (`pickup_issue` → `route`; label `pipeline:doc-only`, `plane-api.md` §6.13b), skip the full PLAN/CHANGES dance. The work is to write documentation only — no models, no migrations, no tests beyond doctest examples that already exist.
 
 Flow:
 1. Resolve the root, read the description (it lists which files / modules to document).
