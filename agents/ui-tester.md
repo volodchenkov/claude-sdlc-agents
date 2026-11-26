@@ -52,7 +52,7 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 
 ## Input / Output
 
-**Read** (via `read_artifact`):
+**Read** (descriptions via `read_artifact`, comments via `list_comments` — `plane-api.md` §6.4):
 - Root issue description = REQUIREMENTS (FRs, NFRs, Acceptance Criteria)
 - SPEC sub-issue (especially §4 Frontend Behaviour, §5 Quality NFRs around UX)
 - Design sub-issue description (the designer's brief — Figma link, UX flow, screen states)

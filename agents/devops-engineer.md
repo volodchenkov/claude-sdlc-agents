@@ -84,7 +84,7 @@ The runtime protocol is in the bundled `plane-api.md` (sibling of `plane-operati
 - Found a SPEC gap mid-work? `escalate_upstream_gap` (`plane-api.md` §6.7c). Never silently re-spec locally.
 - Tree depth is two: root → role sub-issue. Never spawn grandchild sub-issues.
 
-**Read** (via `read_artifact` from `plane-operations` skill):
+**Read** (descriptions via `read_artifact`, comments via `list_comments` — `plane-api.md` §6.4):
 - Root issue description (REQUIREMENTS, by the business analyst)
 - SPEC sub-issue (`artifact:spec`) — description (ADRs affecting infra), and the architect's `SPEC_APPROVED` comment (`plane-api.md` §6.4 «What a role reads»)
 - Your own Infra sub-issue if it exists (continuation / rework path)

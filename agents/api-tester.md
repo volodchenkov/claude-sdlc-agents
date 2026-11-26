@@ -45,7 +45,7 @@ If the root issue carries the label `pipeline:doc-only` (`plane-api.md` §6.13b)
 
 ## Input / Output
 
-**Read** (via `read_artifact`):
+**Read** (descriptions via `read_artifact`, comments via `list_comments` — `plane-api.md` §6.4):
 - Root issue description = REQUIREMENTS (FR/NFR/Acceptance Criteria)
 - SPEC sub-issue description (especially §3 API Contract, §5 Quality Attributes)
 - Backend sub-issue — its CHANGES comment and every delta after it (`plane-api.md` §6.4 «What a role reads») (what was actually implemented — for "as-built" vs SPEC trace)

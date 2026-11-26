@@ -62,7 +62,7 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 
 ## Input / Output
 
-**Read** (via `read_artifact`):
+**Read** (descriptions via `read_artifact`, comments via `list_comments` — `plane-api.md` §6.4):
 - Root issue description = REQUIREMENTS by the business-analyst (4 BABOK types: Business / Stakeholder / Solution / Transition)
 - Root comments from the BA's lock summary (its handoff to you, with the SHOULD authorizations) on: the lock summary, the BA's «Codex findings for SA» comment it points to (posted earlier, kept current with `update_comment`), the initiator's comments after it, and any addressed to your role (`plane-api.md` §6.4 «What a role reads») — not the BA's interview thread before it: REQUIREMENTS carry its result. Exception: REQUIREMENTS name an external service without its docs link → find the link in the root comments, and name the gap in the gate-2 digest
 - Real codebase of affected services / apps (models, URLs, existing serializers — to understand current state)

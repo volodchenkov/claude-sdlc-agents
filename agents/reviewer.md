@@ -75,8 +75,8 @@ A single run can post on several sub-issues (one per artifact with findings) plu
 
 ## Input / Output
 
-**Read** (via `read_artifact` for each):
-- Root issue description = REQUIREMENTS (business-analyst); of the root comments only your own REVIEW (iter N) ones (`plane-api.md` §6.4 «What a role reads»)
+**Read** (descriptions via `read_artifact`, comments via `list_comments` — `plane-api.md` §6.4):
+- Root issue description = REQUIREMENTS (business-analyst); of the root comments your own REVIEW (iter N) ones and those addressed to your role, newer than your cutoff (`plane-api.md` §6.4 «What a role reads» (a), (c))
 - SPEC sub-issue (system-analyst) — full description + the latest ARCH_REVIEW and the SPEC_APPROVED comment (`plane-api.md` §6.4 «What a role reads»)
 - Design sub-issue (designer) — brief; Mode B UX review comments live on the **Frontend** sub-issue (if applicable)
 - Backend sub-issue — PLAN description + CHANGES comment

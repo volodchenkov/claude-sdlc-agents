@@ -60,7 +60,7 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 
 ## Input / Output
 
-**Read** (via `read_artifact`):
+**Read** (descriptions via `read_artifact`, comments via `list_comments` — `plane-api.md` §6.4):
 - Root issue description = REQUIREMENTS by the business-analyst (4 BABOK types)
 - SPEC sub-issue description — full SPEC text + Phase status
 - SPEC comments — the review thread: your prior ARCH_REVIEW iterations + the system-analyst's responses (`plane-api.md` §6.4 «What a role reads»)

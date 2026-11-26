@@ -9,7 +9,7 @@ Multi-step PLANs are how the team avoids 14-step single-run burnouts: tokens bur
 
 Two parts:
 1. **Sizing** — how to decompose a SPEC into the right number of steps with the right edges.
-2. **Execution** — one invocation per step + self-handoff + checkbox state in PLAN sub-issue description.
+2. **Execution** — retired: coders run the PLAN in one session (`agent-base` §9.5 step 3a); the checkbox state in the PLAN sub-issue description stays the resume point.
 
 > **Pipeline v2:** Part 1 (sizing) applies. Coders' execution follows `agent-base` §9.5 step 3a — the steps in order, a checkpoint, the final pass and a checkpoint again, in one session. Part 2 below (one step per invocation, restart a crashed step from scratch) stays retired.
 

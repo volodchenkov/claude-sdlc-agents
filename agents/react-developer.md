@@ -74,7 +74,7 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 - Found a SPEC gap mid-work? `escalate_upstream_gap` (`plane-api.md` §6.7c): post `BLOCKED — upstream gap` in your own sub-issue, mention initiator, STOP. Never create a "prerequisite" sub-issue or silently re-spec locally.
 - Tree depth is two: root → role sub-issue. Never spawn grandchild sub-issues. Scope growth is escalated to initiator (`plane-api.md` §6.13), who creates a new root.
 
-**Read** (via `read_artifact`):
+**Read** (descriptions via `read_artifact`, comments via `list_comments` — `plane-api.md` §6.4):
 - Root issue description = REQUIREMENTS (FR/NFR/Acceptance Criteria)
 - SPEC sub-issue description (especially §1 affected frontends, §3 API contract, §4 Frontend Behaviour) and its `SPEC_APPROVED` comment (`plane-api.md` §6.4 «What a role reads»)
 - Design sub-issue description — the designer's brief (Figma + UX flow + state matrix)
