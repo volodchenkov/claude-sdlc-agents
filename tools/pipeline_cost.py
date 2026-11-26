@@ -86,9 +86,35 @@ def _text(content):
 
 
 WRAPPERS = {"timeout", "nohup", "env", "time", "nice"}
+# reserved words a command may follow: if true; then codex-review; fi
+KEYWORDS = {"if", "then", "else", "elif", "while", "until", "do", "!", "{"}
 DURATION = re.compile(r"^\d+(\.\d+)?[smhd]?$")  # GNU timeout: 10, 1.5, 10m
 OPS = "<>&|;"  # runs of these are one operator; ( ) and newline stand alone
 DQ_ESCAPES = '"\\$`'
+
+
+def _array_end(cmd, i):
+    """Index after the «)» that closes the array opened at cmd[i]; quotes and
+    nested parentheses are skipped. Its values are data: a command
+    substitution inside one is not counted."""
+    depth, quote, j = 0, None, i
+    while j < len(cmd):
+        c = cmd[j]
+        if c == "\\" and quote != "'":
+            j += 2
+            continue
+        if quote:
+            quote = None if c == quote else quote
+        elif c in "'\"":
+            quote = c
+        elif c == "(":
+            depth += 1
+        elif c == ")":
+            depth -= 1
+            if not depth:
+                return j + 1
+        j += 1
+    return len(cmd)
 
 
 def _tokens(cmd):
@@ -96,11 +122,18 @@ def _tokens(cmd):
 
     Single and double quotes, backslashes (a backslash-newline joins lines),
     `#` comments at the start of a word, and heredoc bodies (skipped) follow
-    bash. Command substitution inside double quotes stays text.
+    bash. A «$(…)» inside double quotes is scanned as its own command list:
+    its quotes nest, and its commands are tokens too.
     """
-    toks, heredocs, word = [], [], None
+    return _scan(cmd, 0, False)[0]
+
+
+def _scan(cmd, i, sub):
+    """(tokens, index after the scan) from cmd[i]; `sub` = inside «$(», which
+    ends at its unmatched «)»."""
+    toks, nested, heredocs, word = [], [], [], None
     want_delim = None  # after «<<» / «<<-»: the operator whose delimiter comes next
-    n, i = len(cmd), 0
+    depth, n = 0, len(cmd)
 
     def end_word():
         nonlocal word, want_delim
@@ -126,7 +159,12 @@ def _tokens(cmd):
             word = word or []
             i += 1
             while i < n and cmd[i] != '"':
-                if cmd[i] == "\\" and cmd[i + 1 : i + 2] in (*DQ_ESCAPES, "\n"):
+                if cmd[i : i + 2] == "$(":
+                    inner, j = _scan(cmd, i + 2, True)
+                    nested += [("op", "\n"), *inner]
+                    word.append(cmd[i:j])
+                    i = j
+                elif cmd[i] == "\\" and cmd[i + 1 : i + 2] in (*DQ_ESCAPES, "\n"):
                     word.append(cmd[i + 1] if cmd[i + 1] != "\n" else "")
                     i += 2
                 else:
@@ -150,8 +188,16 @@ def _tokens(cmd):
                     if (line.lstrip("\t") if tabs else line) == delim:
                         break
             heredocs = []
+        elif c == "(" and word and word[-1].endswith("="):  # name=(…): array values
+            j = _array_end(cmd, i)
+            word.append(cmd[i:j])
+            i = j
+        elif sub and c == ")" and not depth:
+            end_word()
+            return toks + nested, i + 1
         elif c in OPS or c in "()":
             end_word()
+            depth += (c == "(") - (c == ")")
             j = i + 1
             while c in OPS and j < n and cmd[j] in OPS:
                 j += 1
@@ -164,7 +210,7 @@ def _tokens(cmd):
             word = (word or []) + [c]
             i += 1
     end_word()
-    return toks
+    return toks + nested, n
 
 
 def _commands(cmd):
@@ -193,14 +239,15 @@ def codex_modes(cmd):
     """'plan' / 'diff' for each codex-review run in a shell command.
 
     Only a command word counts — «echo 'codex-review --plan'» runs nothing.
-    Leading wrappers, their options (with values) and durations, and
-    VAR=value words are skipped.
+    Leading reserved words, wrappers, their options (with values) and
+    durations, and VAR=value words are skipped.
     """
     modes = []
     for words in _commands(cmd):
         while words and (
             "=" in words[0]
             or words[0] in WRAPPERS
+            or words[0] in KEYWORDS
             or words[0].startswith("-")
             or DURATION.match(words[0])
         ):

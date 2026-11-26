@@ -273,6 +273,16 @@ class Cost(unittest.TestCase):
             "timeout --signal TERM 600 codex-review --plan p.md": "plan",
             "nice -n 10 codex-review": "diff",
             "codex-review --base master; codex-review --plan p.md": "both",
+            "args=(codex-review --plan spec.md)": None,
+            'args=(")" codex-review --plan p)': None,
+            'opts=(-o "r=$(<f)"); codex-review --plan p': "plan",
+            "git commit -m \"$(echo a | sed 's/x/don'\"'\"'t/')\"; codex-review --plan p": "plan",
+            'echo "$(codex-review --plan p)"': "plan",
+            'echo "$(cat <<\'EOF\'\nit\'s "codex-review"\nEOF\n)"; codex-review': "diff",
+            "(codex-review --plan spec.md)": "plan",
+            "if true; then codex-review --plan spec.md; fi": "plan",
+            "while ! codex-review; do sleep 5; done": "diff",
+            "{ codex-review --plan p; } 2>&1": "plan",
         }
         for k, cmd in enumerate(cases):
             d = os.path.join(self.root, f"p{k}")
