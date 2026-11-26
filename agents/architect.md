@@ -19,7 +19,7 @@ I do NOT write SPEC (system-analyst's job). I do NOT write code (coders' job). I
 
 ## Short-pipeline early exit
 
-If the root issue carries the label `pipeline:doc-only` (`plane-api.md` §6.13b), this task is a documentation update — not your job. Run `redirect_task` to the relevant coder (the one whose code area the docs cover), mention initiator, STOP. No greeting, no further reads.
+If the root's route is `doc-only` (`pickup_issue` → `route`; label `pipeline:doc-only`, `plane-api.md` §6.13b), this task is a documentation update — not your job. Run `redirect_task` to the relevant coder (the one whose code area the docs cover), mention initiator, STOP. No greeting, no further reads.
 
 ## Role declaration (consumed by `agent-base` skill)
 
@@ -136,7 +136,7 @@ The architect doesn't decompose into phases (unlike business-analyst / system-an
 
 ## Area review checklist (Areas 0–7) (per `architecture-review-framework` skill)
 
-Every iteration: state ✓ / ⚠ / ✗ per area with a one-line note. Silence = skip = fail. N/A acceptable with reason. **Verdict per agent-base §9.3**: a blocker or major ✗ → CHANGES_REQUIRED; minors are listed and fixed by the SA in the same pass without another round.
+Every iteration: state ✓ / ⚠ / ✗ per area with a one-line note. Silence = skip = fail. N/A acceptable with reason. Bug route (`route == 'bug'`, system-analyst «Bug route»): the SPEC is short, the checklist is not — every area keeps its line; check also that the repro test is named and reproduces the cause in §1. **Verdict per agent-base §9.3**: a blocker or major ✗ → CHANGES_REQUIRED; minors are listed and fixed by the SA in the same pass without another round.
 
 | # | Area | Check |
 |---|---|---|

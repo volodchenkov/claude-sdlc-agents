@@ -152,6 +152,8 @@ mcp__plane-<workspace>__retrieve_work_item_by_identifier(
 ```
 Save the response's `id` as `<root_uuid>` and `name` as `<root_name>` for later operations (the root name goes into sub-issue titles — see §6.5).
 
+The tower's `pickup_issue(issue_uuid)` (and `retrieve_work_item_by_identifier`) also returns the route of the issue's **root** — the spawn issue is often a sub-issue: `root_uuid`, `route` (`'bug'`, `'doc-only'` or `None` — the root's one `pipeline:*` label, read from Plane on every call) and `route_conflict` (two or more route labels → `route` is `None`; run the full route and name the conflict in your startup comment). Route decisions read `route`, never the raw `labels` UUIDs (§6.13b).
+
 ### 6.2 post_startup_comment
 At the start of work, post a startup comment via `request_handoff` (it auto-stamps the initiator mention so the human sees the pickup). Save the returned `comment_id` for the heartbeat updates (§6.2b) and the final summary (§6.8).
 
@@ -541,7 +543,7 @@ Sometimes mid-pipeline it becomes clear the work spans more than one cohesive de
 
 ### 6.13b Short pipelines — when the full SDLC is overkill
 
-A documentation update or a one-line config tweak doesn't need 7 sub-issues + ARCH_REVIEW + REVIEW. Two short pipelines are supported:
+A documentation update or a one-line config tweak doesn't need 7 sub-issues + ARCH_REVIEW + REVIEW. The route of a root is its one `pipeline:*` label; agents read it as `pickup_issue` → `route` (§6.1). Routes:
 
 **`pipeline:doc-only`** — pure documentation work (README, ADR notes, internal `kb/*.md`, docstrings). No code paths, no test coverage, no architecture decisions.
 
@@ -551,7 +553,11 @@ Flow:
 3. The coder works in **doc-only mode**: in its own worktree (agent-base §9.5), no PLAN, writes only documentation, posts `post_changes(sub_uuid=<own sub_uuid — agent-base §9.7>, target='backend'|'frontend', summary='docs only — see diff', files=[…doc files…], verification=[], ready_for_review=False)`.
 4. Initiator reviews the diff; on «accepted» Tron pushes the branch and opens the MR (agent-base §9.5 step 7), the initiator merges it and closes the task. No final reviewer pass.
 
-Every other agent (BA, SA, architect, designer, testers, reviewer) MUST detect this label at startup and `redirect_task` to the coder before doing any work — see role prompts.
+Every other agent (BA, SA, architect, designer, testers, reviewer) MUST detect this route at startup (`pickup_issue` → `route == 'doc-only'`) and `redirect_task` to the coder before doing any work — see role prompts.
+
+**`pipeline:bug`** — one bug fix: the BA's short form («Short form: bug or incident» in `business-analyst.md`). The BA sets it with `set_pipeline_route(root_uuid, 'bug')` and clears it with `set_pipeline_route(root_uuid, None)` if the task turns out to need the full form. The pipeline is the usual one with all three gates; what changes: the SA writes the short SPEC with a named repro test (`system-analyst.md` «Bug route»), the coder's PLAN starts with that test red (agent-base §9.5 step 3), the testers cover the bug, the acceptance criteria and the touched screens / endpoints only.
+
+`set_pipeline_route(root_uuid, route, workspace=None)` — `route` is `'bug'`, `'doc-only'` or `None`. Sets the root's one `pipeline:*` label (replacing another route, `None` removes them), keeps every other label, refuses a sub-issue, is idempotent (`changed: False` when nothing to do). The label missing from the project → `LabelNotFoundError` («run `plane-conductor setup`»). Plane replaces the whole label set on write, so a label someone adds in the Plane UI in the same moment can be lost.
 
 **`pipeline:trivial`** — reserved for future use (e.g. a typo fix, a one-line config nudge). Not implemented yet; placeholder so initiators don't repurpose `pipeline:doc-only` for code work.
 

@@ -34,7 +34,7 @@ I do NOT test UI (that's the ui-tester). I do NOT review code or architecture (t
 
 ## Short-pipeline early exit
 
-If the root issue carries the label `pipeline:doc-only` (`plane-api.md` §6.13b), this task is a documentation update — not your job. Run `redirect_task` to the relevant coder (the one whose code area the docs cover), mention initiator, STOP. No greeting, no further reads.
+If the root's route is `doc-only` (`pickup_issue` → `route`; label `pipeline:doc-only`, `plane-api.md` §6.13b), this task is a documentation update — not your job. Run `redirect_task` to the relevant coder (the one whose code area the docs cover), mention initiator, STOP. No greeting, no further reads.
 
 ## Role-specific STOPs (in addition to agent-base §4)
 
@@ -79,6 +79,8 @@ Each **TC-batch** is one execution unit. Sizing rule (lighter than coder's, beca
 - **Resume-friendly:** a batch fails-stops cleanly; the next invocation picks up the next batch, not a half-batch
 
 If a single TC takes >15 min on its own (e.g. it waits for a Celery task chain) — that TC is its own batch.
+
+**Bug route** (`pickup_issue` → `route == 'bug'`): the plan covers the bug (its steps from REQUIREMENTS `0.`, or the SPEC's repro when `0.` has facts only — now fixed), every acceptance criterion, the SPEC's repro test green in the coder's run, and the endpoints the fix touches under «API testing patterns» below (multitenancy negative when the project declares it, auth matrix, idempotency). Endpoints the fix does not touch are out of scope.
 
 1. `pickup_issue(issue_uuid=<spawn uuid>)` → `root_uuid = parent or id` (agent-base §9.7)
 2. Step 0 — read everything
