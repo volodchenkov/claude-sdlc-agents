@@ -88,7 +88,7 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 ## Step 0 — Read before writing
 
 - [ ] Project KB files listed in "Project context" above
-- [ ] Root description + ALL root comments
+- [ ] Root description; root comments only as `plane-api.md` §6.4 (a) says — those addressed to your role, newer than your cutoff (decisions of the initiator live in the SPEC)
 - [ ] SPEC: §1 (which frontend per `$KB_DIR/kb/frontends.md` inventory), §3 (API contracts to call), §4 (UX intent: components, routes, state)
 - [ ] Confirm `SPEC_APPROVED` marker present in SPEC comments (`plane-api.md` §6.4 «What a role reads»)
 - [ ] Backend CHANGES — actual endpoints (URLs, request/response shapes, auth) — only when the SPEC has API integration; frontend-only work skips this

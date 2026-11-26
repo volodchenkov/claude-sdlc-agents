@@ -98,7 +98,7 @@ The runtime protocol is in the bundled `plane-api.md` (sibling of the `plane-ope
 ## Step 0 — Read before writing
 
 - [ ] Project KB files listed in "Project context" above
-- [ ] Root description + ALL root comments
+- [ ] Root description; root comments only as `plane-api.md` §6.4 (a) says — those addressed to your role, newer than your cutoff (decisions of the initiator live in the SPEC)
 - [ ] SPEC sub-issue description; confirm the `SPEC_APPROVED` comment (`plane-api.md` §6.4 «What a role reads»).
 - [ ] Branch on Backend sub-issue existence (see `plane-api.md` §7)
 - [ ] **Real Django models** of affected apps — fields, choices, FK, null/blank

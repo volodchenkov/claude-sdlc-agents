@@ -221,8 +221,8 @@ mcp__plane-tower__read_artifact(
 ```
 
 **What a role reads.** An upstream artifact is its description: `read_artifact(sub_uuid, comments_limit=0)`. REQUIREMENTS, SPEC, the Design brief and a PLAN hold the result; the thread that led there (the BA's interview, review rounds, step notes) is not read downstream. Comments are read only:
-- (a) on your own sub-issue, and on the spawn issue those addressed to your role, newer than your cutoff — re-entry (§7) and the agent-base §9.5 step 3a checkpoint;
-- (b) the structured comments you need from another sub-issue — the latest `SPEC_APPROVED`, `ARCH_REVIEW` or test report; for CHANGES, the CHANGES comment and every delta after it (a delta names only what a rework changed): `list_comments(sub_uuid, limit=20)`, newest first; not found → one call with `limit=200` (one call, so no page shifts under a new comment — as in §7) (match the canonical opening, e.g. `<p><strong>SPEC_APPROVED</strong>`);
+- (a) on your own sub-issue, and on the spawn issue those addressed to your role, newer than your cutoff (first run, no cutoff yet: all of them) — re-entry (§7) and the agent-base §9.5 step 3a checkpoint;
+- (b) the structured comments you need from another sub-issue — the latest `SPEC_APPROVED`, `ARCH_REVIEW` or test report; for CHANGES, the CHANGES comment and every delta after it (a delta names only what a rework changed): `list_comments(sub_uuid, limit=20)`, newest first; not found → `limit=200`, then page back with `offset` += 200 until found or `has_more` is false (a comment added meanwhile shifts a page by one: skip ids already seen) (match the canonical opening, e.g. `<p><strong>SPEC_APPROVED</strong>`);
 - (c) a review thread your own prompt names (architect: the SPEC review thread — its ARCH_REVIEW comments and the system-analyst's answers to each; reviewer: its own REVIEW comments for the iteration, and the open-findings check of agent-base §9.6a).
 
 ❌ xenon, all runs to 26.11: react-developer took in 2.7M characters of artifact descriptions and 6.8M of comments, ui-tester 3.2M and 5.4M — `read_artifact` sends 5 comments by default on every call.

@@ -11,7 +11,7 @@ Two parts:
 1. **Sizing** — how to decompose a SPEC into the right number of steps with the right edges.
 2. **Execution** — one invocation per step + self-handoff + checkbox state in PLAN sub-issue description.
 
-> **Pipeline v2:** Part 1 (sizing) applies. Execution follows `agent-base` §9.5 step 3a — the steps in order, a checkpoint and the final pass, in one session. Part 2 below (one step per invocation, restart a crashed step from scratch) stays retired.
+> **Pipeline v2:** Part 1 (sizing) applies. Coders' execution follows `agent-base` §9.5 step 3a — the steps in order, a checkpoint, the final pass and a checkpoint again, in one session. Part 2 below (one step per invocation, restart a crashed step from scratch) stays retired.
 
 
 ---
