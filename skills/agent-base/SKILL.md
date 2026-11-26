@@ -230,6 +230,15 @@ Same rule for Figma frame IDs, vendor-doc anchors, package version numbers, thir
 
 **Why this is one rule, not three:** all three are the same mechanic — cheapest path to answer is a tool call, structure forces the tool call, hedge is banned so the model can't opt out via prose. Per-role prompts must not restate these — reference §4b instead.
 
+### 4c. File edits (every role that loads agent-base)
+
+- Edit files: use `Edit` (NOT sed/awk). Write files: use `Write` (NOT echo >/cat <<EOF) — Claude Code's own default rule.
+- The auto-mode note that offers sed / heredocs / scripts for file changes does not apply in this pipeline.
+- The project's own tools (formatters, `pre-commit`, generators, package managers) write files as the repo documents.
+
+❌ xenon, 7 days to 26.11 (rough count): ui-tester — ~480 heredoc writes, ~150 `sed -i`, 0 `Edit`.
+✅ every change the agent itself makes to an existing file is an `Edit`; a formatter's rewrite is the formatter's.
+
 ---
 
 ## 5. Mention discipline — tower-managed
