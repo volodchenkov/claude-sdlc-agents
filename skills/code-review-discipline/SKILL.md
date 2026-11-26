@@ -225,7 +225,7 @@ Severity decides whether a finding costs a round (blocker / major) or is fixed i
 
 The initiator's rule (2026-05-13) stands: "close every finding — fix them all". What changed is **how**: fixing everything must not cost a review round per nit. Rounds follow `agent-base` §9.3.
 
-- **Every finding is written down and gets fixed.** No «follow-up ticket», no «non-blocking, separate issue», no discretionary punts.
+- **Every finding on the change is written down and gets fixed.** No «follow-up ticket», no «non-blocking, separate issue», no discretionary punts. A defect in code the task did not change follows `agent-base` §9.3 «Pre-existing findings» (initiator, 2026-11-26).
 - **Only blocker / major return the work** (CHANGES_REQUIRED). Each needs evidence: `file:line` + the scenario that breaks.
 - **Minors** are listed in the same verdict; the author fixes all of them in the same pass. A verdict with only minors is **APPROVED with fixes listed**: the reviewer hands it to the author, who fixes every minor in one pass, posts the delta and hands straight to the initiator for gate 3 — no extra review round.
 - **Iteration 1 = one full pass**; iteration N>1 reviews only the delta plus the status of earlier findings. No new findings on unchanged code unless it is a missed blocker, labelled `missed in iter N-1`.

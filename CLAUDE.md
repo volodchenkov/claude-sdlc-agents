@@ -8,7 +8,7 @@
 | Lint + auto-fix, before `git add` | `pre-commit run --all-files` |
 | Version-bump check (also runs on `git push`) | `tools/check_version_bump.sh` |
 | Tests (plugin hooks) | `python3 -I -m unittest discover -s tools -p 'test_*.py'` |
-| Session budget re-check, on the pipeline host (read-only) | `python3 -I tools/session_stats.py --days 30` |
+| Session length and context stats, on the pipeline host (read-only) | `python3 -I tools/session_stats.py --days 30` |
 | Token cost per kind / role / project / issue, on the pipeline host (read-only) | `python3 -I tools/pipeline_cost.py --hours 24` (`--since <ISO>` to compare with a rollout, `--json` per session) |
 | CodeRabbit locally, before every push to a PR | `cr review --agent --base master` |
 | CodeRabbit CLI install (once) | `curl -fsSL https://cli.coderabbit.ai/install.sh \| sh`, then in a new shell `cr auth login` (`cr auth login --region eu` for EU accounts) |

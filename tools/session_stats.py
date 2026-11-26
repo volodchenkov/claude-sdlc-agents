@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Context size of pipeline runs, from Claude Code transcripts (read-only).
 
-Re-checks the budget of hooks/session_budget.py. Run on the pipeline host:
+Session length and context stats of pipeline runs (it was the re-check of the session-budget hook, retired in 0.6.44). Run on the pipeline host:
 
     python3 -I tools/session_stats.py [--days 30] [--root ~/.claude/projects]
 

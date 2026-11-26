@@ -74,11 +74,11 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 - Found a SPEC gap mid-work? `escalate_upstream_gap` (`plane-api.md` §6.7c): post `BLOCKED — upstream gap` in your own sub-issue, mention initiator, STOP. Never create a "prerequisite" sub-issue or silently re-spec locally.
 - Tree depth is two: root → role sub-issue. Never spawn grandchild sub-issues. Scope growth is escalated to initiator (`plane-api.md` §6.13), who creates a new root.
 
-**Read** (via `read_artifact`):
+**Read** (descriptions via `read_artifact`, comments via `list_comments` — `plane-api.md` §6.4):
 - Root issue description = REQUIREMENTS (FR/NFR/Acceptance Criteria)
-- SPEC sub-issue (especially §1 affected frontends, §3 API contract, §4 Frontend Behaviour)
-- Design sub-issue — the designer's brief (Figma + UX flow + state matrix)
-- Backend sub-issue CHANGES — actual API endpoints to integrate with
+- SPEC sub-issue description (especially §1 affected frontends, §3 API contract, §4 Frontend Behaviour) and its `SPEC_APPROVED` comment (`plane-api.md` §6.4 «What a role reads»)
+- Design sub-issue description — the designer's brief (Figma + UX flow + state matrix)
+- Backend sub-issue — its CHANGES comment and every delta after it: actual API endpoints to integrate with
 - Real codebase of target React project — Step 0
 
 **Write:**
@@ -89,9 +89,9 @@ At session start, run the `agent-base` checklist (greeting, project context, com
 ## Step 0 — Read before writing
 
 - [ ] Project KB files listed in "Project context" above
-- [ ] Root description + ALL root comments
+- [ ] Root description; root comments only as `plane-api.md` §6.4 (a) says — those addressed to your role, newer than your cutoff (decisions of the initiator live in the SPEC)
 - [ ] SPEC: §1 (target React project per `$KB_DIR/kb/frontends.md`), §3 (API contracts), §4 (UX intent)
-- [ ] Confirm `SPEC_APPROVED` marker in SPEC comments
+- [ ] Confirm `SPEC_APPROVED` marker in SPEC comments (`plane-api.md` §6.4 «What a role reads»)
 - [ ] Backend CHANGES — actual endpoints (URLs, request/response shapes, auth) — only when the SPEC has API integration; frontend-only work skips this
 - [ ] Design brief — Figma frames, state matrix. **Read Design sub-issue `description_html` (not just comments). If the description first line is `# Design brief PARTIAL — {K} OQ-D open` OR §"Open questions" lists unresolved OQ-D* → STOP**, post `BLOCKED — designer OQ-D* unresolved (<list>); cannot start PLAN until designer reissues brief with PARTIAL prefix removed, or initiator waives each OQ-D explicitly`. Do NOT pick «pragmatic defaults» for OQ-Ds yourself — that's the failure mode (frontend ships, dev hates result, designer never consulted)
 - [ ] Existing code in target React project:
@@ -114,8 +114,8 @@ The procedure is `agent-base` §9.5. Role specifics:
 2. First run: `create_sub_issue(role='frontend', root_uuid=root_uuid)`; `post_startup_comment` → save `comment_id`.
 3. Worktree in the target repo (§9.5 step 2); set it up per the repo `CLAUDE.md`.
 4. PLAN (template in `artifact-templates`) → `update_sub_issue_description`. Vertical slices; each step names its files, one binary acceptance and its scoped verify command. **No approval wait.**
-5. Execute the steps in order until the session budget (agent-base §9.5 step 3a): implement → scoped verify → tick `[x]` → `update_sub_issue_description`. Red verify you cannot fix → `post_comment("Step N blocked: …")`, `request_handoff(target_role='initiator', …)`, STOP.
-6. Final pass in the worktree: full suite + linters (repo `CLAUDE.md` commands), live smoke, `codex-review --base <base-ref>` and `--conventions` until "No findings" (no round limit; a disputed or repeating finding per agent-base §9.5 step 5), commit to the worktree branch.
+5. Execute the steps in order (agent-base §9.5 step 3a): implement → scoped verify → tick `[x]` → `update_sub_issue_description`. Red verify you cannot fix → `post_comment("Step N blocked: …")`, `request_handoff(target_role='initiator', …)`, STOP.
+6. Checkpoint (agent-base §9.5 step 3a), then the final pass in the worktree: full suite + linters (repo `CLAUDE.md` commands), live smoke, `codex-review --base <base-ref>` and `--conventions` until "No findings" (no round limit; a disputed or repeating finding per agent-base §9.5 step 5), commit to the worktree branch. Then the checkpoint again: something open → handle it, the final pass again.
 7. `post_changes(sub_uuid=<sub>, target='frontend', …, ready_for_review=True, next_role='ui-tester')` with the implementation summary (§9.4) as `summary`. A Design sub-issue exists → also `request_handoff(target_role='designer', message_html='Frontend CHANGES ready — Mode B UX review.')`.
 8. `update_comment`: «{nickname} — done. {one-line gist}.» STOP.
 
@@ -284,7 +284,7 @@ Reproduce checklist as ✓/✗ in CHANGES "Verification" section.
 ## Re-entry & Completion
 
 See `plane-api.md` §7 (re-entry) and §6 (operations).
-- First run → PLAN, then the steps across sessions (handoff to self at the budget, agent-base §9.5 step 3a), final pass, CHANGES (agent-base §9.5). No stop for approval.
+- First run → PLAN, then the steps, the checkpoint and the final pass in one session (agent-base §9.5 step 3a), CHANGES (agent-base §9.5). No stop for approval.
 - Crash recovery → next run resumes from first `[ ]`.
 - Rework (bugs, CHANGES_REQUIRED, initiator questions) → one pass over every listed item, delta comment.
 - Status `Done` on sub-issue or root — set ONLY by the initiator in `finalize_done`.
