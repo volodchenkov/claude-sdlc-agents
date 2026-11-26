@@ -294,11 +294,12 @@ def describe(entries):
     return role, issue.group(1) if issue else None, bool(spawn)
 
 
-def bill(entries, since, seen, own_role=None):
+def bill(entries, since, seen, outputs, own_role=None):
     """Token sums and counts of the assistant messages at or after `since`.
 
     Claude Code writes each content block of one message as its own entry,
-    every one with the same id and usage: usage counts once per message id,
+    every one with the same id and usage: usage counts once per message id
+    (output at its largest count: an early entry may hold a partial one),
     tool calls once per tool_use id.
     """
     out = collections.Counter()
@@ -312,11 +313,22 @@ def bill(entries, since, seen, own_role=None):
         key = (msg.get("id"), e.get("requestId"))
         usage = msg.get("usage")
         # The usage of a message counts once: at its first entry that has one.
-        if isinstance(usage, dict) and (key == (None, None) or key not in seen):
-            seen.add(key)
-            for kind, field in USAGE.items():
-                v = usage.get(field)
-                out[kind] += v if isinstance(v, int) else 0
+        if isinstance(usage, dict):
+            v = usage.get(USAGE["output"])
+            v = v if isinstance(v, int) else 0
+            if key == (None, None) or key not in seen:
+                seen.add(key)
+                for kind, field in USAGE.items():
+                    if kind != "output":
+                        n = usage.get(field)
+                        out[kind] += n if isinstance(n, int) else 0
+                out["output"] += v
+                if key != (None, None):
+                    outputs[key] = [out, v]  # the bill that holds this message
+            elif key in outputs and v > outputs[key][1]:
+                held, old = outputs[key]
+                held["output"] += v - old  # a later entry, maybe another transcript
+                outputs[key][1] = v
         for part in msg.get("content") or []:
             if not isinstance(part, dict) or part.get("type") != "tool_use":
                 continue
@@ -351,12 +363,16 @@ def collect(root, since):
     """
     rows = []
     seen = set()
+    outputs = {}  # message key -> [bill holding it, largest output count]
     pattern = os.path.join(os.path.expanduser(root), "*", "*.jsonl")
     for path in sorted(glob.glob(pattern)):
         subs = [
             p
             for p in sorted(
-                glob.glob(os.path.join(path[: -len(".jsonl")], "subagents", "*.jsonl"))
+                glob.glob(  # workflow agents nest: subagents/workflows/<run>/
+                    os.path.join(path[: -len(".jsonl")], "subagents", "**", "*.jsonl"),
+                    recursive=True,
+                )
             )
             if _fresh(p, since)
         ]
@@ -370,17 +386,16 @@ def collect(root, since):
         )
         base = {"issue": issue, "pipeline": pipeline, "project": project or "~"}
         main = (
-            bill(entries, since, seen, own_role=role)
+            bill(entries, since, seen, outputs, own_role=role)
             if main_fresh
             else collections.Counter()
         )
-        if any(main[k] for k in KINDS + COUNTS):
-            rows.append(dict(base, role=role, sub=False, bill=main))
+        rows.append(dict(base, role=role, sub=False, bill=main))
         for sub in subs:
-            sbill = bill(_load(sub), since, seen)
-            if any(sbill[k] for k in KINDS + COUNTS):
-                rows.append(dict(base, role=role + " [sub]", sub=True, bill=sbill))
-    return rows
+            sbill = bill(_load(sub), since, seen, outputs)
+            rows.append(dict(base, role=role + " [sub]", sub=True, bill=sbill))
+    # empty rows go only now: a later duplicate may still raise a row's output
+    return [r for r in rows if any(r["bill"][k] for k in KINDS + COUNTS)]
 
 
 def group(rows, key):

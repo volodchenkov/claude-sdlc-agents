@@ -225,6 +225,48 @@ class Cost(unittest.TestCase):
             (row["role"], row["bill"]["cache_write"]), ("react-developer [sub]", 50)
         )
 
+    def test_output_of_a_message_is_its_largest_count(self):
+        # a first entry may carry a partial output count, a later one the final
+        a = assistant("m1", "2026-11-25T10:01:00Z", cw=70, out=3)
+        b = assistant("m1", "2026-11-25T10:01:00Z", cw=70, out=40)
+        self.write("a.jsonl", spawn() + [a, b, a])
+        bill = self.rows()[0]["bill"]
+        self.assertEqual((bill["cache_write"], bill["output"]), (70, 40))
+
+    def test_output_largest_across_transcripts(self):
+        # a resumed session repeats a message of its parent transcript
+        a = assistant("m1", "2026-11-25T10:01:00Z", cw=70, out=3)
+        b = assistant("m1", "2026-11-25T10:01:00Z", cw=70, out=40)
+        self.write("a.jsonl", spawn() + [a])
+        self.write("b.jsonl", spawn() + [b])
+        rows = self.rows()
+        self.assertEqual(sum(r["bill"].get("output", 0) for r in rows), 40)
+        self.assertEqual(sum(r["bill"].get("cache_write", 0) for r in rows), 70)
+
+    def test_output_raised_on_a_row_that_started_empty(self):
+        first = assistant("m1", "2026-11-25T10:01:00Z")
+        first["message"]["usage"]["input_tokens"] = 0  # a record with no tokens
+        self.write("a.jsonl", spawn() + [first])
+        self.write(
+            "b.jsonl", spawn() + [assistant("m1", "2026-11-25T10:01:00Z", out=9)]
+        )
+        rows = self.rows()
+        self.assertEqual(sum(r["bill"].get("output", 0) for r in rows), 9)
+
+    def test_nested_workflow_subagent_counts(self):
+        parent = self.write(
+            "run.jsonl", spawn() + [assistant("m", "2026-11-24T10:01:00Z", cw=5)]
+        )
+        os.utime(parent, (1, 1))
+        self.write(
+            "run/subagents/workflows/w1/agent-a.jsonl",
+            [assistant("s", "2026-11-25T10:02:00Z", cw=60)],
+        )
+        (row,) = self.rows()
+        self.assertEqual(
+            (row["role"], row["bill"]["cache_write"]), ("react-developer [sub]", 60)
+        )
+
     def test_usage_on_a_later_entry_of_the_message_counts(self):
         a = assistant("m1", "2026-11-25T10:01:00Z")
         del a["message"]["usage"]
@@ -265,6 +307,8 @@ class Cost(unittest.TestCase):
             "timeout 10m codex-review --plan s.md": "plan",
             "timeout -k 5s 1.5h codex-review": "diff",
             "codex-review --plan p > o.txt 2>&1": "plan",
+            "2>/dev/null codex-review --plan p": "plan",
+            "sleep 2 >x; 3<in codex-review": "diff",
             "true\ncodex-review --plan p.md": "plan",
             "(cd /w; codex-review --plan p)": "plan",
             "cat <<'X'\nhi\nX\ncodex-review --base m": "diff",
