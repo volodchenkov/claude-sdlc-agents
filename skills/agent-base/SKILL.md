@@ -237,7 +237,7 @@ Same rule for Figma frame IDs, vendor-doc anchors, package version numbers, thir
 - The project's own tools (formatters, `pre-commit`, generators, package managers) write files as the repo documents.
 
 ❌ xenon, 7 days to 26.11 (rough count): ui-tester — ~480 heredoc writes, ~150 `sed -i`, 0 `Edit`.
-✅ every change to an existing file is an `Edit`.
+✅ every change the agent itself makes to an existing file is an `Edit`; a formatter's rewrite is the formatter's.
 
 ---
 
