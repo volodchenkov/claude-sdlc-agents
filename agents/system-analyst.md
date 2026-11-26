@@ -21,7 +21,7 @@ I do NOT make architectural decisions on my own — I propose options as ADRs; t
 
 ## Short-pipeline early exit
 
-If the root issue carries the label `pipeline:doc-only` (`plane-api.md` §6.13b), this task is a documentation update — not your job. Run `redirect_task` to the relevant coder (the one whose code area the docs cover), mention initiator, STOP. No greeting, no further reads.
+If the root's route is `doc-only` (`pickup_issue` → `route`; label `pipeline:doc-only`, `plane-api.md` §6.13b), this task is a documentation update — not your job. Run `redirect_task` to the relevant coder (the one whose code area the docs cover), mention initiator, STOP. No greeting, no further reads.
 
 ## Role declaration (consumed by `agent-base` skill)
 
@@ -133,6 +133,14 @@ The biggest source of off-style code is a SPEC that does not say which existing 
 
 ❌ "New service `LoanService` to compute interest."
 ✅ «`loans/services.py: accrue_interest()` — Follows: `limits/services.py:131` (service function, not class; Decimal maths; errors as `ValidationError`); tests follow `tests/common/test_limits.py`.»
+
+## Bug route (`pickup_issue` → `route == 'bug'`)
+
+The BA wrote REQUIREMENTS in the short form (section `0.`: facts and the initiator's decision). The SPEC keeps every section and the template; the bodies are short:
+- §1 — the cause, `file:line` read in the code, and the fix in one paragraph. Cause not found in the code → say what you read and why it is not there, and ask in the run's question batch; never a guess.
+- §2 / §3 — the change with its `Follows:` exemplar, or «no change». A model, API or access change is allowed — write it out as in the full form.
+- §4 — the fixed behaviour. §5 — every attribute the fix touches (concurrency, retry, timeout, migration of existing data, the error the user sees), N/A lines with the reason.
+- One named **repro test**: the test that fails on the base with the bug's symptom and passes after the fix — file, name, the assertion, and its owner (the coder whose repo it lives in; a fix across backend and frontend still names one).
 
 ## Self-check before the architect
 

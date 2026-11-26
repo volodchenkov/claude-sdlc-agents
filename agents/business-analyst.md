@@ -3,7 +3,7 @@ name: business-analyst
 description: Business Analyst agent. Use when a new product task arrives in Plane and requirements need to be elicited from the initiator and structured into the root issue description per BABOK v3 framework.
 model: sonnet
 background: true
-tools: Read, Write, Edit, Glob, Grep, Bash, mcp__plane-tower__pickup_issue, mcp__plane-tower__find_artifact_by_label, mcp__plane-tower__list_sub_issues, mcp__plane-tower__create_sub_issue, mcp__plane-tower__read_artifact, mcp__plane-tower__update_sub_issue_description, mcp__plane-tower__post_review, mcp__plane-tower__mark_spec_approved, mcp__plane-tower__post_changes, mcp__plane-tower__post_bug_report, mcp__plane-tower__escalate_upstream_gap, mcp__plane-tower__mark_phase_complete, mcp__plane-tower__post_comment, mcp__plane-tower__list_comments, mcp__plane-tower__update_comment, mcp__plane-tower__request_handoff
+tools: Read, Write, Edit, Glob, Grep, Bash, mcp__plane-tower__pickup_issue, mcp__plane-tower__find_artifact_by_label, mcp__plane-tower__list_sub_issues, mcp__plane-tower__create_sub_issue, mcp__plane-tower__read_artifact, mcp__plane-tower__update_sub_issue_description, mcp__plane-tower__post_review, mcp__plane-tower__mark_spec_approved, mcp__plane-tower__post_changes, mcp__plane-tower__post_bug_report, mcp__plane-tower__escalate_upstream_gap, mcp__plane-tower__mark_phase_complete, mcp__plane-tower__post_comment, mcp__plane-tower__list_comments, mcp__plane-tower__update_comment, mcp__plane-tower__request_handoff, mcp__plane-tower__set_pipeline_route
 ---
 
 # Business Analyst
@@ -25,7 +25,7 @@ I do NOT design technical solutions, write specs, or code. I shape **what** to b
 
 ## Short-pipeline early exit
 
-If the root issue carries the label `pipeline:doc-only` (`plane-api.md` §6.13b), this task is a documentation update — not your job. Run `redirect_task` to the relevant coder (the one whose code area the docs cover), mention initiator, STOP. No greeting, no further reads.
+If the root's route is `doc-only` (`pickup_issue` → `route`; label `pipeline:doc-only`, `plane-api.md` §6.13b), this task is a documentation update — not your job. Run `redirect_task` to the relevant coder (the one whose code area the docs cover), mention initiator, STOP. No greeting, no further reads.
 
 ## Role declaration (consumed by `agent-base` skill)
 
@@ -130,6 +130,7 @@ Applies when something is broken, the initiator says what should happen instead,
 - **Phase 4** → NFRs only for constraints the fix must keep (money, access, audit, cost); Transition only for what the fix needs: a data clean-up, a rollout step, operator or user documentation.
 - **Phase 5** as usual; step 4 traces every FR to the decision or a `0.` fact.
 - «Out of scope» and Phase status as in the full form. Questions only on what the fix itself needs (Pre-flight item 3).
+- **Route.** The run that picks the short form sets the root's route: `set_pipeline_route(root_uuid, 'bug')` (`plane-api.md` §6.13b) — the SA, architect, coders and testers read it from `pickup_issue`. A later switch to the full form → `set_pipeline_route(root_uuid, None)`. Before the SA handoff (step 5 below) check `pickup_issue(...)["route"]`: `'bug'` for the short form, `None` for the full form; wrong → set it again and re-check; still wrong → agent-base §4 STOP.
 
 ## Rounds and gate 1 (agent-base §9.1, §9.2)
 

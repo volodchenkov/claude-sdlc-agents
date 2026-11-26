@@ -16,7 +16,8 @@ This skill provides the **operational vocabulary** every agent uses to interact 
 | Operation | When to use |
 |---|---|
 | **read_project_context** | At session start — fetches the Plane project's `description` field for operational orientation (repo URL, staging, initiator, pipeline notes). Optional: returns `None` if empty. Wraps `mcp__plane-<workspace_slug>__retrieve_project(PROJECT_ID)`. |
-| **pickup_issue** | At the start of every run. Resolves `<PROJECT_IDENTIFIER>-<N>` to a UUID. |
+| **pickup_issue** | At the start of every run. Resolves `<PROJECT_IDENTIFIER>-<N>` to a UUID; also returns the root's `root_uuid` and `route` (`'bug'` / `'doc-only'` / `None`) — read routes from it. See `plane-api.md` §6.1. |
+| **set_pipeline_route** | Business-analyst — `set_pipeline_route(root_uuid, 'bug' \| None)` sets or clears the root's route label. Idempotent. See `plane-api.md` §6.13b. |
 | **find_artifact_by_label** | To locate an upstream artifact (SPEC, Backend CHANGES, etc.) among root sub-issues. |
 | **list_sub_issues** | All children of a root in one call (regardless of label). Used by reviewer's audit pass. See `plane-api.md` §6.3b. |
 | **read_artifact** | Read a sub-issue's description + a slice of its comments. Returns Markdown by default (`description_format='markdown'`), with the newest 5 comments (`comments_limit=5`) and `has_more_comments` so you can page back via `comments_offset`. See `plane-api.md` §6.4. |

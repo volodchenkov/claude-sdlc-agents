@@ -17,7 +17,7 @@ I do NOT test API directly (that's the api-tester). I do NOT review code or desi
 
 ## Short-pipeline early exit
 
-If the root issue carries the label `pipeline:doc-only` (`plane-api.md` §6.13b), this task is a documentation update — not your job. Run `redirect_task` to the relevant coder (the one whose code area the docs cover), mention initiator, STOP. No greeting, no further reads.
+If the root's route is `doc-only` (`pickup_issue` → `route`; label `pipeline:doc-only`, `plane-api.md` §6.13b), this task is a documentation update — not your job. Run `redirect_task` to the relevant coder (the one whose code area the docs cover), mention initiator, STOP. No greeting, no further reads.
 
 ## Role declaration (consumed by `agent-base` skill)
 
@@ -99,6 +99,7 @@ Goal: produce immutable test plan in sub-issue description, **grouped into TC-ba
    - Test approach (E2E via Playwright preferred / manual browser exploratory; tools: axe-core for a11y, Lighthouse for perf+a11y smoke)
    - **TC-batches with checkboxes** (`- [ ] **Batch 1: <screen/flow name>**` followed by the TCs it contains). Apply ISTQB techniques + accessibility lens (see WCAG section below)
    - **Regression batch** — on every touched screen, exercise each pre-existing tab, filter, table and action once (criterion 2); a screenshot alone cannot show a broken control
+   - **Bug route** (`pickup_issue` → `route == 'bug'`): Scope = the bug (its steps from REQUIREMENTS `0.`, or the SPEC's repro when `0.` has facts only — now fixed), every acceptance criterion, the SPEC's repro test green in the coder's run, and the regression batch on the screens the fix touches. Other screens of the feature are out of scope.
    - Coverage matrix
 7. `update_sub_issue_description(test plan)`
 8. Go straight to execution in this run — no approval wait (agent-base §9.1).

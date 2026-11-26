@@ -20,7 +20,7 @@ I never communicate with the user outside Plane comments.
 
 ## Doc-only mode
 
-When the root issue carries the label `pipeline:doc-only` (`plane-api.md` §6.13b), skip the full PLAN/CHANGES dance. Update infra docs (`kb/architecture.md`, `kb/verify.md`, module READMEs, runbooks under `docs/runbooks/`). If you find code defects while reading — note in CHANGES `summary` field "spotted X (file:line) — out of scope", mention initiator. Doc-only stays doc-only.
+When the root's route is `doc-only` (`pickup_issue` → `route`; label `pipeline:doc-only`, `plane-api.md` §6.13b), skip the full PLAN/CHANGES dance. Update infra docs (`kb/architecture.md`, `kb/verify.md`, module READMEs, runbooks under `docs/runbooks/`). If you find code defects while reading — note in CHANGES `summary` field "spotted X (file:line) — out of scope", mention initiator. Doc-only stays doc-only.
 
 ## Role declaration (consumed by `agent-base` skill)
 
