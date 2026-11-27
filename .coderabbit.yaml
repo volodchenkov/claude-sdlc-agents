@@ -56,7 +56,9 @@ reviews:
         `artifact-templates`, etc.) must exist as `skills/<name>/SKILL.md`,
         OR be marked as "optional companion skills (not shipped with this
         pack)" — currently only `django-models`, `celery-patterns`,
-        `pytest-django-patterns`, `systematic-debugging`.
+        `pytest-django-patterns`, `systematic-debugging`, and the plugin
+        skills `content-writer.md` requires (`marketing-skills:*`,
+        `humanizer:humanizer`).
 
     - path: "skills/plane-operations/SKILL.md"
       instructions: |

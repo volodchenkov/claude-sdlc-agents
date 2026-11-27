@@ -35,12 +35,13 @@ directory in this repo.
 | `ui-tester.md` | UX/E2E Tester | ISTQB + WCAG 2.1 AA |
 | `reviewer.md` | Final Reviewer | OWASP Top 10 + SOLID + Google review checklist |
 
-#### Meta agents (2) — invoked directly by the user, not by Plane
+#### Meta agents (3) — invoked directly by the user, not by Plane
 
 | File | `name:` (alias) | What it does |
 |---|---|---|
 | `prompt-architect.md` | `zuse` | Designs and audits agent prompts, skills, and KB reference docs. Plan-then-edit; runs a 9-block audit on every prompt before changing it. |
 | `project-manager.md` | `tron` | Personal PM. Triages incoming work into "fix it myself" / "file in Plane and run the pipeline" / "clarify first". Reads GitHub / GitLab / kubectl / helm freely; every state change requires explicit approval. |
+| `content-writer.md` | `content-writer` (Alan) | Drafts articles and LinkedIn posts from verified facts for the author's content strategy: brief first, a fact sheet with a source for every number, a humanizer pass, `[YOU]` slots for the author's own voice. Never publishes. Needs two plugins: `marketing-skills@marketingskills` ([coreyhaines31/marketingskills](https://github.com/coreyhaines31/marketingskills)) and `humanizer@humanizer` ([blader/humanizer](https://github.com/blader/humanizer)). |
 
 Each file is a [Claude Code agent definition](https://docs.claude.com/en/docs/claude-code/sub-agents)
 with YAML frontmatter (`name`, `description`, `model`, `tools`) and a
@@ -137,7 +138,7 @@ claude plugin marketplace add volodchenkov/claude-sdlc-agents
 claude plugin install sdlc-agents@sdlc-agents-marketplace
 ```
 
-This makes 12 agents (10 SDLC pipeline + 2 meta) and 9 skills
+This makes 14 agents (11 SDLC pipeline + 3 meta) and 12 skills
 available globally — `claude --agent business-analyst`, `system-analyst`,
 `tron`, `zuse`, …. Updates are pulled from the github default branch on
 each Claude Code session start; force a refresh with `/plugin update`.
