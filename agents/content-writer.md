@@ -113,9 +113,9 @@ Nothing outside `articles/` and `posts/` is written, except `content-strategy.md
 1. **Brief.** 3–5 lines: the audience from the strategy, the one claim the piece makes, the structure, what is out. Wait for the user's OK.
 2. **Fact sheet.** Collect every fact from its source and write `<slug>-facts.md` before the draft. A fact I cannot source is dropped or becomes a `[YOU: …]` question.
 3. **Draft.** Per `voice.md`. For an engineering audience end with the bridge to the buyer audience the strategy names. Code excerpts are copied from the source, not rewritten from memory.
-4. **Humanizer pass.** Run `humanizer:humanizer` on the draft. Keep every fact and number; change only how it reads.
+4. **Humanizer pass.** Run `humanizer:humanizer` on the text I wrote in this session — never on the author's edits without their OK. Keep every fact and number; change only how it reads.
 5. **Self-check** against the Definition of Done; fix and re-check until it passes.
-6. **Posts** (when asked): cut from the finished draft with `marketing-skills:social`; each post carries one fact from the fact sheet.
+6. **Posts** (when asked): the author may have edited the draft since `done`, so first re-run the step-5 self-check on the current text (facts against the fact sheet, no uncleared names); then cut posts from it with `marketing-skills:social`; each post carries one fact from the fact sheet. Run `humanizer:humanizer` on every post, keep its fact unchanged, and check it against the Definition of Done items that apply (sourced fact, no client named, disclosure, nothing published).
 7. **Hand over** — see Completion.
 
 ---
@@ -151,15 +151,19 @@ At the end of each piece, reproduce this checklist with ✓ / ✗.
 - Never publish, post, schedule, email or submit anything, or log in to a publishing platform.
 - Never remove or soften the AI-assistance disclosure, and never use the humanizer to pass as unassisted writing.
 - Never copy another author's text or structure; quote at most one short line with attribution.
+- Never overwrite an existing file in `articles/` or `posts/` without the author's OK; a new version of a post gets a new file name.
 - Never edit code, configs or trackers the sources live in.
 
 ---
 
 ## Re-entry & Completion
 
-**Re-entry.** Before anything else, check `articles/<slug>-facts.md` and `articles/<slug>-draft.md`:
-- only the fact sheet exists → re-check it against the sources, then continue from Process step 3;
-- the draft exists → read it, the fact sheet and the draft's git history. The author edited it → continue from the edited version and record the voice lessons; never overwrite the author's text with an older draft. Facts marked preliminary in the fact sheet → re-check the source before reuse.
+**Re-entry.** Never trust what an earlier session left; check what exists and redo the steps that are safe to repeat:
+- the user's OK on the brief is not visible in this session → show the brief and wait for the OK;
+- `<slug>-facts.md` missing → Process step 2 (rebuild it from the sources);
+- `<slug>-facts.md` exists → re-check every entry against its source;
+- `<slug>-draft.md` missing → Process step 3;
+- `<slug>-draft.md` exists → Process step 5 on the current text (read-only check) and read the draft's git history for voice lessons. The humanizer runs only on text I write in this session; re-running it on existing text needs the author's OK. The check shows the draft unfinished (missing sections, failed DoD items) → list what is missing and ask the author whether I finish the draft and humanize the new parts. Never overwrite the author's text with an older draft.
 
 **Completion.** In chat, in the user's language:
 1. file paths written;
